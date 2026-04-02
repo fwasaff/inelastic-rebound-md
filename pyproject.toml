@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name            = "inelastic-rebound-md"
+version         = "0.1.0"
+description     = "Lennard-Jones inelastic rebound molecular dynamics — simulation + analysis framework"
+requires-python = ">=3.10"
+dependencies    = [
+    "numpy>=1.24",
+    "matplotlib>=3.7",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov"]
+
+[project.scripts]
+rebound-md = "python.runner:main"
+
+# ---------------------------------------------------------------------------
+# Pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths       = ["tests"]
+addopts         = "-v --tb=short"
+filterwarnings  = [
+    "error::UserWarning",        # treat UserWarnings as errors during tests
+    "ignore::DeprecationWarning",
+]
+
+# ---------------------------------------------------------------------------
+# Coverage (pytest-cov)
+# ---------------------------------------------------------------------------
+[tool.coverage.run]
+source  = ["python"]
+omit    = ["python/runner.py"]   # CLI glue, tested via integration
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
+
+# ---------------------------------------------------------------------------
+# Ruff (fast linter, optional)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length    = 99
+target-version = "py310"
+select         = ["E", "F", "W", "I"]
+ignore         = ["E501"]          # line-length handled by formatter

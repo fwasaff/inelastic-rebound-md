@@ -1,0 +1,66 @@
+# ==============================================================================
+# ff.params – Force-field reference for inelastic-rebound-md
+# ==============================================================================
+#
+# Lennard-Jones 12-6 in reduced LJ units (eps=1, sigma=1, m=1).
+# Conversion factors for Argon:
+#
+#   Energy   eps   = 0.01039 eV  = 1.665e-21 J   = 120.0 K * kB
+#   Length   sigma = 3.40 Å      = 3.40e-10 m
+#   Mass     m     = 39.948 amu  = 6.634e-26 kg
+#   Time     tau   = sigma*sqrt(m/eps) = 2.155 ps
+#   Velocity sigma/tau = 157.8 m/s
+#   Force    eps/sigma = 4.89e-12 N
+#   Pressure eps/sigma^3 = 41.9 MPa
+#   Temp     eps/kB = 120.0 K
+#
+# -----------------------------------------------------------------------
+# Pair potential
+# -----------------------------------------------------------------------
+# Style:         lj/cut  (LAMMPS native)
+# Cutoff:        2.5 sigma  (standard for Ar liquid/solid benchmarks)
+# Tail corr.:    pair_modify tail yes  (energy + pressure long-range correction)
+#
+# V(r) = 4*eps * [(sigma/r)^12 - (sigma/r)^6]   r < rc
+#
+# V(rc) = 4 * [(1/2.5)^12 - (1/2.5)^6]
+#        = 4 * [2.621e-5 - 1.638e-2]
+#        ≈ -0.01632 eps   (shift not applied; LAMMPS truncates)
+#
+# Equilibrium:   r_min = 2^(1/6) sigma ≈ 1.1225 sigma
+# Well depth:    V(r_min) = -eps
+# Curvature:     k = 57.15 eps/sigma^2  (harmonic approx at minimum)
+#
+# -----------------------------------------------------------------------
+# Lattice parameters (FCC Argon, LJ units)
+# -----------------------------------------------------------------------
+# T* = 0.1  eps/kB (~12 K):  a0 = 1.5496 sigma   [Verlet 1967]
+# T* = 0.2  eps/kB (~24 K):  a0 = 1.556  sigma   (slight expansion)
+# T* = 0.5  eps/kB (~60 K):  a0 = 1.575  sigma
+#
+# Cohesive energy per atom (FCC, cutoff = inf):
+#   U_coh = -2 * eps * A_LJ  where A_LJ ≈ 7.0 (Madelung-like sum)
+#   U_coh ≈ -8.61 eps/atom  (agrees with literature: ~8.6 eps)
+#
+# Debye temperature:  T_D* ≈ 0.82 eps/kB  (~98 K for Ar)
+#
+# -----------------------------------------------------------------------
+# Atom types used in this project
+# -----------------------------------------------------------------------
+# Type 1: Surface atom   (FCC slab)  — mass 1.0, eps 1.0, sigma 1.0
+# Type 2: Projectile     (single Ar) — mass 1.0, eps 1.0, sigma 1.0
+#         (homoatomic impact: same parameters as surface)
+#
+# Cross-interaction follows Lorentz-Berthelot mixing (trivial here):
+#   eps_12   = sqrt(eps_1 * eps_2)   = 1.0
+#   sigma_12 = (sigma_1 + sigma_2)/2 = 1.0
+#
+# -----------------------------------------------------------------------
+# References
+# -----------------------------------------------------------------------
+# [1] Verlet L., Phys. Rev. 159, 98 (1967) — first LJ MD paper
+# [2] Gillan M.J., Mol. Phys. 38, 1781 (1979) — FCC lattice constant
+# [3] Allen & Tildesley, "Computer Simulation of Liquids" (2nd ed., 2017)
+# [4] Glosli & McClelland, PRL 70, 1960 (1993) — LJ inelastic rebound
+# [5] LAMMPS documentation: https://docs.lammps.org/pair_lj.html
+# ==============================================================================
