@@ -1,0 +1,38 @@
+# LAMMPS output files
+*.lammpstrj
+dump.*
+log.lammps
+restart.*
+data.equilibrated
+data.after_impact
+thermo_*.dat
+rebound_data.dat
+
+# Simulation output directories
+data/outputs/*/
+!data/outputs/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+dist/
+build/
+*.egg
+
+# Figures
+*.pdf
+*.png
+*.eps
+!docs/**/*.png
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db

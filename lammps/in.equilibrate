@@ -1,0 +1,130 @@
+# ==============================================================================
+# in.equilibrate
+# Inelastic Rebound MD - Phase 1: Surface Equilibration
+#
+# Physics:
+#   FCC Argon crystal slab equilibrated at target temperature T*.
+#   The slab acts as the substrate for the subsequent impact simulation.
+#   Periodic boundary conditions in x,y; non-periodic (fixed) in z.
+#
+# Units: LJ reduced units
+#   energy  -> epsilon (Ar: 0.0104 eV)
+#   length  -> sigma   (Ar: 3.4 Angstrom)
+#   time    -> tau = sigma*sqrt(m/eps) (Ar: ~2.15 ps)
+#   temp    -> eps/kB (Ar: ~120 K)
+#
+# Run with: lmp -in in.equilibrate
+# Output:   restart.equilibrated, thermo_equil.dat, dump.equil.lammpstrj
+# ==============================================================================
+
+# --- Global settings ----------------------------------------------------------
+units           lj
+atom_style      atomic
+boundary        p p f          # periodic x,y; fixed (non-periodic) z
+newton          on
+
+# --- Variables ----------------------------------------------------------------
+variable    T_target    equal 0.1      # target temperature [eps/kB] (~12 K for Ar)
+variable    T_damp      equal 1.0      # Nose-Hoover thermostat damping [tau]
+variable    a0          equal 1.5496   # FCC lattice constant at T*=0.1 (LJ units)
+                                       # from Verlet (1967): a0 ~ 1.5496 sigma at P~0
+variable    Nx          equal 8        # unit cells in x
+variable    Ny          equal 8        # unit cells in y
+variable    Nz          equal 6        # unit cells in z (slab thickness)
+variable    steps_equil equal 50000    # equilibration steps
+variable    steps_prod  equal 30000    # production/data-collection steps
+variable    dt          equal 0.005    # timestep [tau]
+variable    thermo_freq equal 500      # thermo output frequency [steps]
+variable    dump_freq   equal 1000     # trajectory dump frequency [steps]
+variable    seed        equal 12345    # velocity seed for reproducibility
+
+# --- Simulation box and atoms -------------------------------------------------
+# FCC lattice: 4 atoms/unit cell
+# Slab occupies z in [0, Nz*a0]; vacuum is added above in in.impact
+lattice         fcc ${a0}
+region          simbox block 0 ${Nx} 0 ${Ny} 0 ${Nz} units lattice
+create_box      1 simbox
+create_atoms    1 box
+
+mass            1 1.0          # reduced mass = 1.0
+
+# --- Interatomic potential ----------------------------------------------------
+# Lennard-Jones 12-6, truncated and shifted at rc = 2.5 sigma
+# V(r) = 4*eps*[(sig/r)^12 - (sig/r)^6] - V(rc)
+# Reference: Allen & Tildesley, Computer Simulation of Liquids (2017)
+pair_style      lj/cut 2.5
+pair_coeff      1 1 1.0 1.0 2.5   # eps=1.0, sig=1.0, cutoff=2.5
+
+# Long-range tail correction to energy and pressure
+pair_modify     tail yes
+
+# --- Groups -------------------------------------------------------------------
+# Bottom 2 layers: fixed (Dirichlet BC, absorbs momentum)
+# Middle layers: thermostatted (heat bath, mimics bulk)
+# Top layer:  free NVE (clean surface for impact)
+region          reg_fixed   block INF INF INF INF 0 2         units lattice
+region          reg_thermo  block INF INF INF INF 2 $(v_Nz-1) units lattice
+region          reg_free    block INF INF INF INF $(v_Nz-1) ${Nz} units lattice
+
+group           fixed_atoms  region reg_fixed
+group           thermo_atoms region reg_thermo
+group           free_atoms   region reg_free
+group           mobile       subtract all fixed_atoms
+
+# --- Initial velocities -------------------------------------------------------
+velocity        mobile create ${T_target} ${seed} dist gaussian rot yes mom yes
+
+# --- Fixes --------------------------------------------------------------------
+# Fixed atoms: zero force (rigid wall)
+fix             f_freeze    fixed_atoms  setforce 0.0 0.0 0.0
+
+# Thermostat on intermediate layers: Nose-Hoover NVT
+# This represents the heat bath (bulk crystal below surface)
+fix             f_nvt       thermo_atoms nvt temp ${T_target} ${T_target} ${T_damp}
+
+# Free surface layer: NVE (microcanonical, no thermostat bias at surface)
+fix             f_nve       free_atoms   nve
+
+# --- Computes -----------------------------------------------------------------
+compute         T_mobile   mobile   temp
+compute         T_thermo   thermo_atoms temp
+compute         pe_all     all      pe/atom
+compute         stress_all all      stress/atom NULL virial
+
+# --- Thermo output ------------------------------------------------------------
+thermo          ${thermo_freq}
+thermo_style    custom step time temp c_T_mobile etotal ke pe press
+thermo_modify   norm no lost warn
+
+# --- Trajectory dump ----------------------------------------------------------
+dump            d_equil all custom ${dump_freq} dump.equil.lammpstrj &
+                id type xs ys zs vx vy vz c_pe_all
+dump_modify     d_equil sort id
+
+# --- Logging to file ----------------------------------------------------------
+fix             f_thermo_log all print ${thermo_freq} &
+                "${time} ${temp} ${etotal} ${ke} ${pe} ${press}" &
+                file thermo_equil.dat title "time temp etotal ke pe press" screen no
+
+# --- Run: Equilibration phase -------------------------------------------------
+timestep        ${dt}
+
+# Quick ramp to avoid instabilities from arbitrary initial positions
+fix             f_ramp all temp/rescale 100 ${T_target} ${T_target} 0.05 1.0
+run             5000
+unfix           f_ramp
+
+# Full NVT equilibration
+run             ${steps_equil}
+
+# --- Run: Production phase (verify equilibrium) -------------------------------
+reset_timestep  0
+run             ${steps_prod}
+
+# --- Write restart for impact phase -------------------------------------------
+write_restart   restart.equilibrated
+write_data      data.equilibrated
+
+print ">>> Equilibration complete. Restart written to restart.equilibrated"
+print ">>> Surface temperature: $(c_T_mobile)"
+print ">>> Total energy: $(etotal)"
