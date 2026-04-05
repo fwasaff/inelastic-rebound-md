@@ -284,8 +284,6 @@ class ImpactSimulation:
 
     def __enter__(self) -> "ImpactSimulation":
         self.workdir.mkdir(parents=True, exist_ok=True)
-        if not self.restart_path.exists():
-            raise RestartNotFoundError(self.restart_path)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
@@ -307,6 +305,9 @@ class ImpactSimulation:
 
     def run(self) -> None:
         """Execute the impact simulation."""
+        if not self.restart_path.exists():
+            raise RestartNotFoundError(self.restart_path)
+
         script_src = _LAMMPS_DIR / self.SCRIPT_NAME
         script_dst = self.workdir / self.SCRIPT_NAME
         shutil.copy2(script_src, script_dst)
