@@ -44,10 +44,11 @@ variable    time        equal step*${dt}  # simulation time [tau] (for fix print
 # Slab occupies z in [0, Nz*a0]; vacuum is added above in in.impact
 lattice         fcc ${a0}
 region          simbox block 0 ${Nx} 0 ${Ny} 0 ${Nz} units lattice
-create_box      1 simbox
+create_box      2 simbox           # 2 types: 1=surface, 2=projectile (reserved for in.impact)
 create_atoms    1 box
 
 mass            1 1.0          # reduced mass = 1.0
+mass            2 1.0          # projectile mass (same as surface; required for restart)
 
 # --- Interatomic potential ----------------------------------------------------
 # Lennard-Jones 12-6, truncated and shifted at rc = 2.5 sigma
@@ -55,6 +56,8 @@ mass            1 1.0          # reduced mass = 1.0
 # Reference: Allen & Tildesley, Computer Simulation of Liquids (2017)
 pair_style      lj/cut 2.5
 pair_coeff      1 1 1.0 1.0 2.5   # eps=1.0, sig=1.0, cutoff=2.5
+pair_coeff      1 2 1.0 1.0 2.5   # surface-projectile (required; no type-2 atoms yet)
+pair_coeff      2 2 1.0 1.0 2.5   # projectile-projectile (required)
 
 # Long-range tail correction to energy and pressure
 pair_modify     tail yes
