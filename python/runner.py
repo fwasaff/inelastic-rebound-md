@@ -160,7 +160,6 @@ def cmd_sweep(args: argparse.Namespace) -> int:
                         v0=v0,
                         angle=angle,
                         T_target=T,
-                        seed=replica * 1000,
                     )
                     jobs.append((cfg, replica, restart_paths[T]))
 
