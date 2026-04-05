@@ -77,12 +77,21 @@ group           thermo_atoms region reg_thermo
 group           free_atoms   region reg_free
 group           mobile       subtract all fixed_atoms
 
+# --- Energy minimization (before velocity init) --------------------------------
+# Relaxes the initial lattice strain so atoms do not fly out at higher T*.
+# The freeze fix is applied first so the bottom wall stays rigid during minimize.
+fix             f_freeze    fixed_atoms  setforce 0.0 0.0 0.0
+
+min_style       cg
+min_modify      dmax 0.05 norm inf     # conservative step limit for slab geometry
+minimize        1.0e-6 1.0e-8 2000 20000
+reset_timestep  0
+
 # --- Initial velocities -------------------------------------------------------
 velocity        mobile create ${T_target} ${seed} dist gaussian rot yes mom yes
 
 # --- Fixes --------------------------------------------------------------------
-# Fixed atoms: zero force (rigid wall)
-fix             f_freeze    fixed_atoms  setforce 0.0 0.0 0.0
+# Fixed atoms: zero force (rigid wall — already defined above for minimize)
 
 # Thermostat on intermediate layers: Nose-Hoover NVT
 # This represents the heat bath (bulk crystal below surface)
