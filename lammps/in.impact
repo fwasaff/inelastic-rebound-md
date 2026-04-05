@@ -121,7 +121,7 @@ compute proj_ke     projectile  ke
 
 # Surface kinetic energy (convert to temperature rise)
 compute surf_ke     mobile      ke
-compute surf_pe     surface     pe
+compute surf_pe     all         pe
 
 # Per-atom potential energy to detect surface disturbance
 compute pe_atom     all         pe/atom
