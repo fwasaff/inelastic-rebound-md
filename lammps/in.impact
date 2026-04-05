@@ -60,7 +60,14 @@ read_restart    restart.equilibrated
 # Get surface top z-position (approximate from lattice params in equilibrate)
 # Lattice a0=1.5496, Nz=6 layers -> top ~ 6*a0 ~ 9.3 sigma
 variable    z_surf_top  equal 9.3      # approximate top of surface [sigma]
-variable    z_proj_init equal $(v_z_surf_top + v_z_gap)  # initial projectile z
+variable    z_proj_init equal $(v_z_surf_top+v_z_gap)   # initial projectile z
+
+# Extend box in z to accommodate vacuum gap + projectile before adding atom.
+# The equilibrated box only reaches z ~ 8.23 sigma (6 FCC layers).
+# Projectile is placed at z_proj_init = z_surf_top + z_gap ~ 17.3 sigma,
+# which is outside that box. change_box extends zhi without moving atoms.
+variable    z_box_hi    equal $(v_z_surf_top+v_z_gap+5.0)
+change_box  all z final 0.0 ${z_box_hi} units box
 
 # --- Add projectile atom ------------------------------------------------------
 # Atom type 2: projectile (same LJ parameters for homoatomic impact)
