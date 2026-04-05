@@ -136,10 +136,10 @@ variable proj_ke_v  equal c_proj_ke
 variable T_surf_v   equal c_T_surface
 
 # Distance from surface top (contact criterion)
-variable d_contact  equal v_proj_z - v_z_surf_top
+variable d_contact  equal v_proj_z-v_z_surf_top
 
 # Detect rebound: projectile moving upward and above surface
-variable rebounded  equal (v_proj_vz > 0) && (v_proj_z > v_z_surf_top)
+variable rebounded  equal (v_proj_vz>0)&&(v_proj_z>v_z_surf_top)
 
 # --- Thermo output ------------------------------------------------------------
 timestep    ${dt}
@@ -171,6 +171,7 @@ run     ${steps_impact}
 # Final projectile velocity for COR calculation
 variable    vf_z    equal c_proj_vel[3]
 variable    COR     equal abs(v_vf_z)/abs(v_vz0)
+# Note: v_vz0 is negative (downward); abs() ensures positive COR
 
 print "============================================="
 print "IMPACT SIMULATION COMPLETE"
