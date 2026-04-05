@@ -63,9 +63,11 @@ pair_modify     tail yes
 # Bottom 2 layers: fixed (Dirichlet BC, absorbs momentum)
 # Middle layers: thermostatted (heat bath, mimics bulk)
 # Top layer:  free NVE (clean surface for impact)
-region          reg_fixed   block INF INF INF INF 0 2         units lattice
-region          reg_thermo  block INF INF INF INF 2 $(v_Nz-1) units lattice
-region          reg_free    block INF INF INF INF $(v_Nz-1) ${Nz} units lattice
+variable        Nz_minus1   equal ${Nz}-1
+
+region          reg_fixed   block INF INF INF INF 0            2             units lattice
+region          reg_thermo  block INF INF INF INF 2            ${Nz_minus1}  units lattice
+region          reg_free    block INF INF INF INF ${Nz_minus1} ${Nz}         units lattice
 
 group           fixed_atoms  region reg_fixed
 group           thermo_atoms region reg_thermo

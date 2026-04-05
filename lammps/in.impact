@@ -86,12 +86,13 @@ pair_modify     tail yes
 
 # --- Re-define groups after read_restart + new atom --------------------------
 # NOTE: read_restart does NOT restore group definitions
-variable    Nz_slab equal 6
-variable    a0      equal 1.5496
+variable    Nz_slab     equal 6
+variable    a0          equal 1.5496
+variable    Nz_slab_m1  equal ${Nz_slab}-1
 
-region          reg_fixed  block INF INF INF INF 0               2                  units lattice
-region          reg_thermo block INF INF INF INF 2               $(v_Nz_slab-1)     units lattice
-region          reg_free   block INF INF INF INF $(v_Nz_slab-1)  ${Nz_slab}         units lattice
+region          reg_fixed  block INF INF INF INF 0               2               units lattice
+region          reg_thermo block INF INF INF INF 2               ${Nz_slab_m1}   units lattice
+region          reg_free   block INF INF INF INF ${Nz_slab_m1}   ${Nz_slab}      units lattice
 
 group           surface    type 1
 group           projectile type 2

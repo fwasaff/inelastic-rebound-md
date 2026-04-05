@@ -142,8 +142,14 @@ class LAMMPSRunner:
         logger.info("LAMMPS finished in %.2f s (returncode=%d)", elapsed, result.returncode)
 
         if result.returncode != 0:
-            # LAMMPS prints errors to stdout; include both streams for diagnostics
-            combined = result.stdout + "\n" + result.stderr
+            # With Open MPI, MPI_Abort flushes log.lammps to disk but may not
+            # flush stdout to the pipe.  Read the log file directly for the
+            # real LAMMPS error message.
+            log_file = workdir / "log.lammps"
+            if log_file.exists():
+                combined = log_file.read_text()
+            else:
+                combined = result.stdout + "\n" + result.stderr
             raise SimulationRuntimeError(result.returncode, combined, str(script))
 
         return result
