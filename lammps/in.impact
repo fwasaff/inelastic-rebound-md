@@ -39,16 +39,16 @@ boundary        p p f
 newton          on
 
 # --- Input variables (overridable from command line) --------------------------
-variable    v0          equal 2.0      # incident speed [sigma/tau] (default)
-variable    angle       equal 0.0      # impact angle from normal [degrees]
-variable    T_target    equal 0.1      # surface temperature [eps/kB]
-variable    T_damp      equal 1.0      # NVT damping time [tau]
-variable    dt          equal 0.002    # timestep [tau] (smaller for impact)
-variable    z_gap       equal 8.0      # vacuum gap above surface [sigma]
-variable    steps_approach equal 10000 # steps before impact (approach phase)
-variable    steps_impact  equal 80000  # steps during and after impact
-variable    thermo_freq equal 50       # thermo output frequency [steps]
-variable    dump_freq   equal 100      # trajectory dump frequency [steps]
+variable    v0          index 2.0      # incident speed [sigma/tau] (default)
+variable    angle       index 0.0      # impact angle from normal [degrees]
+variable    T_target    index 0.1      # surface temperature [eps/kB]
+variable    T_damp      index 1.0      # NVT damping time [tau]
+variable    dt          index 0.002    # timestep [tau] (smaller for impact)
+variable    z_gap       index 8.0      # vacuum gap above surface [sigma]
+variable    steps_approach index 10000 # steps before impact (approach phase)
+variable    steps_impact  index 80000  # steps during and after impact
+variable    thermo_freq index 50       # thermo output frequency [steps]
+variable    dump_freq   index 100      # trajectory dump frequency [steps]
 
 # --- Derived variables --------------------------------------------------------
 variable    vz0     equal -${v0}*cos(${angle}*PI/180.0)   # normal component (<0 = downward)

@@ -24,19 +24,19 @@ boundary        p p f          # periodic x,y; fixed (non-periodic) z
 newton          on
 
 # --- Variables ----------------------------------------------------------------
-variable    T_target    equal 0.1      # target temperature [eps/kB] (~12 K for Ar)
-variable    T_damp      equal 1.0      # Nose-Hoover thermostat damping [tau]
-variable    a0          equal 1.5496   # FCC lattice constant at T*=0.1 (LJ units)
+variable    T_target    index 0.1      # target temperature [eps/kB] (~12 K for Ar)
+variable    T_damp      index 1.0      # Nose-Hoover thermostat damping [tau]
+variable    a0          index 1.5496   # FCC lattice constant at T*=0.1 (LJ units)
                                        # from Verlet (1967): a0 ~ 1.5496 sigma at P~0
-variable    Nx          equal 8        # unit cells in x
-variable    Ny          equal 8        # unit cells in y
-variable    Nz          equal 6        # unit cells in z (slab thickness)
-variable    steps_equil equal 50000    # equilibration steps
-variable    steps_prod  equal 30000    # production/data-collection steps
-variable    dt          equal 0.005    # timestep [tau]
-variable    thermo_freq equal 500      # thermo output frequency [steps]
-variable    dump_freq   equal 1000     # trajectory dump frequency [steps]
-variable    seed        equal 12345    # velocity seed for reproducibility
+variable    Nx          index 8        # unit cells in x
+variable    Ny          index 8        # unit cells in y
+variable    Nz          index 6        # unit cells in z (slab thickness)
+variable    steps_equil index 50000    # equilibration steps
+variable    steps_prod  index 30000    # production/data-collection steps
+variable    dt          index 0.005    # timestep [tau]
+variable    thermo_freq index 500      # thermo output frequency [steps]
+variable    dump_freq   index 1000     # trajectory dump frequency [steps]
+variable    seed        index 12345    # velocity seed for reproducibility
 
 # --- Simulation box and atoms -------------------------------------------------
 # FCC lattice: 4 atoms/unit cell
