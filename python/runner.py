@@ -116,6 +116,29 @@ def cmd_impact(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_one_job(job: tuple) -> "ReboundAnalyzer | None":
+    """Module-level worker for ProcessPoolExecutor (must be picklable).
+
+    Parameters
+    ----------
+    job : (ImpactConfig, replica_index, restart_path, LAMMPSRunner)
+    """
+    cfg, replica, restart_path, runner = job
+    tag = f"T{cfg.T_target:.3f}_v0_{cfg.v0:.3f}_ang_{cfg.angle:.1f}_rep{replica}"
+    workdir = _BASE_OUTPUT / tag
+    sim = ImpactSimulation(cfg, workdir, restart_path, runner)
+    try:
+        with sim:
+            sim.run()
+        analyzer = ReboundAnalyzer(v0=cfg.v0, angle=cfg.angle,
+                                   T_surface_init=cfg.T_target)
+        analyzer.load(sim.rebound_data_path)
+        return analyzer
+    except ReboundMDError as exc:
+        logger.error("Job %s failed: %s", tag, exc)
+        return None
+
+
 def cmd_sweep(args: argparse.Namespace) -> int:
     """Run a parametric sweep over v0, angle, and/or surface temperature."""
     if args.config:
@@ -170,28 +193,15 @@ def cmd_sweep(args: argparse.Namespace) -> int:
     )
 
     # --- Phase 3: run impacts in parallel -------------------------------------
+    # runner is included in each job tuple so _run_one_job (module-level,
+    # picklable) can access it from a worker process.
     parametric = ParametricAnalyzer()
-
-    def run_one(job: Job) -> ReboundAnalyzer | None:
-        cfg, replica, restart_path = job
-        tag = f"T{cfg.T_target:.3f}_v0_{cfg.v0:.3f}_ang_{cfg.angle:.1f}_rep{replica}"
-        workdir = _BASE_OUTPUT / tag
-        sim = ImpactSimulation(cfg, workdir, restart_path, runner)
-        try:
-            with sim:
-                sim.run()
-            analyzer = ReboundAnalyzer(v0=cfg.v0, angle=cfg.angle,
-                                        T_surface_init=cfg.T_target)
-            analyzer.load(sim.rebound_data_path)
-            return analyzer
-        except ReboundMDError as exc:
-            logger.error("Job %s failed: %s", tag, exc)
-            return None
+    jobs_with_runner = [(cfg, replica, restart_path, runner) for cfg, replica, restart_path in jobs]
 
     with concurrent.futures.ProcessPoolExecutor(
         max_workers=sweep_cfg.parallel_jobs
     ) as pool:
-        for analyzer in pool.map(run_one, jobs):
+        for analyzer in pool.map(_run_one_job, jobs_with_runner):
             if analyzer is not None:
                 parametric.add(analyzer.compute_all())
 
