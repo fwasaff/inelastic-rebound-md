@@ -126,8 +126,6 @@ compute surf_pe     all         pe
 # Per-atom potential energy to detect surface disturbance
 compute pe_atom     all         pe/atom
 
-# Center of mass velocity of surface (should stay near 0)
-compute surf_vcm    surface     vcm/chunk all
 
 # --- Variables for real-time monitoring ---------------------------------------
 variable time       equal step*dt
