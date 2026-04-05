@@ -390,6 +390,10 @@ class ParametricSweepConfig(BaseConfig):
     angle_list = FieldDescriptor(str, "0.0",
                                   doc="Comma-separated list of impact angles [degrees]")
     T_surface  = FieldDescriptor(float, 0.1, validator=positive("T_surface"), unit="eps/kB")
+    T_surface_list = FieldDescriptor(str, "",
+                                      doc="Comma-separated list of surface temperatures [eps/kB]. "
+                                          "If non-empty, overrides T_surface; runs one equilibration "
+                                          "per temperature.")
     n_replicas = FieldDescriptor(int,   3,   validator=positive("n_replicas"),
                                   doc="Number of independent replicas per condition")
     parallel_jobs = FieldDescriptor(int, 4,  validator=positive("parallel_jobs"),
@@ -407,3 +411,15 @@ class ParametricSweepConfig(BaseConfig):
     def angles(self) -> list[float]:
         """Parsed list of impact angles."""
         return [float(a.strip()) for a in self.angle_list.split(",")]
+
+    @property
+    def temperatures(self) -> list[float]:
+        """Parsed list of surface temperatures.
+
+        If ``T_surface_list`` is non-empty, returns that list.
+        Otherwise returns ``[T_surface]`` (single temperature, backward-compatible).
+        """
+        s = self.T_surface_list.strip()
+        if s:
+            return [float(t.strip()) for t in s.split(",")]
+        return [self.T_surface]

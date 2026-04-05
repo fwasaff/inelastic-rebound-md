@@ -213,6 +213,67 @@ def plot_cor_vs_v0(
 
 
 @save_figure
+def plot_eac_vs_Estar(
+    E_star_values: np.ndarray,
+    eac_mean: np.ndarray,
+    eac_std: Optional[np.ndarray] = None,
+    fit_params: Optional[tuple[float, float]] = None,
+    T_label: str = "",
+    xlabel: str = r"Reduced incident energy  E* = ½v₀²  [ε]",
+    title: str = r"Energy Accommodation Coefficient vs. E*",
+) -> Any:
+    """α_E vs. reduced incident energy E* — Gonzalo's general observable.
+
+    Parameters
+    ----------
+    E_star_values : 1-D array
+        Unique reduced incident energies E* = ½v₀² [eps].
+    eac_mean : 1-D array
+        Mean α_E at each E*.
+    eac_std : 1-D array | None
+        Standard deviation of α_E (error bars).
+    fit_params : (A, beta) | None
+        Power-law fit α_E ~ A * E*^beta; if given, overlay the fit curve.
+    T_label : str
+        Legend label suffix, e.g. "T*=0.1" to identify a temperature series.
+    xlabel : str
+        X-axis label (override for α_E vs T* use case).
+    title : str
+        Figure title.
+    """
+    plt, _ = _mpl()
+
+    with publication_style():
+        fig, ax = plt.subplots(figsize=(6, 5))
+
+        label = f"α_E" + (f"  ({T_label})" if T_label else "")
+        if eac_std is not None:
+            ax.errorbar(E_star_values, eac_mean, yerr=eac_std,
+                        fmt="o", color="darkorange", capsize=4, label=label)
+        else:
+            ax.plot(E_star_values, eac_mean, "o-", color="darkorange", label=label)
+
+        if fit_params is not None:
+            A, beta = fit_params
+            E_fit = np.linspace(E_star_values.min(), E_star_values.max(), 300)
+            eac_fit = A * E_fit ** beta
+            ax.plot(E_fit, eac_fit, "--", color="steelblue",
+                    label=rf"fit: {A:.3f}·E*$^{{{beta:+.3f}}}$")
+
+        ax.axhline(1.0, color="gray", linestyle=":", lw=0.8, label="full accommodation")
+        ax.axhline(0.0, color="gray", linestyle=":", lw=0.8)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(r"Energy Accommodation Coefficient  α$_E$")
+        ax.set_title(title)
+        ax.set_ylim(-0.05, 1.1)
+        ax.legend()
+
+        fig.tight_layout()
+
+    return fig
+
+
+@save_figure
 def plot_energy_partition(
     data: Any,   # TrajectoryData
     v0: float,

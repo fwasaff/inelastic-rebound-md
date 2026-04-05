@@ -24,7 +24,9 @@ from python.config import EquilibrationConfig, ImpactConfig
 
 def make_trajectory(
     v0: float = 2.0,
+    angle: float = 0.0,
     COR_true: float = 0.75,
+    COR_t_true: float = 1.0,
     dt: float = 0.002,
     n_approach: int = 5000,
     n_contact: int = 2000,
@@ -39,16 +41,20 @@ def make_trajectory(
     """Generate a physically plausible synthetic trajectory.
 
     The projectile:
-    - Approaches at constant velocity -v0 (approach phase).
-    - Penetrates and rebounds following a sinusoidal z profile (contact phase).
-    - Departs at constant velocity +COR*v0 (rebound phase).
+    - Approaches at velocity (-v0_x, -v0_z) (approach phase).
+    - Penetrates and rebounds: vz reverses with COR, vx changes with COR_t.
+    - Departs at constant velocity (vf_x, +vf_z) (rebound phase).
 
     Parameters
     ----------
     v0 : float
         Incident speed [sigma/tau].
+    angle : float
+        Impact angle from surface normal [degrees].
     COR_true : float
-        Ground-truth coefficient of restitution.
+        Ground-truth normal coefficient of restitution.
+    COR_t_true : float
+        Ground-truth tangential restitution coefficient vf_x/v0_x (typically ~1).
     dt : float
         Time step [tau].
     n_approach, n_contact, n_rebound : int
@@ -69,33 +75,41 @@ def make_trajectory(
     rng = np.random.default_rng(seed)
     n_total = n_approach + n_contact + n_rebound
 
+    v0_z = v0 * math.cos(math.radians(angle))
+    v0_x = v0 * math.sin(math.radians(angle))
+    vf_z = COR_true * v0_z
+    vf_x = COR_t_true * v0_x
+
     # --- Approach ---
-    z_start = surface_top_z + v0 * n_approach * dt + 5.0
-    z_approach = np.linspace(z_start, surface_top_z + 0.01, n_approach)
-    vz_approach = np.full(n_approach, -v0)
-    ke_approach = np.full(n_approach, 0.5 * v0 ** 2)
+    z_start = surface_top_z + v0_z * n_approach * dt + 5.0
+    z_approach  = np.linspace(z_start, surface_top_z + 0.01, n_approach)
+    vz_approach = np.full(n_approach, -v0_z)
+    vx_approach = np.full(n_approach, v0_x)
+    ke_approach = np.full(n_approach, 0.5 * (v0_z ** 2 + v0_x ** 2))
 
     # --- Contact ---
     t_c = np.linspace(0.0, n_contact * dt, n_contact)
-    # Parabolic penetration, amplitude slightly less than cutoff
     delta_max = min(0.3, lj_cutoff * 0.9)
-    z_contact = surface_top_z - delta_max * np.sin(math.pi * t_c / (n_contact * dt))
-    vz_contact = np.linspace(-v0, COR_true * v0, n_contact)
-    ke_contact = 0.5 * vz_contact ** 2
+    z_contact  = surface_top_z - delta_max * np.sin(math.pi * t_c / (n_contact * dt))
+    vz_contact = np.linspace(-v0_z, vf_z, n_contact)
+    vx_contact = np.linspace(v0_x, vf_x, n_contact)
+    ke_contact = 0.5 * (vz_contact ** 2 + vx_contact ** 2)
 
     # --- Rebound ---
-    vf = COR_true * v0
-    z_rebound = surface_top_z + vf * np.arange(n_rebound) * dt
-    vz_rebound = np.full(n_rebound, vf)
-    ke_rebound = np.full(n_rebound, 0.5 * vf ** 2)
+    z_rebound  = surface_top_z + vf_z * np.arange(n_rebound) * dt
+    vz_rebound = np.full(n_rebound, vf_z)
+    vx_rebound = np.full(n_rebound, vf_x)
+    ke_rebound = np.full(n_rebound, 0.5 * (vf_z ** 2 + vf_x ** 2))
 
     # Assemble
-    z  = np.concatenate([z_approach, z_contact, z_rebound])
+    z  = np.concatenate([z_approach,  z_contact,  z_rebound])
     vz = np.concatenate([vz_approach, vz_contact, vz_rebound])
+    vx = np.concatenate([vx_approach, vx_contact, vx_rebound])
     ke = np.concatenate([ke_approach, ke_contact, ke_rebound])
 
     z  += rng.normal(0.0, noise, n_total)
     vz += rng.normal(0.0, noise * 0.1, n_total)
+    vx += rng.normal(0.0, noise * 0.1, n_total)
 
     time = np.arange(n_total, dtype=float) * dt
 
@@ -108,6 +122,7 @@ def make_trajectory(
     return TrajectoryData(
         time=time,
         z=z,
+        vx=vx,
         vz=vz,
         ke_proj=ke,
         T_surf=T_surf,
@@ -118,12 +133,12 @@ def make_trajectory(
 def write_trajectory_file(data: TrajectoryData, path: Path) -> None:
     """Write ``TrajectoryData`` to a ``rebound_data.dat`` text file."""
     with path.open("w") as fh:
-        fh.write("# time z vz ke_proj T_surf d_contact\n")
+        fh.write("# time z vx vz ke_proj T_surf d_contact\n")
         for i in range(len(data)):
             fh.write(
-                f"{data.time[i]:.8f} {data.z[i]:.8f} {data.vz[i]:.8f} "
-                f"{data.ke_proj[i]:.8f} {data.T_surf[i]:.8f} "
-                f"{data.d_contact[i]:.8f}\n"
+                f"{data.time[i]:.8f} {data.z[i]:.8f} {data.vx[i]:.8f} "
+                f"{data.vz[i]:.8f} {data.ke_proj[i]:.8f} "
+                f"{data.T_surf[i]:.8f} {data.d_contact[i]:.8f}\n"
             )
 
 

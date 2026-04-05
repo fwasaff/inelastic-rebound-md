@@ -131,6 +131,7 @@ compute surf_vcm    surface     vcm/chunk all
 # --- Variables for real-time monitoring ---------------------------------------
 variable time       equal step*dt
 variable proj_z     equal c_proj_pos[3]
+variable proj_vx    equal c_proj_vel[1]
 variable proj_vz    equal c_proj_vel[3]
 variable proj_ke_v  equal c_proj_ke
 variable T_surf_v   equal c_T_surface
@@ -155,8 +156,8 @@ dump_modify d_impact sort id
 
 # --- Rebound data (high-frequency projectile tracking) -----------------------
 fix     f_proj_track projectile print 10 &
-        "${time} ${proj_z} ${proj_vz} ${proj_ke_v} ${T_surf_v} ${d_contact}" &
-        file rebound_data.dat title "# time z vz ke_proj T_surf d_contact" &
+        "${time} ${proj_z} ${proj_vx} ${proj_vz} ${proj_ke_v} ${T_surf_v} ${d_contact}" &
+        file rebound_data.dat title "# time z vx vz ke_proj T_surf d_contact" &
         screen no
 
 # --- Approach phase: let projectile approach surface at constant v0 -----------

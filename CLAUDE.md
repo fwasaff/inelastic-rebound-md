@@ -4,6 +4,97 @@ Guía de referencia para trabajar en este repositorio con Claude Code.
 
 ---
 
+## Estado del repositorio y flujo de trabajo confirmado
+
+**Rama principal de desarrollo:** `claude/review-lammps-project-hra1A`
+**Remote:** `https://github.com/fwasaff/inelastic-rebound-md`
+
+El repositorio local y GitHub están **sincronizados** (verificado 2026-04-05).
+
+### Workflow estándar con Claude Code
+
+```bash
+# Siempre trabajar desde la rama de desarrollo
+git checkout claude/review-lammps-project-hra1A
+
+# Antes de empezar a editar: verificar que estamos sincronizados
+git fetch origin && git status
+
+# Después de cambios: commit + push
+git add -p
+git commit -m "descripción concisa"
+git push
+```
+
+Claude Code opera directamente sobre este directorio. No clonar salvo que la rama local
+esté desincronizada respecto a origin (verificar con `git fetch && git status`).
+
+---
+
+## Tiempos de simulación (medidos en este notebook)
+
+**Hardware:** CPU único, benchmark LAMMPS 7 Feb 2024 → **~1.37 M atom-steps/s**
+
+| Fase                    | Pasos    | Átomos | Tiempo estimado |
+|-------------------------|----------|--------|-----------------|
+| Equilibración (default) | 85 000   | 1 536  | ~1.5 min        |
+| Un impacto (default)    | 90 000   | 1 537  | ~1.7 min        |
+| Pipeline completo       | 175 000  | 1 537  | ~3.5 min        |
+| Sweep 10×1×3 replicas   | 30 runs  | —      | ~13 min (4 cores) |
+| Sweep 10×3×3 replicas   | 90 runs  | —      | ~38 min (4 cores) |
+
+Para acelerar: aumentar `--jobs` hasta el número de cores disponibles.
+
+---
+
+## Visualización: OVITO y ParaView
+
+### Archivos generados para visualización
+
+| Script          | Archivo dump                | Coordenadas | Campos extra        |
+|-----------------|-----------------------------|-------------|---------------------|
+| in.equilibrate  | `dump.equil.lammpstrj`      | **scaled** (xs ys zs) | pe/atom |
+| in.impact       | `dump.impact.lammpstrj`     | **real** (x y z)      | pe/atom |
+
+Ambos archivos están en `data/outputs/<fase>/` tras correr el runner Python.
+
+### OVITO (recomendado)
+
+**Instalación:**
+```bash
+pip install ovito          # OVITO Python API (headless + scripting)
+# o descargar OVITO Pro/Basic desde https://www.ovito.org/
+```
+
+**Abrir dump en OVITO GUI:**
+1. File → Open → seleccionar `dump.impact.lammpstrj`
+2. OVITO detecta automáticamente el formato LAMMPS custom
+3. Para `dump.equil.lammpstrj`: las coordenadas son **scaled** — OVITO las convierte solas
+4. Colorear por `pe` (energía potencial por átomo) para ver la perturbación del impacto
+
+**Nota:** OVITO no está instalado en este sistema. ParaView sí está disponible (`/usr/bin/paraview`).
+
+### ParaView (disponible en este sistema)
+
+**Abrir dump:**
+1. File → Open → seleccionar `dump.impact.lammpstrj`
+2. En el diálogo de formato: seleccionar **"LAMMPS Dump"** (no CSV)
+3. Apply → usar "Point Gaussian" representation para ver los átomos
+
+**Colorear por energía potencial:**
+- En el panel izquierdo: cambiar "Solid Color" → `c_pe_atom`
+- Ajustar escala de colores con el botón de rescale
+
+**Animación del impacto:**
+- Play en la barra inferior para animar frames del dump
+- `dump_freq = 100` → 1 frame cada 100 pasos = 900 frames totales para in.impact
+
+**Filtros útiles en ParaView:**
+- `Threshold` sobre `c_pe_atom` → aislar átomos perturbados
+- `Glyph` → representar átomos como esferas con radio = 0.5 sigma
+
+---
+
 ## Descripción del proyecto
 
 Simulación de **dinámica molecular de rebote inelástico** a escala nanométrica.

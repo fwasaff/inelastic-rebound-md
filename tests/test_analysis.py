@@ -57,59 +57,60 @@ def _make_synthetic_trajectory(
     dT: float = 0.005,
     noise: float = 0.001,
 ) -> TrajectoryData:
-    """Generate a physically plausible synthetic trajectory.
+    """Generate a physically plausible synthetic trajectory (normal incidence).
 
     The projectile:
-      - Approaches at constant velocity -v0.
+      - Approaches at constant velocity -v0 (no tangential component).
       - Contacts (parabolic z, velocity reversal with COR).
       - Rebounds at constant velocity +COR*v0.
     """
     rng = np.random.default_rng(42)
     n_total = n_approach + n_contact + n_rebound
 
-    # Approach phase: z decreases linearly from z_start to surface_top
+    # Approach phase
     z_start = surface_top_z + v0 * n_approach * dt + 5.0
-    z_approach = np.linspace(z_start, surface_top_z + 0.01, n_approach)
+    z_approach  = np.linspace(z_start, surface_top_z + 0.01, n_approach)
     vz_approach = np.full(n_approach, -v0)
+    vx_approach = np.zeros(n_approach)
     ke_approach = np.full(n_approach, 0.5 * v0 ** 2)
 
-    # Contact phase: parabolic z (simple penetration model), velocity transitions
+    # Contact phase
     t_contact = np.linspace(0, n_contact * dt, n_contact)
-    delta_max = 0.3  # penetration depth
-    z_contact = surface_top_z - delta_max * np.sin(math.pi * t_contact / (n_contact * dt))
-    # Velocity linearly reverses from -v0 to +COR*v0
+    delta_max = 0.3
+    z_contact  = surface_top_z - delta_max * np.sin(math.pi * t_contact / (n_contact * dt))
     vz_contact = np.linspace(-v0, COR_true * v0, n_contact)
+    vx_contact = np.zeros(n_contact)
     ke_contact = 0.5 * vz_contact ** 2
 
-    # Rebound phase: z increases linearly
+    # Rebound phase
     vf = COR_true * v0
-    z_rebound = surface_top_z + vf * np.arange(n_rebound) * dt
+    z_rebound  = surface_top_z + vf * np.arange(n_rebound) * dt
     vz_rebound = np.full(n_rebound, vf)
+    vx_rebound = np.zeros(n_rebound)
     ke_rebound = np.full(n_rebound, 0.5 * vf ** 2)
 
     # Concatenate
-    z  = np.concatenate([z_approach, z_contact, z_rebound])
+    z  = np.concatenate([z_approach,  z_contact,  z_rebound])
     vz = np.concatenate([vz_approach, vz_contact, vz_rebound])
+    vx = np.concatenate([vx_approach, vx_contact, vx_rebound])
     ke = np.concatenate([ke_approach, ke_contact, ke_rebound])
 
-    # Add Gaussian noise
     z  += rng.normal(0, noise, n_total)
     vz += rng.normal(0, noise * 0.1, n_total)
+    vx += rng.normal(0, noise * 0.1, n_total)
 
-    # Time
     time = np.arange(n_total) * dt
 
-    # Surface temperature: rises during contact, levels off
     T_surf = np.full(n_total, T_init)
     T_surf[n_approach:n_approach + n_contact] += np.linspace(0, dT, n_contact)
     T_surf[n_approach + n_contact:] = T_init + dT
 
-    # Distance from surface top
     d_contact = z - surface_top_z
 
     return TrajectoryData(
         time=time,
         z=z,
+        vx=vx,
         vz=vz,
         ke_proj=ke,
         T_surf=T_surf,
@@ -120,11 +121,12 @@ def _make_synthetic_trajectory(
 def _write_trajectory_file(data: TrajectoryData, path: Path) -> None:
     """Write a TrajectoryData to a rebound_data.dat text file."""
     with path.open("w") as fh:
-        fh.write("# time z vz ke_proj T_surf d_contact\n")
+        fh.write("# time z vx vz ke_proj T_surf d_contact\n")
         for i in range(len(data)):
             fh.write(
-                f"{data.time[i]:.6f} {data.z[i]:.6f} {data.vz[i]:.6f} "
-                f"{data.ke_proj[i]:.6f} {data.T_surf[i]:.6f} {data.d_contact[i]:.6f}\n"
+                f"{data.time[i]:.6f} {data.z[i]:.6f} {data.vx[i]:.6f} "
+                f"{data.vz[i]:.6f} {data.ke_proj[i]:.6f} "
+                f"{data.T_surf[i]:.6f} {data.d_contact[i]:.6f}\n"
             )
 
 
@@ -153,7 +155,12 @@ class TestReboundDataParser:
 
     def test_parse_column_counts(self, rebound_data_file):
         data = ReboundDataParser.parse(rebound_data_file)
-        assert data.time.shape == data.z.shape == data.vz.shape
+        assert data.time.shape == data.z.shape == data.vx.shape == data.vz.shape
+
+    def test_parse_has_vx_column(self, rebound_data_file):
+        data = ReboundDataParser.parse(rebound_data_file)
+        assert hasattr(data, "vx")
+        assert data.vx.shape == data.time.shape
 
     def test_missing_file_raises(self, tmp_path):
         from python.exceptions import FileNotFoundError as ReboundFNF
@@ -161,23 +168,25 @@ class TestReboundDataParser:
             ReboundDataParser.parse(tmp_path / "nonexistent.dat")
 
     def test_bad_column_count_raises(self, tmp_path):
+        # Old 6-column format must raise ParseError (requires 7 columns now)
         p = tmp_path / "bad.dat"
-        p.write_text("# time z vz ke_proj T_surf d_contact\n1.0 2.0 3.0\n")
+        p.write_text("# time z vz ke_proj T_surf d_contact\n1.0 2.0 3.0 4.0 0.1 0.5\n")
         with pytest.raises(ParseError):
             ReboundDataParser.parse(p)
 
     def test_too_few_rows_raises(self, tmp_path):
         p = tmp_path / "short.dat"
-        lines = ["# time z vz ke_proj T_surf d_contact\n"]
+        lines = ["# time z vx vz ke_proj T_surf d_contact\n"]
         for i in range(5):
-            lines.append(f"{i} {i} {i} {i} 0.1 {i}\n")
+            lines.append(f"{i} {i} 0.0 {i} {i} 0.1 {i}\n")
         p.write_text("".join(lines))
         with pytest.raises(InsufficientDataError):
             ReboundDataParser.parse(p)
 
     def test_non_numeric_data_raises(self, tmp_path):
         p = tmp_path / "bad_numeric.dat"
-        p.write_text("# time z vz ke_proj T_surf d_contact\nfoo bar baz qux quux quuz\n")
+        p.write_text("# time z vx vz ke_proj T_surf d_contact\n"
+                     "foo bar baz qux quux quuz zzz\n")
         with pytest.raises(ParseError):
             ReboundDataParser.parse(p)
 
@@ -246,6 +255,56 @@ class TestReboundAnalyzer:
         cor1 = analyzer.coefficient_of_restitution
         cor2 = analyzer.coefficient_of_restitution
         assert cor1 == cor2
+
+    # --- EAC tests (new observables for generalisation study) -----------------
+
+    def test_EAC_in_physical_range(self, rebound_data_file):
+        """α_E must be in [0, 1] for an inelastic collision."""
+        analyzer = ReboundAnalyzer(v0=2.0)
+        analyzer.load(rebound_data_file)
+        eac = analyzer.energy_accommodation
+        assert 0.0 <= eac <= 1.0, f"EAC={eac} out of physical range"
+
+    def test_EAC_normal_equals_one_minus_COR_squared(self, rebound_data_file):
+        """α_n = 1 - COR² must hold exactly by definition."""
+        analyzer = ReboundAnalyzer(v0=2.0)
+        analyzer.load(rebound_data_file)
+        alpha_n = analyzer.eac_normal
+        cor = analyzer.coefficient_of_restitution
+        assert abs(alpha_n - (1.0 - cor ** 2)) < 1e-12
+
+    def test_EAC_normal_incidence_equals_EAC(self, rebound_data_file):
+        """For normal incidence (angle=0), α_E ≈ α_n since all energy is in z."""
+        analyzer = ReboundAnalyzer(v0=2.0, angle=0.0)
+        analyzer.load(rebound_data_file)
+        # In synthetic data at angle=0, ke_proj = 0.5*vz², so EAC ≈ α_n
+        assert abs(analyzer.energy_accommodation - analyzer.eac_normal) < 0.02
+
+    def test_EAC_tangential_is_zero_for_normal_incidence(self, rebound_data_file):
+        """α_t must be 0 for normal incidence (v0_x = 0, undefined)."""
+        analyzer = ReboundAnalyzer(v0=2.0, angle=0.0)
+        analyzer.load(rebound_data_file)
+        assert analyzer.eac_tangential == 0.0
+
+    def test_E_star_matches_incident_KE(self, rebound_data_file):
+        """E* ≈ ½v₀² for normal incidence."""
+        v0 = 2.0
+        analyzer = ReboundAnalyzer(v0=v0)
+        analyzer.load(rebound_data_file)
+        E_star = analyzer.incident_energy
+        expected = 0.5 * v0 ** 2
+        assert abs(E_star - expected) < 0.05 * expected, (
+            f"E*={E_star:.4f}, expected ≈ {expected:.4f}"
+        )
+
+    def test_compute_all_includes_EAC_fields(self, rebound_data_file):
+        """compute_all() must populate EAC, EAC_normal, EAC_tangential, E_star."""
+        analyzer = ReboundAnalyzer(v0=2.0)
+        analyzer.load(rebound_data_file)
+        result = analyzer.compute_all()
+        assert result.EAC >= 0.0
+        assert result.EAC_normal >= 0.0
+        assert result.E_star > 0.0
 
 
 # ==============================================================================
@@ -323,13 +382,18 @@ class TestConfig:
 
 class TestParametricAnalyzer:
 
-    def _make_results(self, v0_list, cor_list):
+    def _make_results(self, v0_list, cor_list, T_surface: float = 0.1):
         return [
             ReboundResult(
                 v0_z=v0, vf_z=v0 * cor, COR=cor,
                 delta_E=0.5 * v0 ** 2 * (1 - cor ** 2),
                 contact_time=0.1, max_penetration=0.2,
-                dT_surface=0.001
+                dT_surface=0.001,
+                T_surface=T_surface,
+                EAC=1.0 - cor ** 2,
+                EAC_normal=1.0 - cor ** 2,
+                EAC_tangential=0.0,
+                E_star=0.5 * v0 ** 2,
             )
             for v0, cor in zip(v0_list, cor_list)
         ]
@@ -355,3 +419,73 @@ class TestParametricAnalyzer:
         pa = ParametricAnalyzer()
         with pytest.raises(InsufficientDataError):
             pa.cor_vs_v0()
+
+    def test_eac_vs_Estar(self):
+        v0s = [1.0, 2.0, 3.0, 1.0, 2.0, 3.0]
+        cors = [0.9, 0.8, 0.7, 0.88, 0.82, 0.72]
+        pa = ParametricAnalyzer(self._make_results(v0s, cors))
+        E_u, eac_m, eac_s = pa.eac_vs_Estar()
+        assert len(E_u) == 3
+        # Higher E* → higher α_E (more energy transferred at higher velocity)
+        assert eac_m[2] > eac_m[0]
+
+    def test_eac_vs_T(self):
+        """α_E should be grouped correctly by surface temperature."""
+        v0s  = [2.0, 2.0, 2.0, 2.0]
+        cors = [0.9, 0.85, 0.8, 0.75]
+        Ts   = [0.05, 0.1, 0.2, 0.3]
+        results = [
+            ReboundResult(
+                v0_z=v0, vf_z=v0 * cor, COR=cor,
+                delta_E=0.5 * v0 ** 2 * (1 - cor ** 2),
+                contact_time=0.1, max_penetration=0.2,
+                dT_surface=0.001,
+                T_surface=T,
+                EAC=1.0 - cor ** 2,
+                EAC_normal=1.0 - cor ** 2,
+                EAC_tangential=0.0,
+                E_star=0.5 * v0 ** 2,
+            )
+            for v0, cor, T in zip(v0s, cors, Ts)
+        ]
+        pa = ParametricAnalyzer(results)
+        T_u, eac_m, _ = pa.eac_vs_T()
+        assert len(T_u) == 4
+        # Higher T* → higher α_E (hotter surface transfers more energy)
+        assert eac_m[-1] > eac_m[0]
+
+    def test_fit_eac_power_law(self):
+        """Fit α_E ~ A * E*^beta should recover known exponent."""
+        # α_E = 0.2 * E*^0.3 → a weak power-law increase with energy
+        v0s = np.linspace(1.0, 5.0, 10).tolist() * 2
+        cors = [math.sqrt(max(0.0, 1.0 - 0.2 * (0.5 * v ** 2) ** 0.3)) for v in v0s]
+        pa = ParametricAnalyzer(self._make_results(v0s, cors))
+        A, beta = pa.fit_eac_power_law()
+        assert A > 0
+        assert beta > 0
+
+
+# ==============================================================================
+# Tests: ParametricSweepConfig temperature list
+# ==============================================================================
+
+class TestParametricSweepTemperatures:
+
+    def test_single_temperature_default(self):
+        cfg = ParametricSweepConfig(T_surface=0.1)
+        assert cfg.temperatures == [0.1]
+
+    def test_T_surface_list_overrides_T_surface(self):
+        cfg = ParametricSweepConfig(T_surface=0.1, T_surface_list="0.05,0.1,0.2,0.3")
+        assert cfg.temperatures == [0.05, 0.1, 0.2, 0.3]
+
+    def test_T_surface_list_empty_falls_back(self):
+        cfg = ParametricSweepConfig(T_surface=0.15, T_surface_list="")
+        assert cfg.temperatures == [0.15]
+
+    def test_T_surface_list_json_round_trip(self, tmp_path):
+        cfg = ParametricSweepConfig(T_surface_list="0.1,0.2,0.3")
+        path = tmp_path / "sweep.json"
+        cfg.to_json(path)
+        cfg2 = ConfigRegistry.from_json_auto(path)
+        assert cfg2.temperatures == [0.1, 0.2, 0.3]

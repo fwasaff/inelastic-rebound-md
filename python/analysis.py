@@ -11,8 +11,12 @@ Advanced Python features used:
 - Type annotations throughout
 
 Key physics computed:
-- Coefficient of Restitution (COR):  e = |v_f| / |v_0|
-- Energy dissipation:  ΔE = ½m(v₀² - vf²)
+- Coefficient of Restitution (COR):  e = |v_f_z| / |v_0_z|
+- Energy Accommodation Coefficient (EAC):  α_E = 1 - E_f/E_inc  (general)
+- Normal EAC:       α_n = 1 - e²  = ΔE_n / E_inc_n
+- Tangential EAC:   α_t = 1 - (v_f_x/v_0_x)²  (oblique impacts)
+- Reduced energy:   E* = ½ m v₀²  (= ½ v₀² in LJ units where m=ε=1)
+- Energy dissipation:  ΔE = E_inc - E_fin  [eps]
 - Contact time:  τ_c (time projectile is within LJ cutoff of surface)
 - Maximum penetration depth:  δ_max
 - Surface temperature rise:  ΔT = T_final - T_initial
@@ -123,7 +127,7 @@ class ReboundResult:
     COR : float
         Coefficient of restitution = |vf_z| / |v0_z|.
     delta_E : float
-        Energy dissipated = ½m(v0²-vf²) [eps].
+        Energy dissipated = E_inc - E_fin  [eps].
     contact_time : float
         Duration of contact phase [tau].
     max_penetration : float
@@ -134,6 +138,14 @@ class ReboundResult:
         Impact angle from normal [degrees].
     T_surface : float
         Surface temperature [eps/kB].
+    EAC : float
+        Energy Accommodation Coefficient α_E = ΔE/E_inc  (total, all components).
+    EAC_normal : float
+        Normal EAC α_n = 1 - COR²  (fraction of normal KE transferred).
+    EAC_tangential : float
+        Tangential EAC α_t = 1 - (vf_x/v0_x)²  (0 for normal incidence).
+    E_star : float
+        Reduced incident energy E* = ½v₀²  [eps]  (in LJ units m=ε=1).
     """
 
     v0_z: float
@@ -145,6 +157,10 @@ class ReboundResult:
     dT_surface: float
     angle: float = 0.0
     T_surface: float = 0.1
+    EAC: float = 0.0
+    EAC_normal: float = 0.0
+    EAC_tangential: float = 0.0
+    E_star: float = 0.0
 
 
 @dataclass
@@ -157,16 +173,18 @@ class TrajectoryData:
     ----------
     time     : 1-D array, simulation time [tau]
     z        : 1-D array, projectile z-position [sigma]
-    vz       : 1-D array, projectile z-velocity [sigma/tau]
-    ke_proj  : 1-D array, projectile kinetic energy [eps]
+    vx       : 1-D array, projectile x-velocity (tangential) [sigma/tau]
+    vz       : 1-D array, projectile z-velocity (normal) [sigma/tau]
+    ke_proj  : 1-D array, projectile total kinetic energy [eps]
     T_surf   : 1-D array, surface temperature [eps/kB]
     d_contact: 1-D array, signed distance from surface top [sigma]
     """
 
-    __slots__ = ("time", "z", "vz", "ke_proj", "T_surf", "d_contact")
+    __slots__ = ("time", "z", "vx", "vz", "ke_proj", "T_surf", "d_contact")
 
     time:      np.ndarray
     z:         np.ndarray
+    vx:        np.ndarray
     vz:        np.ndarray
     ke_proj:   np.ndarray
     T_surf:    np.ndarray
@@ -183,11 +201,11 @@ class TrajectoryData:
 class ReboundDataParser:
     """Parses the ``rebound_data.dat`` file written by LAMMPS ``fix print``.
 
-    The file has one header line (``# time z vz ke_proj T_surf d_contact``)
+    The file has one header line (``# time z vx vz ke_proj T_surf d_contact``)
     followed by whitespace-delimited numeric data.
     """
 
-    EXPECTED_COLUMNS = ("time", "z", "vz", "ke_proj", "T_surf", "d_contact")
+    EXPECTED_COLUMNS = ("time", "z", "vx", "vz", "ke_proj", "T_surf", "d_contact")
     N_COLS = len(EXPECTED_COLUMNS)
 
     @classmethod
@@ -244,10 +262,11 @@ class ReboundDataParser:
         return TrajectoryData(
             time=arr[0],
             z=arr[1],
-            vz=arr[2],
-            ke_proj=arr[3],
-            T_surf=arr[4],
-            d_contact=arr[5],
+            vx=arr[2],
+            vz=arr[3],
+            ke_proj=arr[4],
+            T_surf=arr[5],
+            d_contact=arr[6],
         )
 
 
@@ -407,6 +426,94 @@ class ReboundAnalyzer:
         T_final = float(np.mean(self._data.T_surf[-200:]))
         return T_final - self.T_surface_init
 
+    # --- Energy accommodation (generalised) -----------------------------------
+
+    @property
+    @require_data
+    @cached
+    def incident_energy(self) -> float:
+        """Total incident kinetic energy E* = ½v₀² [eps].
+
+        Measured as mean ke_proj over the pre-contact approach frames,
+        providing E* directly from the trajectory rather than assuming v0.
+        """
+        i_end = self._approach_end_idx()
+        # Use last 200 approach frames to avoid startup transients
+        start = max(0, i_end - 200)
+        return float(np.mean(self._data.ke_proj[start:i_end]))
+
+    @property
+    @require_data
+    @cached
+    def final_energy(self) -> float:
+        """Total final kinetic energy E_f [eps] after rebound.
+
+        Measured as mean ke_proj over the first 50 post-rebound frames.
+        """
+        i_start = self._rebound_start_idx()
+        window = self._data.ke_proj[i_start: i_start + 50]
+        return float(np.mean(window))
+
+    @property
+    @require_data
+    @cached
+    @validate_physical("EAC", 0.0, 1.05)
+    def energy_accommodation(self) -> float:
+        """Energy Accommodation Coefficient α_E = (E_inc - E_fin) / E_inc.
+
+        General observable for Gonzalo's study: measures the fraction of the
+        total incident kinetic energy transferred to the surface (phonons + heat).
+        Independent of impact angle — valid for all (v0, T*, θ) combinations.
+
+        Range: [0, 1]
+          0 → elastic (no energy transfer)
+          1 → full accommodation (projectile sticks)
+        """
+        E_inc = self.incident_energy
+        if E_inc < 1e-12:
+            raise ZeroDivisionError("Incident energy is essentially zero; EAC undefined.")
+        E_fin = self.final_energy
+        return float((E_inc - E_fin) / E_inc)
+
+    @property
+    @require_data
+    @cached
+    def eac_normal(self) -> float:
+        """Normal EAC α_n = 1 - COR² = ΔE_n / E_inc_n.
+
+        Fraction of normal kinetic energy transferred during the collision.
+        For normal incidence (angle=0), α_n = α_E.
+        """
+        return float(1.0 - self.coefficient_of_restitution ** 2)
+
+    @property
+    @require_data
+    @cached
+    def final_velocity_x(self) -> float:
+        """Tangential (x) velocity of projectile after rebound [sigma/tau]."""
+        i_start = self._rebound_start_idx()
+        window = self._data.vx[i_start: i_start + 50]
+        return float(np.mean(window))
+
+    @property
+    @require_data
+    @cached
+    def eac_tangential(self) -> float:
+        """Tangential EAC α_t = 1 - (vf_x / v0_x)².
+
+        Fraction of tangential kinetic energy transferred.
+        Returns 0.0 for normal incidence (angle ≈ 0, v0_x ≈ 0) where α_t
+        is undefined (no tangential energy to transfer).
+        """
+        import math
+        v0_x = self.v0 * math.sin(math.radians(self.angle))
+        if abs(v0_x) < 1e-10:
+            return 0.0
+        vf_x = self.final_velocity_x
+        alpha_t = 1.0 - (vf_x / v0_x) ** 2
+        # Clip to physical range; noise can push it slightly outside [0, 1]
+        return float(np.clip(alpha_t, 0.0, 1.0))
+
     # --- Summary --------------------------------------------------------------
 
     @require_data
@@ -423,6 +530,10 @@ class ReboundAnalyzer:
             dT_surface=self.surface_temperature_rise,
             angle=self.angle,
             T_surface=self.T_surface_init,
+            EAC=self.energy_accommodation,
+            EAC_normal=self.eac_normal,
+            EAC_tangential=self.eac_tangential,
+            E_star=self.incident_energy,
         )
 
     def __repr__(self) -> str:
@@ -477,6 +588,24 @@ class ParametricAnalyzer:
         self._require_results()
         return np.array([r.delta_E for r in self.results])
 
+    @property
+    def EAC_array(self) -> np.ndarray:
+        """Energy Accommodation Coefficients α_E for all results."""
+        self._require_results()
+        return np.array([r.EAC for r in self.results])
+
+    @property
+    def E_star_array(self) -> np.ndarray:
+        """Reduced incident energies E* = ½v₀² for all results [eps]."""
+        self._require_results()
+        return np.array([r.E_star for r in self.results])
+
+    @property
+    def T_surface_array(self) -> np.ndarray:
+        """Surface temperatures T* for all results [eps/kB]."""
+        self._require_results()
+        return np.array([r.T_surface for r in self.results])
+
     @timed
     def cor_vs_v0(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Group results by v0, return (v0_unique, COR_mean, COR_std).
@@ -497,6 +626,82 @@ class ParametricAnalyzer:
         means = np.array([cors[v0s == v].mean() for v in unique_v0])
         stds  = np.array([cors[v0s == v].std()  for v in unique_v0])
         return unique_v0, means, stds
+
+    @timed
+    def eac_vs_Estar(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Group results by E*, return (E*_unique, EAC_mean, EAC_std).
+
+        Primary curve for Gonzalo's generalisation study: α_E(E*) collapses
+        data from different v0 onto a single reduced-variable axis.
+
+        Returns
+        -------
+        E_star_unique : 1-D ndarray
+            Sorted unique reduced incident energies E* = ½v₀² [eps].
+        EAC_mean : 1-D ndarray
+            Mean α_E at each E* (across replicas and angles if present).
+        EAC_std : 1-D ndarray
+            Standard deviation of α_E at each E*.
+        """
+        self._require_results()
+        E_stars = self.E_star_array
+        eacs = self.EAC_array
+        unique_E = np.unique(np.round(E_stars, decimals=6))
+        means = np.array([eacs[np.abs(E_stars - E) < 1e-5].mean() for E in unique_E])
+        stds  = np.array([eacs[np.abs(E_stars - E) < 1e-5].std()  for E in unique_E])
+        return unique_E, means, stds
+
+    @timed
+    def eac_vs_T(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Group results by surface temperature T*, return (T*_unique, EAC_mean, EAC_std).
+
+        Secondary curve for generalisation: α_E(T*) at fixed E* shows how
+        thermal surface agitation affects energy accommodation.
+
+        Returns
+        -------
+        T_unique : 1-D ndarray
+            Sorted unique surface temperatures [eps/kB].
+        EAC_mean : 1-D ndarray
+            Mean α_E at each T*.
+        EAC_std : 1-D ndarray
+            Standard deviation of α_E at each T*.
+        """
+        self._require_results()
+        Ts = self.T_surface_array
+        eacs = self.EAC_array
+        unique_T = np.unique(np.round(Ts, decimals=6))
+        means = np.array([eacs[np.abs(Ts - T) < 1e-5].mean() for T in unique_T])
+        stds  = np.array([eacs[np.abs(Ts - T) < 1e-5].std()  for T in unique_T])
+        return unique_T, means, stds
+
+    @timed
+    def fit_eac_power_law(self) -> tuple[float, float]:
+        """Fit α_E ~ A * E*^β to the data via log-log regression.
+
+        Returns
+        -------
+        A : float
+            Prefactor.
+        beta : float
+            Power-law exponent (positive → α_E increases with E*).
+
+        Notes
+        -----
+        Linearises via ln(α_E) = ln(A) + β·ln(E*).
+        Requires >= 4 distinct E* values.
+        """
+        self._require_results(4)
+        E_stars, eacs, _ = self.eac_vs_Estar()
+        mask = (E_stars > 0) & (eacs > 0) & (eacs < 1)
+        if mask.sum() < 4:
+            raise InsufficientDataError("EAC power-law fit", int(mask.sum()), 4)
+        ln_E   = np.log(E_stars[mask])
+        ln_eac = np.log(eacs[mask])
+        A_mat = np.column_stack([np.ones_like(ln_E), ln_E])
+        coeffs, *_ = np.linalg.lstsq(A_mat, ln_eac, rcond=None)
+        ln_A, beta = coeffs
+        return float(np.exp(ln_A)), float(beta)
 
     @timed
     def fit_cor_power_law(self) -> tuple[float, float]:
@@ -532,10 +737,15 @@ class ParametricAnalyzer:
         """Return a human-readable summary string."""
         lines = [
             f"ParametricAnalyzer: {len(self.results)} results",
-            f"  v0 range: {self.v0_array.min():.3f} - {self.v0_array.max():.3f} sigma/tau",
-            f"  COR range: {self.COR_array.min():.4f} - {self.COR_array.max():.4f}",
-            f"  mean COR: {self.COR_array.mean():.4f} ± {self.COR_array.std():.4f}",
+            f"  v0 range:    {self.v0_array.min():.3f} – {self.v0_array.max():.3f}  σ/τ",
+            f"  E* range:    {self.E_star_array.min():.4f} – {self.E_star_array.max():.4f}  ε",
+            f"  COR range:   {self.COR_array.min():.4f} – {self.COR_array.max():.4f}",
+            f"  α_E range:   {self.EAC_array.min():.4f} – {self.EAC_array.max():.4f}",
+            f"  mean α_E:    {self.EAC_array.mean():.4f} ± {self.EAC_array.std():.4f}",
         ]
+        unique_T = np.unique(self.T_surface_array)
+        if len(unique_T) > 1:
+            lines.append(f"  T* values:   {', '.join(f'{t:.3f}' for t in unique_T)}  ε/k_B")
         return "\n".join(lines)
 
     def __repr__(self) -> str:

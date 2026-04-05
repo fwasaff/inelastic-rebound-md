@@ -36,7 +36,7 @@ from .config import (
 )
 from .exceptions import ReboundMDError
 from .simulation import EquilibrationSimulation, ImpactSimulation, LAMMPSRunner, SimulationPipeline
-from .visualization import plot_cor_vs_v0, plot_trajectory
+from .visualization import plot_cor_vs_v0, plot_eac_vs_Estar, plot_trajectory
 
 # ---------------------------------------------------------------------------
 # Logging setup
@@ -113,7 +113,7 @@ def cmd_impact(args: argparse.Namespace) -> int:
 
 
 def cmd_sweep(args: argparse.Namespace) -> int:
-    """Run a parametric sweep."""
+    """Run a parametric sweep over v0, angle, and/or surface temperature."""
     if args.config:
         sweep_cfg = ConfigRegistry.from_json_auto(args.config)
         if not isinstance(sweep_cfg, ParametricSweepConfig):
@@ -126,47 +126,59 @@ def cmd_sweep(args: argparse.Namespace) -> int:
             v0_steps=args.v0_steps,
             angle_list=",".join(str(a) for a in args.angles),
             T_surface=args.T,
+            T_surface_list=args.T_list,
             n_replicas=args.replicas,
             parallel_jobs=args.jobs,
         )
 
-    equil_cfg = EquilibrationConfig(T_target=sweep_cfg.T_surface)
+    temperatures = sweep_cfg.temperatures
     runner = LAMMPSRunner(mpi_procs=args.mpi)
 
-    # Equilibrate once; all sweeps reuse the same surface
-    equil_workdir = _BASE_OUTPUT / "equilibration"
-    with EquilibrationSimulation(equil_cfg, equil_workdir, runner) as sim:
-        sim.run()
-        restart_path = sim.restart_path
+    # --- Phase 1: one equilibration per temperature (sequential) --------------
+    # Each T* requires its own equilibrated surface.
+    restart_paths: dict[float, Path] = {}
+    for T in temperatures:
+        equil_cfg = EquilibrationConfig(T_target=T)
+        equil_workdir = _BASE_OUTPUT / f"equilibration_T{T:.3f}"
+        logger.info("Equilibrating at T* = %.3f ...", T)
+        with EquilibrationSimulation(equil_cfg, equil_workdir, runner) as sim:
+            sim.run()
+            restart_paths[T] = sim.restart_path
 
-    # Build all impact jobs
-    jobs: list[tuple[ImpactConfig, int]] = []
-    for v0 in sweep_cfg.v0_values:
-        for angle in sweep_cfg.angles:
-            for replica in range(sweep_cfg.n_replicas):
-                cfg = ImpactConfig(
-                    v0=v0,
-                    angle=angle,
-                    T_target=sweep_cfg.T_surface,
-                    seed=replica * 1000,  # different initial conditions per replica
-                )
-                jobs.append((cfg, replica))
+    # --- Phase 2: build all impact jobs (all T × v0 × angle × replica) -------
+    Job = tuple[ImpactConfig, int, Path]  # (config, replica_index, restart_path)
+    jobs: list[Job] = []
+    for T in temperatures:
+        for v0 in sweep_cfg.v0_values:
+            for angle in sweep_cfg.angles:
+                for replica in range(sweep_cfg.n_replicas):
+                    cfg = ImpactConfig(
+                        v0=v0,
+                        angle=angle,
+                        T_target=T,
+                        seed=replica * 1000,
+                    )
+                    jobs.append((cfg, replica, restart_paths[T]))
 
-    logger.info("Parametric sweep: %d total simulations", len(jobs))
+    n_T = len(temperatures)
+    logger.info(
+        "Parametric sweep: %d T* × %d v0 × %d angles × %d replicas = %d simulations",
+        n_T, sweep_cfg.v0_steps, len(sweep_cfg.angles), sweep_cfg.n_replicas, len(jobs),
+    )
 
-    # Run in parallel using a process pool
+    # --- Phase 3: run impacts in parallel -------------------------------------
     parametric = ParametricAnalyzer()
 
-    def run_one(job: tuple[ImpactConfig, int]) -> ReboundAnalyzer | None:
-        cfg, replica = job
-        tag = f"v0_{cfg.v0:.3f}_ang_{cfg.angle:.1f}_rep{replica}"
+    def run_one(job: Job) -> ReboundAnalyzer | None:
+        cfg, replica, restart_path = job
+        tag = f"T{cfg.T_target:.3f}_v0_{cfg.v0:.3f}_ang_{cfg.angle:.1f}_rep{replica}"
         workdir = _BASE_OUTPUT / tag
         sim = ImpactSimulation(cfg, workdir, restart_path, runner)
         try:
             with sim:
                 sim.run()
             analyzer = ReboundAnalyzer(v0=cfg.v0, angle=cfg.angle,
-                                        T_surface_init=sweep_cfg.T_surface)
+                                        T_surface_init=cfg.T_target)
             analyzer.load(sim.rebound_data_path)
             return analyzer
         except ReboundMDError as exc:
@@ -183,20 +195,57 @@ def cmd_sweep(args: argparse.Namespace) -> int:
     logger.info("Sweep complete: %d successful runs", len(parametric))
     print(parametric.summary())
 
-    if len(parametric) >= 2:
-        v0_u, cor_m, cor_s = parametric.cor_vs_v0()
-        try:
-            A, beta = parametric.fit_cor_power_law()
-            logger.info("Power-law fit: COR = %.4f * v0^(-%.4f)", A, beta)
-            fit_params = (A, beta)
-        except Exception:
-            fit_params = None
+    if len(parametric) < 2:
+        return 0
 
-        fig = plot_cor_vs_v0(
-            v0_u, cor_m, cor_s,
-            fit_params=fit_params,
-            output_path=_BASE_OUTPUT / "cor_vs_v0.pdf",
-        )
+    # --- COR vs v0 plot -------------------------------------------------------
+    v0_u, cor_m, cor_s = parametric.cor_vs_v0()
+    try:
+        A_cor, beta_cor = parametric.fit_cor_power_law()
+        logger.info("COR power-law fit: e = %.4f * v0^(-%.4f)", A_cor, beta_cor)
+        cor_fit = (A_cor, beta_cor)
+    except Exception:
+        cor_fit = None
+    plot_cor_vs_v0(
+        v0_u, cor_m, cor_s,
+        fit_params=cor_fit,
+        output_path=_BASE_OUTPUT / "cor_vs_v0.pdf",
+    )
+
+    # --- α_E vs E* plot (Gonzalo's general observable) -----------------------
+    if len(parametric) >= 4:
+        E_u, eac_m, eac_s = parametric.eac_vs_Estar()
+        try:
+            A_eac, beta_eac = parametric.fit_eac_power_law()
+            logger.info("EAC power-law fit: α_E = %.4f * E*^(%.4f)", A_eac, beta_eac)
+            eac_fit = (A_eac, beta_eac)
+        except Exception:
+            eac_fit = None
+
+        # One curve per T* if multiple temperatures were swept
+        unique_T = np.unique(parametric.T_surface_array)
+        if len(unique_T) > 1:
+            # Plot α_E vs E* with one series per T*
+            plot_eac_vs_Estar(
+                E_u, eac_m, eac_s,
+                fit_params=eac_fit,
+                output_path=_BASE_OUTPUT / "eac_vs_Estar.pdf",
+                T_label="all T*",
+            )
+            # Also plot α_E vs T* to show thermal dependence
+            T_u, eac_T_m, eac_T_s = parametric.eac_vs_T()
+            plot_eac_vs_Estar(
+                T_u, eac_T_m, eac_T_s,
+                output_path=_BASE_OUTPUT / "eac_vs_T.pdf",
+                xlabel=r"Surface temperature  T*  [ε/k$_B$]",
+                title=r"Energy Accommodation Coefficient vs. T*",
+            )
+        else:
+            plot_eac_vs_Estar(
+                E_u, eac_m, eac_s,
+                fit_params=eac_fit,
+                output_path=_BASE_OUTPUT / "eac_vs_Estar.pdf",
+            )
 
     return 0
 
@@ -249,16 +298,22 @@ def _print_config_summary(phase: str, cfg: object) -> None:
 def _print_result(result: object) -> None:
     from .analysis import ReboundResult
     assert isinstance(result, ReboundResult)
-    print(f"\n{'='*50}")
+    print(f"\n{'='*54}")
     print(f"  Rebound Analysis Results")
-    print(f"{'='*50}")
-    print(f"  Incident velocity v0_z : {result.v0_z:.4f}  σ/τ")
-    print(f"  Rebound velocity  vf_z : {result.vf_z:.4f}  σ/τ")
-    print(f"  COR                    : {result.COR:.5f}")
-    print(f"  Energy dissipated  ΔE  : {result.delta_E:.5f}  ε")
-    print(f"  Contact time       τ_c : {result.contact_time:.4f}  τ")
-    print(f"  Max penetration    δ   : {result.max_penetration:.4f}  σ")
-    print(f"  Surface ΔT             : {result.dT_surface:.5f}  ε/k_B")
+    print(f"{'='*54}")
+    print(f"  Incident velocity   v0_z    : {result.v0_z:.4f}  σ/τ")
+    print(f"  Rebound velocity    vf_z    : {result.vf_z:.4f}  σ/τ")
+    print(f"  COR                  e      : {result.COR:.5f}")
+    print(f"  Reduced energy       E*     : {result.E_star:.5f}  ε")
+    print(f"{'─'*54}")
+    print(f"  EAC (total)          α_E    : {result.EAC:.5f}")
+    print(f"  EAC (normal)         α_n    : {result.EAC_normal:.5f}")
+    print(f"  EAC (tangential)     α_t    : {result.EAC_tangential:.5f}")
+    print(f"{'─'*54}")
+    print(f"  Energy dissipated    ΔE     : {result.delta_E:.5f}  ε")
+    print(f"  Contact time         τ_c    : {result.contact_time:.4f}  τ")
+    print(f"  Max penetration      δ      : {result.max_penetration:.4f}  σ")
+    print(f"  Surface ΔT                  : {result.dT_surface:.5f}  ε/k_B")
     print()
 
 
@@ -306,7 +361,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_sweep.add_argument("--v0-max",   type=float, default=5.0,  dest="v0_max")
     p_sweep.add_argument("--v0-steps", type=int,   default=10,   dest="v0_steps")
     p_sweep.add_argument("--angles",   type=float, nargs="+",    default=[0.0])
-    p_sweep.add_argument("--T",        type=float, default=0.1)
+    p_sweep.add_argument("--T",        type=float, default=0.1,
+                         help="Single surface temperature [eps/kB] (default: 0.1)")
+    p_sweep.add_argument("--T-list",   type=str,   default="",  dest="T_list",
+                         help="Comma-separated T* values, e.g. '0.05,0.1,0.2,0.3'. "
+                              "Overrides --T; runs one equilibration per temperature.")
     p_sweep.add_argument("--replicas", type=int,   default=3)
     p_sweep.add_argument("--jobs",     type=int,   default=4)
 
