@@ -313,8 +313,20 @@ class ImpactSimulation:
     def is_complete(self) -> bool:
         return self._completed and self.rebound_data_path.exists()
 
-    def run(self) -> None:
-        """Execute the impact simulation."""
+    def run(self, skip_if_exists: bool = False) -> None:
+        """Execute the impact simulation.
+
+        Parameters
+        ----------
+        skip_if_exists : bool
+            If True and ``rebound_data.dat`` already exists, skip the LAMMPS
+            run.  Useful for re-running analysis without re-simulating.
+        """
+        if skip_if_exists and self.rebound_data_path.exists():
+            logger.info("rebound_data.dat found; skipping impact simulation.")
+            self._completed = True
+            return
+
         if not self.restart_path.exists():
             raise RestartNotFoundError(self.restart_path)
 

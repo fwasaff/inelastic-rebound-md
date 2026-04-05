@@ -129,7 +129,7 @@ def _run_one_job(job: tuple) -> "ReboundAnalyzer | None":
     sim = ImpactSimulation(cfg, workdir, restart_path, runner)
     try:
         with sim:
-            sim.run()
+            sim.run(skip_if_exists=True)
         analyzer = ReboundAnalyzer(v0=cfg.v0, angle=cfg.angle,
                                    T_surface_init=cfg.T_target)
         analyzer.load(sim.rebound_data_path)
@@ -167,10 +167,15 @@ def cmd_sweep(args: argparse.Namespace) -> int:
     for T in temperatures:
         equil_cfg = EquilibrationConfig(T_target=T)
         equil_workdir = _BASE_OUTPUT / f"equilibration_T{T:.3f}"
-        logger.info("Equilibrating at T* = %.3f ...", T)
-        with EquilibrationSimulation(equil_cfg, equil_workdir, runner) as sim:
-            sim.run()
-            restart_paths[T] = sim.restart_path
+        restart_file = equil_workdir / EquilibrationSimulation.RESTART_NAME
+        if restart_file.exists():
+            logger.info("Restart found for T*=%.3f; skipping equilibration.", T)
+            restart_paths[T] = restart_file
+        else:
+            logger.info("Equilibrating at T* = %.3f ...", T)
+            with EquilibrationSimulation(equil_cfg, equil_workdir, runner) as sim:
+                sim.run()
+                restart_paths[T] = sim.restart_path
 
     # --- Phase 2: build all impact jobs (all T × v0 × angle × replica) -------
     Job = tuple[ImpactConfig, int, Path]  # (config, replica_index, restart_path)
