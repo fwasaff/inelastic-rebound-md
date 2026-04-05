@@ -154,10 +154,13 @@ class SimulationRuntimeError(SimulationError):
         self.returncode = returncode
         self.stderr = stderr
         self.script = script
-        snippet = stderr.strip().splitlines()[-5:]  # last 5 lines
+        lines = stderr.strip().splitlines()
+        # Prefer lines that contain the actual LAMMPS error/warning
+        error_lines = [l for l in lines if l.startswith(("ERROR", "WARNING", "Last command"))]
+        snippet = error_lines[:5] if error_lines else lines[:10]
         super().__init__(
             f"LAMMPS terminated with code {returncode} while running '{script}'.\n"
-            f"Last stderr lines:\n" + "\n".join(f"  {l}" for l in snippet),
+            f"LAMMPS output:\n" + "\n".join(f"  {l}" for l in snippet),
             returncode=returncode,
             script=script,
         )

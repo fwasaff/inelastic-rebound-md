@@ -140,7 +140,9 @@ class LAMMPSRunner:
         logger.info("LAMMPS finished in %.2f s (returncode=%d)", elapsed, result.returncode)
 
         if result.returncode != 0:
-            raise SimulationRuntimeError(result.returncode, result.stderr, str(script))
+            # LAMMPS prints errors to stdout; include both streams for diagnostics
+            combined = result.stdout + "\n" + result.stderr
+            raise SimulationRuntimeError(result.returncode, combined, str(script))
 
         return result
 
