@@ -472,7 +472,7 @@ class ReboundAnalyzer:
     @property
     @require_data
     @cached
-    @validate_physical("EAC", 0.0, 1.05)
+    @validate_physical("EAC", -1.05, 1.05)   # negative EAC is physical in sub-thermal regime
     def energy_accommodation(self) -> float:
         """Energy Accommodation Coefficient α_E = (E_inc - E_fin) / E_inc.
 
