@@ -27,6 +27,8 @@ import logging
 import sys
 from pathlib import Path
 
+import numpy as np
+
 from .analysis import ParametricAnalyzer, ReboundAnalyzer
 from .config import (
     ConfigRegistry,
@@ -69,7 +71,7 @@ def cmd_equilibrate(args: argparse.Namespace) -> int:
         seed=args.seed,
     )
     runner = LAMMPSRunner(mpi_procs=args.mpi)
-    workdir = _BASE_OUTPUT / "equilibration"
+    workdir = _BASE_OUTPUT / f"equilibration_T{args.T:.3f}"
 
     with EquilibrationSimulation(cfg, workdir, runner) as sim:
         sim.run()
@@ -92,10 +94,12 @@ def cmd_impact(args: argparse.Namespace) -> int:
     )
 
     runner = LAMMPSRunner(mpi_procs=args.mpi)
+    equil_dir = _BASE_OUTPUT / f"equilibration_T{args.T:.3f}"
     pipeline = SimulationPipeline.from_configs(
         equil_cfg, impact_cfg,
         base_workdir=_BASE_OUTPUT,
         runner=runner,
+        equil_dir=equil_dir,
     )
 
     with pipeline:

@@ -383,15 +383,21 @@ class SimulationPipeline:
         base_workdir: Path | str = Path("data/outputs"),
         runner: Optional[LAMMPSRunner] = None,
         run_id: Optional[str] = None,
+        equil_dir: Optional[Path | str] = None,
     ) -> "SimulationPipeline":
         """Construct a pipeline from config objects.
 
         Automatically creates unique subdirectories under ``base_workdir``.
+        ``equil_dir`` overrides the default equilibration directory, which is
+        useful when running at multiple temperatures.
         """
         base = Path(base_workdir)
         tag = run_id or f"v0_{impact_config.v0:.2f}_ang_{impact_config.angle:.1f}"
 
-        equil_dir = base / "equilibration"
+        if equil_dir is not None:
+            equil_dir = Path(equil_dir)
+        else:
+            equil_dir = base / f"equilibration_T{equil_config.T_target:.3f}"
         impact_dir = base / tag
 
         runner_ = runner or LAMMPSRunner()
