@@ -94,6 +94,13 @@ compute         T_thermo   thermo_atoms temp
 compute         pe_all     all      pe/atom
 compute         stress_all all      stress/atom NULL virial
 
+# --- Variables for fix print (thermo keywords are not variables) --------------
+variable        v_T_mobile  equal c_T_mobile
+variable        v_etotal    equal etotal
+variable        v_ke        equal ke
+variable        v_pe        equal pe
+variable        v_press     equal press
+
 # --- Thermo output ------------------------------------------------------------
 thermo          ${thermo_freq}
 thermo_style    custom step time temp c_T_mobile etotal ke pe press
@@ -106,7 +113,7 @@ dump_modify     d_equil sort id
 
 # --- Logging to file ----------------------------------------------------------
 fix             f_thermo_log all print ${thermo_freq} &
-                "${time} ${temp} ${etotal} ${ke} ${pe} ${press}" &
+                "${time} ${v_T_mobile} ${v_etotal} ${v_ke} ${v_pe} ${v_press}" &
                 file thermo_equil.dat title "time temp etotal ke pe press" screen no
 
 # --- Run: Equilibration phase -------------------------------------------------
