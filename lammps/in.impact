@@ -57,9 +57,9 @@ variable    vx0     equal  ${v0}*sin(${angle}*PI/180.0)   # tangential component
 # --- Read equilibrated surface ------------------------------------------------
 read_restart    restart.equilibrated
 
-# Get surface top z-position (approximate from lattice params in equilibrate)
-# Lattice a0=1.5496, Nz=6 layers -> top ~ 6*a0 ~ 9.3 sigma
-variable    z_surf_top  equal 9.3      # approximate top of surface [sigma]
+# Get surface top z-position from the actual restart box (exact, not approximate).
+# Must capture zhi BEFORE change_box extends it.
+variable    z_surf_top  equal $(zhi)   # exact box top from restart [sigma]
 variable    z_proj_init equal $(v_z_surf_top+v_z_gap)   # initial projectile z
 
 # Extend box in z to accommodate vacuum gap + projectile before adding atom.

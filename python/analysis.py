@@ -353,12 +353,27 @@ class ReboundAnalyzer:
     @require_data
     @cached
     def _rebound_start_idx(self) -> int:
-        """Index of first frame after contact ends (projectile moving away)."""
+        """Index of first frame after contact ends (projectile moving away).
+
+        If the projectile never clearly leaves the contact zone (sticking
+        regime), fall back to the last 50 frames so callers get valid data
+        rather than an out-of-bounds empty window.
+        """
         mask = self._contact_mask()
         contact_indices = np.where(mask)[0]
         if len(contact_indices) == 0:
             raise InsufficientDataError("rebound detection", 0, 1)
-        return int(contact_indices[-1]) + 1
+        last_contact = int(contact_indices[-1])
+        n_frames = len(self._data.time)
+        if last_contact >= n_frames - 10:
+            # Projectile still in contact at end of simulation → sticking regime
+            warnings.warn(
+                "Projectile still in contact at end of simulation "
+                "(sticking / COR ≈ 0). Using final trajectory frames.",
+                stacklevel=3,
+            )
+            return max(0, n_frames - 50)
+        return last_contact + 1
 
     @property
     @require_data
