@@ -88,7 +88,9 @@ class LAMMPSRunner:
         cmd: list[str] = []
         if self.mpi_procs > 1:
             cmd += ["mpirun", "-n", str(self.mpi_procs)]
-        cmd += [self.executable, "-in", str(script)]
+        # Resolve to absolute path: LAMMPS runs with cwd=workdir, so relative
+        # paths would be mis-interpreted if script lives outside the workdir.
+        cmd += [self.executable, "-in", str(script.resolve())]
         for key, val in extra_vars.items():
             cmd += ["-var", key, val]
         return cmd
