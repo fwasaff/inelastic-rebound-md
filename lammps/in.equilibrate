@@ -77,28 +77,24 @@ group           thermo_atoms region reg_thermo
 group           free_atoms   region reg_free
 group           mobile       subtract all fixed_atoms
 
-# --- Energy minimization (before velocity init) --------------------------------
-# Relaxes the initial lattice strain so atoms do not fly out at higher T*.
-# The freeze fix is applied first so the bottom wall stays rigid during minimize.
+# --- Fixes --------------------------------------------------------------------
+# Fixed atoms: zero force (rigid wall)
 fix             f_freeze    fixed_atoms  setforce 0.0 0.0 0.0
 
-min_style       cg
-min_modify      dmax 0.05 norm inf     # conservative step limit for slab geometry
-minimize        1.0e-6 1.0e-8 2000 20000
-reset_timestep  0
-
-# --- Initial velocities -------------------------------------------------------
-velocity        mobile create ${T_target} ${seed} dist gaussian rot yes mom yes
-
-# --- Fixes --------------------------------------------------------------------
-# Fixed atoms: zero force (rigid wall — already defined above for minimize)
-
 # Thermostat on intermediate layers: Nose-Hoover NVT
-# This represents the heat bath (bulk crystal below surface)
-fix             f_nvt       thermo_atoms nvt temp ${T_target} ${T_target} ${T_damp}
+# Tstart=0.01 (near zero) → Tstop=T_target: NVT ramps temperature gradually.
+# This avoids the atom-loss problem that occurs when initializing velocities
+# directly at T_target on a slightly compressed (a0 fixed) lattice.
+fix             f_nvt       thermo_atoms nvt temp 0.01 ${T_target} ${T_damp}
 
 # Free surface layer: NVE (microcanonical, no thermostat bias at surface)
-fix             f_nve       free_atoms   nve
+# nve/limit caps displacement per step to 0.05σ during the heat-up phase,
+# preventing surface atoms from flying out the non-periodic z boundary.
+fix             f_nvelim    free_atoms   nve/limit 0.05
+
+# --- Initial velocities -------------------------------------------------------
+# Start from near-zero T; the NVT fix ramps the system to T_target.
+velocity        mobile create 0.01 ${seed} dist gaussian rot yes mom yes
 
 # --- Computes -----------------------------------------------------------------
 compute         T_mobile   mobile   temp
@@ -131,12 +127,19 @@ fix             f_thermo_log all print ${thermo_freq} &
 # --- Run: Equilibration phase -------------------------------------------------
 timestep        ${dt}
 
-# Quick ramp to avoid instabilities from arbitrary initial positions
-fix             f_ramp all temp/rescale 100 ${T_target} ${T_target} 0.05 1.0
-run             5000
-unfix           f_ramp
+# Heat-up run: NVT ramps from T=0.01 to T_target; nve/limit keeps surface stable.
+# 10000 steps × dt=0.005 = 50 tau — enough to reach T_target smoothly.
+run             10000
 
-# Full NVT equilibration
+# Switch surface layer from nve/limit to standard nve now that T is established.
+unfix           f_nvelim
+fix             f_nve       free_atoms   nve
+
+# Retarget NVT thermostat to hold at T_target for the rest of equilibration.
+unfix           f_nvt
+fix             f_nvt       thermo_atoms nvt temp ${T_target} ${T_target} ${T_damp}
+
+# Full NVT equilibration at constant T_target
 run             ${steps_equil}
 
 # --- Run: Production phase (verify equilibrium) -------------------------------
