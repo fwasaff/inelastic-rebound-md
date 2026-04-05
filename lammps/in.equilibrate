@@ -128,6 +128,7 @@ unfix           f_ramp
 run             ${steps_equil}
 
 # --- Run: Production phase (verify equilibrium) -------------------------------
+undump          d_equil        # required before reset_timestep with active dump
 reset_timestep  0
 run             ${steps_prod}
 
