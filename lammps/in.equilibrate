@@ -37,6 +37,7 @@ variable    dt          index 0.005    # timestep [tau]
 variable    thermo_freq index 500      # thermo output frequency [steps]
 variable    dump_freq   index 1000     # trajectory dump frequency [steps]
 variable    seed        index 12345    # velocity seed for reproducibility
+variable    time        equal step*${dt}  # simulation time [tau] (for fix print)
 
 # --- Simulation box and atoms -------------------------------------------------
 # FCC lattice: 4 atoms/unit cell
