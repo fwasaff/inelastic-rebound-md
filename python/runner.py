@@ -292,7 +292,8 @@ def _run_one_cluster_job(job: tuple) -> "ClusterReboundAnalyzer | None":
     cfg, replica, restart_path, runner = job
     tag = (
         f"cluster_N{cfg.N_cluster}_T{cfg.T_target:.3f}"
-        f"_v0_{cfg.v0:.3f}_ang_{cfg.angle:.1f}_rep{replica}"
+        f"_v0_{cfg.v0:.3f}_ang_{cfg.angle:.1f}"
+        f"_eps{cfg.eps_ps:.2f}_rep{replica}"
     )
     workdir = _BASE_OUTPUT / tag
     sim = ClusterImpactSimulation(cfg, workdir, restart_path, runner)
