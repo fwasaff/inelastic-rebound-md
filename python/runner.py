@@ -428,6 +428,7 @@ def cmd_cluster_sweep(args: argparse.Namespace) -> int:
                             ),
                             z_gap=z_gap,
                             eps_ps=args.eps_ps,
+                            seed=replica * 11111 + 12345,
                         )
                         jobs.append((cfg, replica, restart_paths[T]))
 

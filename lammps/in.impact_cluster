@@ -50,6 +50,7 @@ variable    dump_freq      index 100
 variable    N_cluster      index 13
 variable    cluster_file   index lammps/clusters/cluster_N13_min.dat
 variable    eps_ps         index 1.0   # projectile-surface LJ epsilon
+variable    seed           index 12345 # random seed for surface re-thermalisation (varies per replica)
 
 # --- Derived: incident velocity components ------------------------------------
 variable    vz0  equal -${v0}*cos(${angle}*PI/180.0)   # downward (<0)
@@ -111,6 +112,11 @@ group   mobile        subtract surface fixed_atoms
 # All cluster atoms get the same initial velocity (rigid-body translation).
 # Internal thermal velocities are zero because the cluster was minimised at T=0.
 velocity    cluster set ${vx0} 0.0 ${vz0} units box
+
+# Re-randomise mobile surface velocities so different replicas explore
+# different phase-space starting points.  The seed variable is varied per
+# replica by the Python runner (seed = replica*11111 + 12345).
+velocity    mobile create ${T_target} ${seed} dist gaussian mom yes rot no loop geom
 
 # --- Fixes --------------------------------------------------------------------
 fix     f_freeze    fixed_atoms   setforce 0.0 0.0 0.0

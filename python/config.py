@@ -415,6 +415,8 @@ class ClusterImpactConfig(BaseConfig):
                                       doc="Number of atoms in the projectile cluster")
     cluster_file   = FieldDescriptor(str, "lammps/clusters/cluster_N13_min.dat",
                                       doc="Path to minimised cluster LAMMPS data file")
+    seed           = FieldDescriptor(int, 12345,
+                                      doc="Random seed for surface velocity re-randomisation")
 
     @property
     def vz0(self) -> float:

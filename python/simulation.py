@@ -656,6 +656,7 @@ class ClusterImpactSimulation:
             "eps_ps":          str(cfg.eps_ps),
             "N_cluster":       str(cfg.N_cluster),
             "cluster_file":    str(Path(cfg.cluster_file).resolve()),
+            "seed":            str(cfg.seed),
         }
 
     def __repr__(self) -> str:

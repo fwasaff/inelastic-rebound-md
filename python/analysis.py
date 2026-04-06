@@ -1005,11 +1005,19 @@ class ClusterReboundAnalyzer:
     @property
     @cached
     def E_incident(self) -> float:
-        """Incident COM kinetic energy [eps], measured from approach trajectory."""
-        self._require_data()
-        i_end = self._approach_end_idx()
-        start = max(0, i_end - 200)
-        return float(np.mean(self._data.ke_cm[start: i_end]))
+        """Incident normal COM kinetic energy [eps].
+
+        Uses the normal (z) component only:
+            E_inc = ½ × N_cluster × (v0 cos θ)²
+
+        For normal incidence (θ=0) this equals the total COM KE.
+        For oblique incidence, only the normal component participates in
+        the approach/rebound energy balance.  Using the total KE at oblique
+        angles would cause α_E_int to appear artificially small by cos²(θ).
+        """
+        import math
+        vz0 = self.v0 * math.cos(math.radians(self.angle))
+        return 0.5 * self.N_cluster * vz0 ** 2
 
     @property
     @cached
