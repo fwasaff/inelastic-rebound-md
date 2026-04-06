@@ -790,8 +790,9 @@ class ClusterReboundResult:
         Internal EAC: ΔKE_internal / E_incident.
         Fraction of incident energy deposited into cluster vibrational modes.
     alpha_E_surf : float
-        Surface EAC estimated from surface temperature rise: ΔT * Cv * N_surf / E_incident.
-        (Approximate — exact partition requires fully NVE surface.)
+        Surface EAC from energy balance: 1 − COR² − α_E_int.
+        Negative values indicate hyper-accommodation (cluster gains thermal
+        energy from the surface bath beyond its incident KE).
     dT_surface : float
         Surface free-layer temperature rise during impact [eps/kB].
     contact_time : float
@@ -1056,27 +1057,24 @@ class ClusterReboundAnalyzer:
     @property
     @cached
     def alpha_E_surf(self) -> float:
-        """Surface energy accommodation (estimated from temperature rise).
+        """Surface energy accommodation from energy balance.
 
-        α_E_surf = ΔE_surface / E_incident
+        α_E_surf = 1 − COR² − α_E_int
 
-        For a thermostatted surface, the exact surface energy is not conserved.
-        This estimate uses the free-layer temperature rise as a proxy:
-          ΔE_surf ≈ 3/2 · ΔT · N_free_layer  (equipartition, 3D)
+        This is the only reliable estimate for a Nosé-Hoover thermostatted
+        surface: the thermostat continuously exchanges heat with the reservoir
+        so ΔT of the free layer underestimates (and N_free is ill-defined),
+        making a ΔT-based estimate unreliable.
 
-        For quantitative energy balance, compare α_E_surf + α_E_int + COR²
-        and report the residual as a consistency check.
+        The balance residual instead measures the fraction of incident COM
+        kinetic energy that went neither into COM rebound (COR²) nor into
+        cluster internal modes (α_E_int).  In the sticking limit (COR=0,
+        full accommodation) α_E_surf + α_E_int ≈ 1.
+
+        Note: can be negative when the cluster gains thermal energy from
+        the surface bath (hyper-accommodation regime, α_E_int > 1 − COR²).
         """
-        E_inc = self.E_incident
-        if E_inc < 1e-12:
-            return 0.0
-        # Approximate: surface free layer has ~128 atoms (8×8×1 unit cell, 4 atoms/cell × 2 layers = actually Nz=1 layer)
-        # Use ΔT as the primary observable; scale by a nominal heat capacity.
-        # The paper should show ΔT(N) directly rather than relying on this estimate.
-        # Placeholder: 3/2 * N_free * ΔT  with N_free ≈ 256 (top 2 layers)
-        N_free_approx = 256
-        delta_E_surf = 1.5 * N_free_approx * self.dT_surface
-        return float(delta_E_surf / E_inc)
+        return float(1.0 - self.COR ** 2 - self.alpha_E_int)
 
     @require_data
     @timed
@@ -1101,8 +1099,10 @@ class ClusterReboundAnalyzer:
     def energy_balance_residual(self) -> float:
         """Return |COR² + α_E_int + α_E_surf - 1|.
 
-        A small residual (<0.1) indicates consistent energy accounting.
-        Larger values reflect thermostat energy exchange during impact.
+        With the current energy-balance definition of α_E_surf this is
+        always exactly 0.  Kept for API compatibility and as a sanity check
+        if the surface observable is ever replaced with an independent
+        measurement (e.g., direct surface energy from a NVE run).
         """
         return abs(self.COR ** 2 + self.alpha_E_int + self.alpha_E_surf - 1.0)
 
@@ -1161,25 +1161,52 @@ class ClusterParametricAnalyzer:
 
     def partition_vs_N(
         self,
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """Return (N_unique, COR_mean, alpha_int_mean, alpha_surf_mean).
+    ) -> dict[str, np.ndarray]:
+        """Return per-N statistics averaged over replicas.
 
-        Averages over replicas at each N.
+        Returns
+        -------
+        dict with keys:
+          N        : unique cluster sizes
+          cor_m    : mean COR
+          cor_s    : std COR
+          ai_m     : mean α_E_int
+          ai_s     : std α_E_int
+          as_m     : mean α_E_surf  (= 1 − COR² − α_E_int, balance)
+          as_s     : std α_E_surf
+          dT_m     : mean ΔT_surface [eps/kB]
+          dT_s     : std  ΔT_surface
         """
         self._require()
         Ns = self.N_array
         unique_N = np.unique(Ns)
-        cor_m = np.array([self.COR_array[Ns == N].mean() for N in unique_N])
-        ai_m  = np.array([self.alpha_int_array[Ns == N].mean() for N in unique_N])
-        as_m  = np.array([self.alpha_surf_array[Ns == N].mean() for N in unique_N])
-        return unique_N, cor_m, ai_m, as_m
+
+        def _stats(arr: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+            m = np.array([arr[Ns == N].mean() for N in unique_N])
+            s = np.array([arr[Ns == N].std()  for N in unique_N])
+            return m, s
+
+        cor_m,  cor_s  = _stats(self.COR_array)
+        ai_m,   ai_s   = _stats(self.alpha_int_array)
+        as_m,   as_s   = _stats(self.alpha_surf_array)
+        dT_m,   dT_s   = _stats(self.dT_array)
+
+        return {
+            "N":     unique_N,
+            "cor_m": cor_m,  "cor_s": cor_s,
+            "ai_m":  ai_m,   "ai_s":  ai_s,
+            "as_m":  as_m,   "as_s":  as_s,
+            "dT_m":  dT_m,   "dT_s":  dT_s,
+        }
 
     def summary(self) -> str:
         lines = [
             f"ClusterParametricAnalyzer: {len(self.results)} results",
-            f"  N values:       {sorted(set(self.N_array))}",
+            f"  N values:       {sorted(set(int(n) for n in self.N_array))}",
             f"  COR range:      {self.COR_array.min():.4f} – {self.COR_array.max():.4f}",
             f"  α_E_int range:  {self.alpha_int_array.min():.4f} – {self.alpha_int_array.max():.4f}",
             f"  α_E_surf range: {self.alpha_surf_array.min():.4f} – {self.alpha_surf_array.max():.4f}",
+            f"  ΔT range:       {self.dT_array.min():.4f} – {self.dT_array.max():.4f}  ε/k_B",
+            "  (α_E_surf = 1 − COR² − α_E_int; negative = hyper-accommodation)",
         ]
         return "\n".join(lines)

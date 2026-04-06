@@ -462,7 +462,15 @@ def _plot_cluster_partition(
     parametric: "ClusterParametricAnalyzer",
     output_dir: Path,
 ) -> None:
-    """Generate the key cluster-sweep figure: energy partition vs. N."""
+    """Generate the key cluster-sweep figure: energy partition vs. N.
+
+    Four panels:
+      (a) COR(N)
+      (b) α_E_int(N)  — cluster internal modes
+      (c) α_E_surf(N) = 1 − COR² − α_E_int  — surface phonon excitation
+      (d) ΔT_surface(N)  — surface heating diagnostic
+    Error bars show std across replicas.
+    """
     import matplotlib
     import matplotlib.ticker
     matplotlib.use("Agg")
@@ -471,37 +479,52 @@ def _plot_cluster_partition(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        N_u, cor_m, ai_m, as_m = parametric.partition_vs_N()
+        stats = parametric.partition_vs_N()
     except Exception as exc:
         logger.warning("Could not generate cluster partition plot: %s", exc)
         return
 
-    fig, axes = plt.subplots(1, 3, figsize=(12, 4), sharey=False)
+    N_u   = stats["N"]
+    cor_m = stats["cor_m"];  cor_s = stats["cor_s"]
+    ai_m  = stats["ai_m"];   ai_s  = stats["ai_s"]
+    as_m  = stats["as_m"];   as_s  = stats["as_s"]
+    dT_m  = stats["dT_m"];   dT_s  = stats["dT_s"]
 
-    axes[0].plot(N_u, cor_m, "o-", color="steelblue")
-    axes[0].set_xlabel("Cluster size  N  [atoms]")
+    fig, axes = plt.subplots(1, 4, figsize=(16, 4), sharey=False)
+
+    kw_eb = dict(fmt="o-", capsize=4, capthick=1.2, elinewidth=1.2)
+
+    axes[0].errorbar(N_u, cor_m, yerr=cor_s, color="steelblue", **kw_eb)
     axes[0].set_ylabel("COR")
-    axes[0].set_title("Coefficient of Restitution")
-    axes[0].set_ylim(0, None)
+    axes[0].set_title("(a) Coefficient of Restitution")
+    axes[0].set_ylim(bottom=0)
 
-    axes[1].plot(N_u, ai_m, "s-", color="firebrick")
-    axes[1].set_xlabel("Cluster size  N  [atoms]")
+    axes[1].errorbar(N_u, ai_m, yerr=ai_s, color="firebrick", **kw_eb)
+    axes[1].axhline(1.0, color="gray", lw=0.8, ls="--", label="α=1")
+    axes[1].axhline(0.0, color="gray", lw=0.8, ls=":")
     axes[1].set_ylabel(r"$\alpha_{E,\mathrm{int}}$")
-    axes[1].set_title("Internal EAC\n(cluster vibrational modes)")
+    axes[1].set_title("(b) Internal EAC\n(vibrational modes)")
 
-    axes[2].plot(N_u, as_m, "^-", color="seagreen")
-    axes[2].set_xlabel("Cluster size  N  [atoms]")
+    axes[2].errorbar(N_u, as_m, yerr=as_s, color="seagreen", **kw_eb)
+    axes[2].axhline(0.0, color="gray", lw=0.8, ls=":")
     axes[2].set_ylabel(r"$\alpha_{E,\mathrm{surf}}$")
-    axes[2].set_title("Surface EAC\n(phonon excitation)")
+    axes[2].set_title(r"(c) Surface EAC" + "\n" + r"($1 - \mathrm{COR}^2 - \alpha_{E,\mathrm{int}}$)")
+
+    axes[3].errorbar(N_u, dT_m, yerr=dT_s, color="darkorange", **kw_eb)
+    axes[3].axhline(0.0, color="gray", lw=0.8, ls=":")
+    axes[3].set_ylabel(r"$\Delta T_\mathrm{surf}$ [$\varepsilon/k_B$]")
+    axes[3].set_title("(d) Surface heating\n(diagnostic)")
 
     for ax in axes:
         ax.set_xscale("log")
+        ax.set_xlabel("Cluster size  $N$  [atoms]")
         ax.grid(True, alpha=0.3)
         ax.set_xticks(N_u)
         ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
     fig.suptitle(
-        r"Energy Partition vs. Cluster Size  ($\alpha_{E,\mathrm{int}} + \alpha_{E,\mathrm{surf}} + \mathrm{COR}^2 \approx 1$)",
+        r"Energy Partition vs. Cluster Size"
+        r"  ($\alpha_{E,\mathrm{int}} + \alpha_{E,\mathrm{surf}} + \mathrm{COR}^2 = 1$  by construction)",
         fontsize=11,
     )
     fig.tight_layout()
