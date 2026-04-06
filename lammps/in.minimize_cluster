@@ -14,7 +14,7 @@
 
 units           lj
 atom_style      atomic
-boundary        s s s    # shrink-wrap: box adjusts to enclose all atoms
+boundary        f f f    # fixed (non-periodic): use box from data file (has 6σ padding)
 
 # --- Overridable variables ----------------------------------------------------
 variable    N_cluster   index 13
