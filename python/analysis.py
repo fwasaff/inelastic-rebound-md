@@ -764,3 +764,422 @@ class ParametricAnalyzer:
 
     def __repr__(self) -> str:
         return f"ParametricAnalyzer(n_results={len(self.results)})"
+
+
+# ==============================================================================
+# Cluster impact analysis
+# ==============================================================================
+
+@dataclass(frozen=True)
+class ClusterReboundResult:
+    """Immutable result container for a single cluster impact event.
+
+    Attributes
+    ----------
+    N_cluster : int
+        Number of atoms in the projectile cluster.
+    v0 : float
+        Incident speed of cluster COM [sigma/tau].
+    vf_z : float
+        Final z-velocity of cluster COM after rebound [sigma/tau].
+    COR : float
+        Coefficient of restitution based on COM z-velocity.
+    E_incident : float
+        Incident COM kinetic energy = 0.5 * N * v0^2  [eps].
+    alpha_E_int : float
+        Internal EAC: ΔKE_internal / E_incident.
+        Fraction of incident energy deposited into cluster vibrational modes.
+    alpha_E_surf : float
+        Surface EAC estimated from surface temperature rise: ΔT * Cv * N_surf / E_incident.
+        (Approximate — exact partition requires fully NVE surface.)
+    dT_surface : float
+        Surface free-layer temperature rise during impact [eps/kB].
+    contact_time : float
+        Duration of contact phase [tau].
+    T_surface : float
+        Initial surface temperature [eps/kB].
+    angle : float
+        Impact angle from normal [degrees].
+    """
+
+    N_cluster:    int
+    v0:           float
+    vf_z:         float
+    COR:          float
+    E_incident:   float
+    alpha_E_int:  float
+    alpha_E_surf: float
+    dT_surface:   float
+    contact_time: float
+    T_surface:    float = 0.1
+    angle:        float = 0.0
+
+
+@dataclass
+class ClusterTrajectoryData:
+    """Parsed ``cluster_rebound_data.dat`` as numpy arrays.
+
+    Columns written by in.impact_cluster:
+      time  z_cm  vz_cm  ke_cm  ke_internal  T_surf_free
+    """
+
+    __slots__ = ("time", "z_cm", "vz_cm", "ke_cm", "ke_internal", "T_surf")
+
+    time:        np.ndarray   # simulation time [tau]
+    z_cm:        np.ndarray   # cluster COM z-position [sigma]
+    vz_cm:       np.ndarray   # cluster COM z-velocity [sigma/tau]
+    ke_cm:       np.ndarray   # KE of cluster COM [eps]
+    ke_internal: np.ndarray   # cluster internal KE [eps]
+    T_surf:      np.ndarray   # surface free-layer temperature [eps/kB]
+
+    def __len__(self) -> int:
+        return len(self.time)
+
+
+class ClusterDataParser:
+    """Parses ``cluster_rebound_data.dat`` produced by in.impact_cluster."""
+
+    COLUMNS = ("time", "z_cm", "vz_cm", "ke_cm", "ke_internal", "T_surf")
+    N_COLS = len(COLUMNS)
+
+    @classmethod
+    @timed
+    def parse(cls, path: Path | str) -> ClusterTrajectoryData:
+        path = Path(path)
+        if not path.exists():
+            raise FileNotFoundError(path, role="cluster rebound tracking data")
+
+        rows: list[list[float]] = []
+        with path.open() as fh:
+            for lineno, raw in enumerate(fh, start=1):
+                line = raw.strip()
+                if not line or line.startswith("#"):
+                    continue
+                tokens = line.split()
+                if len(tokens) != cls.N_COLS:
+                    raise ParseError(
+                        path.name, lineno, raw.rstrip(),
+                        f"expected {cls.N_COLS} columns, got {len(tokens)}",
+                    )
+                try:
+                    rows.append([float(t) for t in tokens])
+                except ValueError as exc:
+                    raise ParseError(path.name, lineno, raw.rstrip(), str(exc)) from exc
+
+        if len(rows) < 10:
+            raise InsufficientDataError("cluster trajectory parsing", len(rows), 10)
+
+        arr = np.array(rows, dtype=float).T
+        return ClusterTrajectoryData(
+            time=arr[0],
+            z_cm=arr[1],
+            vz_cm=arr[2],
+            ke_cm=arr[3],
+            ke_internal=arr[4],
+            T_surf=arr[5],
+        )
+
+
+class ClusterReboundAnalyzer:
+    """Compute energy partition observables from a cluster impact trajectory.
+
+    Central quantities for the cluster-size dependence study:
+      α_E_int(N)  = ΔKE_internal / E_incident
+      α_E_surf(N) = estimated from surface ΔT
+      COR(N)      = |vf_z_cm| / |v0_z|
+
+    Parameters
+    ----------
+    N_cluster : int
+        Cluster size.
+    v0 : float
+        Incident speed [sigma/tau].
+    angle : float
+        Impact angle from surface normal [degrees].
+    T_surface_init : float
+        Initial surface temperature [eps/kB].
+    surface_top_z : float
+        Z-coordinate of unperturbed surface top [sigma].
+    lj_cutoff : float
+        LJ cutoff used as contact criterion [sigma].
+    """
+
+    def __init__(
+        self,
+        N_cluster: int,
+        v0: float,
+        angle: float = 0.0,
+        T_surface_init: float = 0.1,
+        surface_top_z: float = 9.3,
+        lj_cutoff: float = 2.5,
+    ) -> None:
+        self.N_cluster = N_cluster
+        self.v0 = v0
+        self.angle = angle
+        self.T_surface_init = T_surface_init
+        self.surface_top_z = surface_top_z
+        self.lj_cutoff = lj_cutoff
+        self._data: Optional[ClusterTrajectoryData] = None
+        self._invalidate_cache()
+
+    def _invalidate_cache(self) -> None:
+        for attr in list(vars(self)):
+            if attr.startswith("_cache_"):
+                delattr(self, attr)
+
+    @timed
+    def load(self, path: Path | str) -> "ClusterReboundAnalyzer":
+        """Load cluster trajectory from ``cluster_rebound_data.dat``."""
+        self._data = ClusterDataParser.parse(path)
+        self._invalidate_cache()
+        logger.info("Loaded %d cluster frames from %s", len(self._data), path)
+        return self
+
+    def _require_data(self) -> None:
+        if self._data is None:
+            raise RuntimeError("Call load() before computing observables.")
+
+    # --- Contact detection ----------------------------------------------------
+
+    @cached
+    def _contact_mask(self) -> np.ndarray:
+        self._require_data()
+        # Contact when cluster COM is within lj_cutoff of surface top
+        return (self._data.z_cm - self.surface_top_z) < self.lj_cutoff
+
+    @cached
+    def _approach_end_idx(self) -> int:
+        mask = self._contact_mask()
+        idxs = np.where(mask)[0]
+        if len(idxs) == 0:
+            raise InsufficientDataError("cluster contact detection", 0, 1)
+        return int(idxs[0]) - 1
+
+    @cached
+    def _rebound_start_idx(self) -> int:
+        mask = self._contact_mask()
+        idxs = np.where(mask)[0]
+        if len(idxs) == 0:
+            raise InsufficientDataError("cluster rebound detection", 0, 1)
+        last_contact = int(idxs[-1])
+        n = len(self._data.time)
+        if last_contact >= n - 10:
+            warnings.warn(
+                f"Cluster N={self.N_cluster} still in contact at end of simulation "
+                "(sticking / COR ≈ 0). Using final trajectory frames.",
+                stacklevel=3,
+            )
+            return max(0, n - 50)
+        return last_contact + 1
+
+    # --- Core observables -----------------------------------------------------
+
+    @property
+    @cached
+    def contact_time(self) -> float:
+        """Duration of contact phase [tau]."""
+        self._require_data()
+        t = self._data.time
+        return float(t[self._rebound_start_idx()] - t[self._approach_end_idx()])
+
+    @property
+    @cached
+    def final_vz_cm(self) -> float:
+        """Z-velocity of cluster COM after rebound [sigma/tau]."""
+        self._require_data()
+        i = self._rebound_start_idx()
+        window = self._data.vz_cm[i: i + 50]
+        return float(np.mean(window))
+
+    @property
+    @cached
+    def COR(self) -> float:
+        """Coefficient of restitution = |vf_z_cm| / |v0_z|."""
+        import math
+        v0z = self.v0 * math.cos(math.radians(self.angle))
+        if v0z == 0.0:
+            return 0.0
+        return float(np.clip(abs(self.final_vz_cm) / v0z, 0.0, 1.05))
+
+    @property
+    @cached
+    def E_incident(self) -> float:
+        """Incident COM kinetic energy [eps], measured from approach trajectory."""
+        self._require_data()
+        i_end = self._approach_end_idx()
+        start = max(0, i_end - 200)
+        return float(np.mean(self._data.ke_cm[start: i_end]))
+
+    @property
+    @cached
+    def ke_internal_initial(self) -> float:
+        """Mean internal KE before contact (cluster's thermal energy) [eps]."""
+        self._require_data()
+        i_end = self._approach_end_idx()
+        start = max(0, i_end - 200)
+        return float(np.mean(self._data.ke_internal[start: i_end]))
+
+    @property
+    @cached
+    def ke_internal_final(self) -> float:
+        """Mean internal KE after rebound [eps]."""
+        self._require_data()
+        i = self._rebound_start_idx()
+        window = self._data.ke_internal[i: i + 100]
+        return float(np.mean(window))
+
+    @property
+    @cached
+    def alpha_E_int(self) -> float:
+        """Internal energy accommodation coefficient.
+
+        α_E_int = ΔKE_internal / E_incident
+                = (KE_int_final - KE_int_initial) / E_incident
+
+        Measures the fraction of incident kinetic energy deposited into
+        the cluster's vibrational modes during impact.  Increases with N
+        as more internal modes become available.
+        """
+        E_inc = self.E_incident
+        if E_inc < 1e-12:
+            return 0.0
+        return float((self.ke_internal_final - self.ke_internal_initial) / E_inc)
+
+    @property
+    @cached
+    def dT_surface(self) -> float:
+        """Surface free-layer temperature rise [eps/kB]."""
+        self._require_data()
+        T_final = float(np.mean(self._data.T_surf[-200:]))
+        return T_final - self.T_surface_init
+
+    @property
+    @cached
+    def alpha_E_surf(self) -> float:
+        """Surface energy accommodation (estimated from temperature rise).
+
+        α_E_surf = ΔE_surface / E_incident
+
+        For a thermostatted surface, the exact surface energy is not conserved.
+        This estimate uses the free-layer temperature rise as a proxy:
+          ΔE_surf ≈ 3/2 · ΔT · N_free_layer  (equipartition, 3D)
+
+        For quantitative energy balance, compare α_E_surf + α_E_int + COR²
+        and report the residual as a consistency check.
+        """
+        E_inc = self.E_incident
+        if E_inc < 1e-12:
+            return 0.0
+        # Approximate: surface free layer has ~128 atoms (8×8×1 unit cell, 4 atoms/cell × 2 layers = actually Nz=1 layer)
+        # Use ΔT as the primary observable; scale by a nominal heat capacity.
+        # The paper should show ΔT(N) directly rather than relying on this estimate.
+        # Placeholder: 3/2 * N_free * ΔT  with N_free ≈ 256 (top 2 layers)
+        N_free_approx = 256
+        delta_E_surf = 1.5 * N_free_approx * self.dT_surface
+        return float(delta_E_surf / E_inc)
+
+    @require_data
+    @timed
+    def compute_all(self) -> ClusterReboundResult:
+        """Compute all cluster impact observables."""
+        import math
+        v0z = self.v0 * math.cos(math.radians(self.angle))
+        return ClusterReboundResult(
+            N_cluster=self.N_cluster,
+            v0=self.v0,
+            vf_z=self.final_vz_cm,
+            COR=self.COR,
+            E_incident=self.E_incident,
+            alpha_E_int=self.alpha_E_int,
+            alpha_E_surf=self.alpha_E_surf,
+            dT_surface=self.dT_surface,
+            contact_time=self.contact_time,
+            T_surface=self.T_surface_init,
+            angle=self.angle,
+        )
+
+    def energy_balance_residual(self) -> float:
+        """Return |COR² + α_E_int + α_E_surf - 1|.
+
+        A small residual (<0.1) indicates consistent energy accounting.
+        Larger values reflect thermostat energy exchange during impact.
+        """
+        return abs(self.COR ** 2 + self.alpha_E_int + self.alpha_E_surf - 1.0)
+
+    def __repr__(self) -> str:
+        loaded = self._data is not None
+        return (
+            f"ClusterReboundAnalyzer(N={self.N_cluster}, v0={self.v0}, "
+            f"data_loaded={loaded})"
+        )
+
+
+class ClusterParametricAnalyzer:
+    """Aggregates ClusterReboundResult objects for the N-dependence study.
+
+    Primary output: curves α_E_int(N), α_E_surf(N), COR(N)
+    for fixed (v0, T*, θ) — the central result of the paper.
+    """
+
+    def __init__(self) -> None:
+        self.results: list[ClusterReboundResult] = []
+
+    def add(self, result: ClusterReboundResult) -> None:
+        self.results.append(result)
+
+    def __len__(self) -> int:
+        return len(self.results)
+
+    def _require(self, n: int = 2) -> None:
+        if len(self.results) < n:
+            raise InsufficientDataError("cluster parametric analysis", len(self.results), n)
+
+    @property
+    def N_array(self) -> np.ndarray:
+        self._require()
+        return np.array([r.N_cluster for r in self.results])
+
+    @property
+    def COR_array(self) -> np.ndarray:
+        self._require()
+        return np.array([r.COR for r in self.results])
+
+    @property
+    def alpha_int_array(self) -> np.ndarray:
+        self._require()
+        return np.array([r.alpha_E_int for r in self.results])
+
+    @property
+    def alpha_surf_array(self) -> np.ndarray:
+        self._require()
+        return np.array([r.alpha_E_surf for r in self.results])
+
+    @property
+    def dT_array(self) -> np.ndarray:
+        self._require()
+        return np.array([r.dT_surface for r in self.results])
+
+    def partition_vs_N(
+        self,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Return (N_unique, COR_mean, alpha_int_mean, alpha_surf_mean).
+
+        Averages over replicas at each N.
+        """
+        self._require()
+        Ns = self.N_array
+        unique_N = np.unique(Ns)
+        cor_m = np.array([self.COR_array[Ns == N].mean() for N in unique_N])
+        ai_m  = np.array([self.alpha_int_array[Ns == N].mean() for N in unique_N])
+        as_m  = np.array([self.alpha_surf_array[Ns == N].mean() for N in unique_N])
+        return unique_N, cor_m, ai_m, as_m
+
+    def summary(self) -> str:
+        lines = [
+            f"ClusterParametricAnalyzer: {len(self.results)} results",
+            f"  N values:       {sorted(set(self.N_array))}",
+            f"  COR range:      {self.COR_array.min():.4f} – {self.COR_array.max():.4f}",
+            f"  α_E_int range:  {self.alpha_int_array.min():.4f} – {self.alpha_int_array.max():.4f}",
+            f"  α_E_surf range: {self.alpha_surf_array.min():.4f} – {self.alpha_surf_array.max():.4f}",
+        ]
+        return "\n".join(lines)

@@ -49,6 +49,7 @@ variable    steps_approach index 10000 # steps before impact (approach phase)
 variable    steps_impact  index 80000  # steps during and after impact
 variable    thermo_freq index 50       # thermo output frequency [steps]
 variable    dump_freq   index 100      # trajectory dump frequency [steps]
+variable    eps_ps      index 1.0      # surface-projectile LJ epsilon (1.0 = homoatomic)
 
 # --- Derived variables --------------------------------------------------------
 variable    vz0     equal -${v0}*cos(${angle}*PI/180.0)   # normal component (<0 = downward)
@@ -86,7 +87,7 @@ mass            2 1.0   # same mass as surface atoms (Ar-Ar)
 # Projectile-surface interaction: same LJ parameters
 pair_style      lj/cut 2.5
 pair_coeff      1 1 1.0 1.0 2.5    # surface-surface
-pair_coeff      1 2 1.0 1.0 2.5    # surface-projectile (Lorentz-Berthelot mixing)
+pair_coeff      1 2 ${eps_ps} 1.0 2.5  # surface-projectile (tunable well depth)
 pair_coeff      2 2 1.0 1.0 2.5    # projectile-projectile (irrelevant, single atom)
 
 pair_modify     tail yes

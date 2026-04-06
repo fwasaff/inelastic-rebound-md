@@ -29,15 +29,28 @@ from pathlib import Path
 
 import numpy as np
 
-from .analysis import ParametricAnalyzer, ReboundAnalyzer
+from .analysis import (
+    ClusterParametricAnalyzer,
+    ClusterReboundAnalyzer,
+    ParametricAnalyzer,
+    ReboundAnalyzer,
+)
 from .config import (
+    ClusterImpactConfig,
     ConfigRegistry,
     EquilibrationConfig,
     ImpactConfig,
     ParametricSweepConfig,
 )
 from .exceptions import ReboundMDError
-from .simulation import EquilibrationSimulation, ImpactSimulation, LAMMPSRunner, SimulationPipeline
+from .simulation import (
+    ClusterImpactSimulation,
+    ClusterMinimiser,
+    EquilibrationSimulation,
+    ImpactSimulation,
+    LAMMPSRunner,
+    SimulationPipeline,
+)
 from .visualization import plot_cor_vs_v0, plot_eac_vs_Estar, plot_trajectory
 
 # ---------------------------------------------------------------------------
@@ -188,6 +201,7 @@ def cmd_sweep(args: argparse.Namespace) -> int:
                         v0=v0,
                         angle=angle,
                         T_target=T,
+                        eps_ps=getattr(args, "eps_ps", 1.0),
                     )
                     jobs.append((cfg, replica, restart_paths[T]))
 
@@ -266,6 +280,236 @@ def cmd_sweep(args: argparse.Namespace) -> int:
             )
 
     return 0
+
+
+def _run_one_cluster_job(job: tuple) -> "ClusterReboundAnalyzer | None":
+    """Module-level worker for cluster sweep (picklable).
+
+    Parameters
+    ----------
+    job : (ClusterImpactConfig, replica_index, restart_path, LAMMPSRunner)
+    """
+    cfg, replica, restart_path, runner = job
+    tag = (
+        f"cluster_N{cfg.N_cluster}_T{cfg.T_target:.3f}"
+        f"_v0_{cfg.v0:.3f}_ang_{cfg.angle:.1f}_rep{replica}"
+    )
+    workdir = _BASE_OUTPUT / tag
+    sim = ClusterImpactSimulation(cfg, workdir, restart_path, runner)
+    try:
+        with sim:
+            sim.run(skip_if_exists=True)
+        analyzer = ClusterReboundAnalyzer(
+            N_cluster=cfg.N_cluster,
+            v0=cfg.v0,
+            angle=cfg.angle,
+            T_surface_init=cfg.T_target,
+        )
+        analyzer.load(sim.rebound_data_path)
+        return analyzer
+    except ReboundMDError as exc:
+        logger.error("Cluster job %s failed: %s", tag, exc)
+        return None
+
+
+def cmd_cluster_setup(args: argparse.Namespace) -> int:
+    """Generate and minimise initial LJ cluster geometries.
+
+    Creates ``lammps/clusters/cluster_N{N}_init.dat`` for each N in N_list,
+    then runs LAMMPS minimisation to produce ``cluster_N{N}_min.dat``.
+    Must be run once before ``cluster-sweep``.
+    """
+    from .cluster_gen import generate_all_clusters
+
+    sizes = [int(n.strip()) for n in args.N_list.split(",")]
+    logger.info("Generating initial cluster geometries for N = %s", sizes)
+
+    # Generate initial data files
+    cluster_dir = Path("lammps/clusters")
+    generate_all_clusters(cluster_dir, sizes=sizes)
+
+    # Minimise each cluster with LAMMPS
+    runner = LAMMPSRunner(mpi_procs=args.mpi)
+    min_workdir = _BASE_OUTPUT / "cluster_minimisation"
+
+    for N in sizes:
+        if N == 1:
+            # Monomer: write minimised file = init file (nothing to minimise)
+            from .cluster_gen import write_lammps_cluster_data, generate_cluster
+            import numpy as np
+            pos = generate_cluster(1)
+            min_path = cluster_dir / "cluster_N1_min.dat"
+            write_lammps_cluster_data(pos, min_path)
+            logger.info("N=1 monomer: copied init → min directly.")
+            continue
+
+        minimiser = ClusterMinimiser(N, workdir=min_workdir / f"N{N}", runner=runner)
+        try:
+            minimiser.run(skip_if_exists=not args.force)
+        except Exception as exc:
+            logger.error("Minimisation failed for N=%d: %s", N, exc)
+            return 1
+
+    logger.info("All clusters ready. Minimised files in lammps/clusters/")
+    return 0
+
+
+def cmd_cluster_sweep(args: argparse.Namespace) -> int:
+    """Parametric sweep over cluster size N and impact conditions.
+
+    This is the central command for the cluster size dependence study.
+    Produces α_E_int(N), α_E_surf(N), COR(N) curves.
+
+    Workflow:
+      1. Equilibrate surface at T* (once per temperature).
+      2. For each N in N_list, for each v0/angle/replica: run cluster impact.
+      3. Collect results → plot partition curves.
+
+    Usage example::
+
+        python -m python.runner cluster-sweep \\
+            --N-list 1,7,13,55 --v0 2.0 --T 0.3 --replicas 3 --jobs 4
+    """
+    from pathlib import Path as _P
+
+    # Parse N_list
+    N_list = [int(n.strip()) for n in args.N_list.split(",")]
+
+    # Check that minimised cluster files exist
+    cluster_dir = _P("lammps/clusters")
+    missing = [N for N in N_list
+               if not (cluster_dir / f"cluster_N{N}_min.dat").exists()]
+    if missing:
+        logger.error(
+            "Minimised cluster files missing for N = %s.\n"
+            "Run first: python -m python.runner cluster-setup --N-list %s",
+            missing, args.N_list,
+        )
+        return 1
+
+    runner = LAMMPSRunner(mpi_procs=args.mpi)
+
+    # --- Equilibration (one per temperature) ----------------------------------
+    temperatures = [float(t.strip()) for t in args.T_list.split(",")]
+    restart_paths: dict[float, Path] = {}
+    for T in temperatures:
+        equil_cfg = EquilibrationConfig(T_target=T)
+        equil_workdir = _BASE_OUTPUT / f"equilibration_T{T:.3f}"
+        restart_file = equil_workdir / EquilibrationSimulation.RESTART_NAME
+        if restart_file.exists():
+            logger.info("Restart found for T*=%.3f; skipping equilibration.", T)
+            restart_paths[T] = restart_file
+        else:
+            logger.info("Equilibrating at T* = %.3f ...", T)
+            with EquilibrationSimulation(equil_cfg, equil_workdir, runner) as sim:
+                sim.run()
+                restart_paths[T] = sim.restart_path
+
+    # --- Build job list -------------------------------------------------------
+    angles = [float(a.strip()) for a in args.angles_str.split(",")]
+    v0_values = [float(v.strip()) for v in args.v0_list.split(",")]
+
+    jobs = []
+    for T in temperatures:
+        for N in N_list:
+            for v0 in v0_values:
+                for angle in angles:
+                    for replica in range(args.replicas):
+                        from .cluster_gen import cluster_radius
+                        z_gap = max(10.0, cluster_radius(N) + 8.0)
+                        cfg = ClusterImpactConfig(
+                            v0=v0,
+                            angle=angle,
+                            T_target=T,
+                            N_cluster=N,
+                            cluster_file=str(
+                                cluster_dir / f"cluster_N{N}_min.dat"
+                            ),
+                            z_gap=z_gap,
+                            eps_ps=args.eps_ps,
+                        )
+                        jobs.append((cfg, replica, restart_paths[T]))
+
+    n_total = len(jobs)
+    logger.info(
+        "Cluster sweep: %d N × %d T* × %d v0 × %d angles × %d replicas = %d simulations",
+        len(N_list), len(temperatures), len(v0_values), len(angles),
+        args.replicas, n_total,
+    )
+
+    # --- Run in parallel ------------------------------------------------------
+    parametric = ClusterParametricAnalyzer()
+    jobs_with_runner = [(cfg, rep, rp, runner) for cfg, rep, rp in jobs]
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
+        for analyzer in pool.map(_run_one_cluster_job, jobs_with_runner):
+            if analyzer is not None:
+                parametric.add(analyzer.compute_all())
+
+    logger.info("Cluster sweep complete: %d successful runs", len(parametric))
+    print(parametric.summary())
+
+    if len(parametric) < 2:
+        return 0
+
+    # --- Plot α_E_int(N), α_E_surf(N), COR(N) ---------------------------------
+    _plot_cluster_partition(parametric, output_dir=_BASE_OUTPUT)
+
+    return 0
+
+
+def _plot_cluster_partition(
+    parametric: "ClusterParametricAnalyzer",
+    output_dir: Path,
+) -> None:
+    """Generate the key cluster-sweep figure: energy partition vs. N."""
+    import matplotlib
+    import matplotlib.ticker
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        N_u, cor_m, ai_m, as_m = parametric.partition_vs_N()
+    except Exception as exc:
+        logger.warning("Could not generate cluster partition plot: %s", exc)
+        return
+
+    fig, axes = plt.subplots(1, 3, figsize=(12, 4), sharey=False)
+
+    axes[0].plot(N_u, cor_m, "o-", color="steelblue")
+    axes[0].set_xlabel("Cluster size  N  [atoms]")
+    axes[0].set_ylabel("COR")
+    axes[0].set_title("Coefficient of Restitution")
+    axes[0].set_ylim(0, None)
+
+    axes[1].plot(N_u, ai_m, "s-", color="firebrick")
+    axes[1].set_xlabel("Cluster size  N  [atoms]")
+    axes[1].set_ylabel(r"$\alpha_{E,\mathrm{int}}$")
+    axes[1].set_title("Internal EAC\n(cluster vibrational modes)")
+
+    axes[2].plot(N_u, as_m, "^-", color="seagreen")
+    axes[2].set_xlabel("Cluster size  N  [atoms]")
+    axes[2].set_ylabel(r"$\alpha_{E,\mathrm{surf}}$")
+    axes[2].set_title("Surface EAC\n(phonon excitation)")
+
+    for ax in axes:
+        ax.set_xscale("log")
+        ax.grid(True, alpha=0.3)
+        ax.set_xticks(N_u)
+        ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+
+    fig.suptitle(
+        r"Energy Partition vs. Cluster Size  ($\alpha_{E,\mathrm{int}} + \alpha_{E,\mathrm{surf}} + \mathrm{COR}^2 \approx 1$)",
+        fontsize=11,
+    )
+    fig.tight_layout()
+
+    out = output_dir / "cluster_energy_partition.pdf"
+    fig.savefig(out, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    logger.info("Cluster partition figure saved to %s", out)
 
 
 def cmd_analyze(args: argparse.Namespace) -> int:
@@ -386,6 +630,50 @@ def build_parser() -> argparse.ArgumentParser:
                               "Overrides --T; runs one equilibration per temperature.")
     p_sweep.add_argument("--replicas", type=int,   default=3)
     p_sweep.add_argument("--jobs",     type=int,   default=4)
+    p_sweep.add_argument("--eps-ps",   type=float, default=1.0,  dest="eps_ps",
+                         help="Surface-projectile LJ epsilon (1.0=homoatomic, 0.3=weak)")
+
+    # ---------- cluster-setup ----------
+    p_csetup = sub.add_parser(
+        "cluster-setup",
+        help="Generate and minimise LJ cluster geometries (run once before cluster-sweep)",
+    )
+    p_csetup.add_argument(
+        "--N-list", type=str, default="1,2,7,13,55", dest="N_list",
+        help="Comma-separated cluster sizes, e.g. '1,7,13,55' (default: 1,2,7,13,55)",
+    )
+    p_csetup.add_argument(
+        "--force", action="store_true",
+        help="Re-minimise even if minimised file already exists",
+    )
+
+    # ---------- cluster-sweep ----------
+    p_csweep = sub.add_parser(
+        "cluster-sweep",
+        help="Parametric sweep over cluster size N (central study for paper)",
+    )
+    p_csweep.add_argument(
+        "--N-list", type=str, default="1,7,13,55", dest="N_list",
+        help="Comma-separated cluster sizes to sweep (default: 1,7,13,55)",
+    )
+    p_csweep.add_argument(
+        "--v0-list", type=str, default="2.0", dest="v0_list",
+        help="Comma-separated v0 values, e.g. '1.0,2.0,3.0' (default: 2.0)",
+    )
+    p_csweep.add_argument(
+        "--angles", type=str, default="0.0", dest="angles_str",
+        help="Comma-separated impact angles [degrees] (default: 0.0)",
+    )
+    p_csweep.add_argument(
+        "--T-list", type=str, default="0.3", dest="T_list",
+        help="Comma-separated T* values (default: 0.3)",
+    )
+    p_csweep.add_argument("--replicas", type=int, default=1)
+    p_csweep.add_argument("--jobs",     type=int, default=4)
+    p_csweep.add_argument(
+        "--eps-ps", type=float, default=1.0, dest="eps_ps",
+        help="Surface-cluster LJ epsilon (default: 1.0)",
+    )
 
     # ---------- analyze ----------
     p_an = sub.add_parser("analyze", help="Analyse existing rebound_data.dat")
@@ -413,11 +701,13 @@ def main() -> int:
     args = parser.parse_args()
 
     dispatch = {
-        "equilibrate": cmd_equilibrate,
-        "impact":      cmd_impact,
-        "sweep":       cmd_sweep,
-        "analyze":     cmd_analyze,
-        "plot":        cmd_plot,
+        "equilibrate":   cmd_equilibrate,
+        "impact":        cmd_impact,
+        "sweep":         cmd_sweep,
+        "cluster-setup": cmd_cluster_setup,
+        "cluster-sweep": cmd_cluster_sweep,
+        "analyze":       cmd_analyze,
+        "plot":          cmd_plot,
     }
 
     try:

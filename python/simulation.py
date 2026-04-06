@@ -33,7 +33,7 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from .config import EquilibrationConfig, ImpactConfig
+from .config import ClusterImpactConfig, EquilibrationConfig, ImpactConfig
 from .exceptions import (
     LAMMPSNotFoundError,
     RestartNotFoundError,
@@ -357,6 +357,7 @@ class ImpactSimulation:
             "steps_impact":    str(cfg.steps_impact),
             "thermo_freq":     str(cfg.thermo_freq),
             "dump_freq":       str(cfg.dump_freq),
+            "eps_ps":          str(cfg.eps_ps),
         }
 
     def __repr__(self) -> str:
@@ -466,4 +467,200 @@ class SimulationPipeline:
             f"SimulationPipeline(\n"
             f"  equil={self.equil_sim!r},\n"
             f"  impact={self.impact_sim!r}\n)"
+        )
+
+
+# ==============================================================================
+# Cluster minimisation
+# ==============================================================================
+
+class ClusterMinimiser:
+    """Minimise an N-atom LJ cluster using LAMMPS in vacuum.
+
+    Reads ``clusters/cluster_N{N}_init.dat`` (written by ``cluster_gen.py``)
+    and produces ``clusters/cluster_N{N}_min.dat`` (minimised coordinates).
+
+    Parameters
+    ----------
+    N : int
+        Cluster size.
+    workdir : Path | str
+        Directory where the minimisation is run (LAMMPS writes log there).
+    runner : LAMMPSRunner | None
+        Pre-configured runner.
+    """
+
+    SCRIPT_NAME = "in.minimize_cluster"
+
+    def __init__(
+        self,
+        N: int,
+        workdir: Path | str,
+        runner: Optional[LAMMPSRunner] = None,
+    ) -> None:
+        self.N = N
+        self.workdir = Path(workdir)
+        self.runner = runner or LAMMPSRunner()
+
+    @property
+    def init_dat(self) -> Path:
+        return _LAMMPS_DIR.parent / "lammps" / "clusters" / f"cluster_N{self.N}_init.dat"
+
+    @property
+    def min_dat(self) -> Path:
+        return _LAMMPS_DIR.parent / "lammps" / "clusters" / f"cluster_N{self.N}_min.dat"
+
+    def run(self, skip_if_exists: bool = True) -> Path:
+        """Run the minimisation and return the path to the minimised data file.
+
+        Parameters
+        ----------
+        skip_if_exists : bool
+            If True and the minimised file already exists, skip the LAMMPS run.
+        """
+        if skip_if_exists and self.min_dat.exists():
+            logger.info("Minimised cluster N=%d found; skipping.", self.N)
+            return self.min_dat
+
+        if not self.init_dat.exists():
+            raise FileNotFoundError(
+                f"Initial cluster data not found: {self.init_dat}\n"
+                "Run: python -m python.runner cluster-setup"
+            )
+
+        self.workdir.mkdir(parents=True, exist_ok=True)
+
+        script = _LAMMPS_DIR / self.SCRIPT_NAME
+        extra_vars = {
+            "N_cluster":  str(self.N),
+            "init_file":  str(self.init_dat.resolve()),
+            "out_file":   str(self.min_dat.resolve()),
+        }
+        self.runner.run(script, self.workdir, extra_vars)
+
+        if not self.min_dat.exists():
+            raise FileNotFoundError(
+                f"LAMMPS minimisation did not produce: {self.min_dat}"
+            )
+        logger.info("Cluster N=%d minimised → %s", self.N, self.min_dat)
+        return self.min_dat
+
+
+# ==============================================================================
+# Phase 2 (cluster variant): Cluster Impact Simulation
+# ==============================================================================
+
+class ClusterImpactSimulation:
+    """Wraps the LAMMPS cluster impact simulation (in.impact_cluster).
+
+    Tracks both the cluster COM motion and its internal kinetic energy,
+    enabling computation of α_E_int (energy to internal modes) and
+    α_E_surf (energy to surface phonons) — the central observables for
+    the cluster size dependence study.
+
+    Parameters
+    ----------
+    config : ClusterImpactConfig
+        Physical/numerical parameters (includes N_cluster, cluster_file).
+    workdir : Path | str
+        Directory where output files are written.
+    restart_path : Path | str
+        Path to the restart file from equilibration.
+    runner : LAMMPSRunner | None
+        Pre-configured runner.
+    """
+
+    SCRIPT_NAME = "in.impact_cluster"
+    REBOUND_DATA = "cluster_rebound_data.dat"
+    DUMP_FILE = "dump.cluster_impact.lammpstrj"
+
+    def __init__(
+        self,
+        config: ClusterImpactConfig,
+        workdir: Path | str,
+        restart_path: Path | str,
+        runner: Optional[LAMMPSRunner] = None,
+    ) -> None:
+        self.config = config
+        self.workdir = Path(workdir)
+        self.restart_path = Path(restart_path)
+        self.runner = runner or LAMMPSRunner()
+        self._completed = False
+
+    # --- Context manager -------------------------------------------------------
+
+    def __enter__(self) -> "ClusterImpactSimulation":
+        self.workdir.mkdir(parents=True, exist_ok=True)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+        return False
+
+    # --- Public API ------------------------------------------------------------
+
+    @property
+    def rebound_data_path(self) -> Path:
+        return self.workdir / self.REBOUND_DATA
+
+    @property
+    def dump_path(self) -> Path:
+        return self.workdir / self.DUMP_FILE
+
+    @property
+    def is_complete(self) -> bool:
+        return self._completed and self.rebound_data_path.exists()
+
+    def run(self, skip_if_exists: bool = False) -> None:
+        """Execute the cluster impact simulation.
+
+        Parameters
+        ----------
+        skip_if_exists : bool
+            If True and ``cluster_rebound_data.dat`` already exists, skip.
+        """
+        if skip_if_exists and self.rebound_data_path.exists():
+            logger.info("cluster_rebound_data.dat found; skipping.")
+            self._completed = True
+            return
+
+        if not self.restart_path.exists():
+            raise RestartNotFoundError(self.restart_path)
+
+        script_src = _LAMMPS_DIR / self.SCRIPT_NAME
+        script_dst = self.workdir / self.SCRIPT_NAME
+        shutil.copy2(script_src, script_dst)
+
+        # Symlink restart into workdir
+        restart_link = self.workdir / "restart.equilibrated"
+        if not restart_link.exists():
+            restart_link.symlink_to(self.restart_path.resolve())
+
+        extra_vars = self._config_to_lammps_vars()
+        self.runner.run(script_dst, self.workdir, extra_vars)
+        self._completed = True
+        logger.info("Cluster impact complete. Data: %s", self.rebound_data_path)
+
+    def _config_to_lammps_vars(self) -> dict[str, str]:
+        cfg = self.config
+        return {
+            "v0":              str(cfg.v0),
+            "angle":           str(cfg.angle),
+            "T_target":        str(cfg.T_target),
+            "T_damp":          str(cfg.T_damp),
+            "dt":              str(cfg.dt),
+            "z_gap":           str(cfg.z_gap),
+            "steps_approach":  str(cfg.steps_approach),
+            "steps_impact":    str(cfg.steps_impact),
+            "thermo_freq":     str(cfg.thermo_freq),
+            "dump_freq":       str(cfg.dump_freq),
+            "eps_ps":          str(cfg.eps_ps),
+            "N_cluster":       str(cfg.N_cluster),
+            "cluster_file":    str(Path(cfg.cluster_file).resolve()),
+        }
+
+    def __repr__(self) -> str:
+        return (
+            f"ClusterImpactSimulation(N={self.config.N_cluster}, "
+            f"v0={self.config.v0}, T={self.config.T_target}, "
+            f"completed={self._completed})"
         )

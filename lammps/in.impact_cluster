@@ -1,0 +1,196 @@
+# ==============================================================================
+# in.impact_cluster
+# Inelastic Rebound MD – Phase 2 (cluster variant)
+#
+# Physics:
+#   An N-atom LJ cluster is launched toward the equilibrated FCC surface.
+#   The cluster impacts and rebounds (or sticks), partitioning its incident
+#   kinetic energy between:
+#     1. Centre-of-mass (COM) kinetic energy  → COR observable
+#     2. Internal vibrational modes of the cluster  → α_E_int
+#     3. Surface phonons (ΔT_surface)               → α_E_surf
+#
+#   Key energy balance:
+#     E_incident  =  E_rebound_CM  +  ΔE_internal  +  ΔE_surface
+#     1           =  COR²          +  α_E_int       +  α_E_surf
+#
+#   α_E_int grows with N: larger clusters have more internal modes to absorb
+#   impact energy → less energy reaches the surface (central research question).
+#
+# Input:
+#   restart.equilibrated          (from in.equilibrate)
+#   ${cluster_file}               (minimised cluster, from in.minimize_cluster)
+#
+# Output:
+#   cluster_rebound_data.dat      (high-freq COM + internal KE time series)
+#   dump.cluster_impact.lammpstrj (full trajectory for visualisation)
+#
+# Run with:
+#   lmp -in in.impact_cluster -var v0 2.0 -var N_cluster 13 \
+#                              -var cluster_file lammps/clusters/cluster_N13_min.dat
+# ==============================================================================
+
+# --- Global settings ----------------------------------------------------------
+units           lj
+atom_style      atomic
+boundary        p p f        # periodic x,y; fixed z (same as equilibration)
+newton          on
+
+# --- Input variables ----------------------------------------------------------
+variable    v0          index 2.0
+variable    angle       index 0.0
+variable    T_target    index 0.1
+variable    T_damp      index 1.0
+variable    dt          index 0.002
+variable    z_gap       index 10.0     # larger default for clusters (set by runner)
+variable    steps_approach index 10000
+variable    steps_impact   index 80000
+variable    thermo_freq    index 50
+variable    dump_freq      index 100
+variable    N_cluster      index 13
+variable    cluster_file   index lammps/clusters/cluster_N13_min.dat
+variable    eps_ps         index 1.0   # projectile-surface LJ epsilon
+
+# --- Derived: incident velocity components ------------------------------------
+variable    vz0  equal -${v0}*cos(${angle}*PI/180.0)   # downward (<0)
+variable    vx0  equal  ${v0}*sin(${angle}*PI/180.0)   # tangential
+
+# --- Read equilibrated surface ------------------------------------------------
+read_restart    restart.equilibrated
+
+# Capture z_surf_top BEFORE change_box (exact box top from restart).
+variable    z_surf_top  equal $(zhi)
+
+# Extend box in z to fit cluster gap + extra headroom (cluster radius ≤ 5σ).
+variable    z_box_hi    equal $(v_z_surf_top+v_z_gap+10.0)
+change_box  all z final 0.0 ${z_box_hi} units box
+
+# --- Box centre in x,y (cluster COM target) -----------------------------------
+variable    Lx       equal xhi-xlo
+variable    Ly       equal yhi-ylo
+variable    x_center equal $(v_Lx/2.0)
+variable    y_center equal $(v_Ly/2.0)
+variable    z_proj_init equal $(v_z_surf_top+v_z_gap)
+
+# --- Read minimised cluster into the simulation box ---------------------------
+# The cluster file has atoms as type 2, centred at origin.
+# shift moves the COM to (x_center, y_center, z_proj_init).
+# nocoeff: do not read pair/bond coefficients from the data file.
+read_data   ${cluster_file} add merge &
+            shift ${x_center} ${y_center} ${z_proj_init} &
+            nocoeff
+
+mass        2 1.0    # re-affirm (may be reset by read_data)
+
+# --- Interatomic potential (re-defined after read_data) -----------------------
+pair_style      lj/cut 2.5
+pair_coeff      1 1 1.0 1.0 2.5              # surface-surface
+pair_coeff      1 2 ${eps_ps} 1.0 2.5        # surface-cluster (tunable)
+pair_coeff      2 2 1.0 1.0 2.5              # cluster-cluster
+
+pair_modify     tail yes
+
+# --- Groups -------------------------------------------------------------------
+# Re-define after read_restart (groups are not saved in restart files).
+variable    Nz_slab    equal 6
+variable    a0         equal 1.5496
+variable    Nz_slab_m1 equal ${Nz_slab}-1
+
+region  reg_fixed  block INF INF INF INF 0             2             units lattice
+region  reg_thermo block INF INF INF INF 2             ${Nz_slab_m1} units lattice
+region  reg_free   block INF INF INF INF ${Nz_slab_m1} ${Nz_slab}   units lattice
+
+group   surface     type 1
+group   cluster     type 2
+group   fixed_atoms   region reg_fixed
+group   thermo_atoms  region reg_thermo
+group   free_surface  region reg_free
+group   mobile        subtract surface fixed_atoms
+
+# --- Apply cluster COM velocity -----------------------------------------------
+# All cluster atoms get the same initial velocity (rigid-body translation).
+# Internal thermal velocities are zero because the cluster was minimised at T=0.
+velocity    cluster set ${vx0} 0.0 ${vz0} units box
+
+# --- Fixes --------------------------------------------------------------------
+fix     f_freeze    fixed_atoms   setforce 0.0 0.0 0.0
+fix     f_nvt       thermo_atoms  nvt temp ${T_target} ${T_target} ${T_damp}
+fix     f_nve_surf  free_surface  nve
+fix     f_nve_clust cluster       nve   # cluster: microcanonical
+
+# --- Computes -----------------------------------------------------------------
+compute T_surface    mobile      temp
+compute T_free_surf  free_surface temp
+
+# Cluster COM kinematics (equal-style variables using thermo keywords)
+variable vx_cm equal vcm(cluster,x)
+variable vy_cm equal vcm(cluster,y)
+variable vz_cm equal vcm(cluster,z)
+variable z_cm  equal xcm(cluster,z)
+
+# KE of cluster COM = 0.5 * N_cluster * |V_cm|^2  (LJ: mass per atom = 1)
+variable ke_cm equal 0.5*${N_cluster}*(v_vx_cm*v_vx_cm+v_vy_cm*v_vy_cm+v_vz_cm*v_vz_cm)
+
+# Total KE of cluster (via compute, then referenced as variable)
+compute  c_ke_cluster  cluster  ke
+variable ke_cluster_total equal c_c_ke_cluster
+
+# Internal KE = total cluster KE − COM KE  (vibrational modes in cluster frame)
+variable ke_internal equal v_ke_cluster_total-v_ke_cm
+
+# Surface temperature (free layer only — cleanest contact-temperature observable)
+variable T_free_v  equal c_T_free_surf
+variable T_surf_v  equal c_T_surface
+
+# Distance of cluster COM from surface top (contact criterion)
+variable d_contact equal v_z_cm-v_z_surf_top
+
+# --- Thermo output ------------------------------------------------------------
+timestep    ${dt}
+thermo      ${thermo_freq}
+thermo_style custom step v_z_cm v_vz_cm v_ke_cm v_ke_internal &
+             v_d_contact v_T_surf_v etotal ke pe
+thermo_modify norm no lost warn
+
+# --- Trajectory dump ----------------------------------------------------------
+dump    d_cluster all custom ${dump_freq} dump.cluster_impact.lammpstrj &
+        id type x y z vx vy vz
+dump_modify d_cluster sort id
+
+# --- High-frequency cluster tracking (every 10 steps) ------------------------
+# Format: time z_cm vz_cm ke_cm ke_internal T_free
+fix     f_cluster_track all print 10 &
+        "${time} ${z_cm} ${vz_cm} ${ke_cm} ${ke_internal} ${T_free_v}" &
+        file cluster_rebound_data.dat &
+        title "# time z_cm vz_cm ke_cm ke_internal T_surf_free" &
+        screen no
+
+variable time equal step*dt
+
+# --- Phase 1: approach --------------------------------------------------------
+run     ${steps_approach}
+
+# --- Phase 2: impact + rebound ------------------------------------------------
+run     ${steps_impact}
+
+# --- Post-run summary ---------------------------------------------------------
+variable    vf_z_cm  equal v_vz_cm
+variable    COR_cm   equal abs(v_vf_z_cm)/abs(v_vz0)
+
+print "============================================="
+print "CLUSTER IMPACT COMPLETE"
+print "---------------------------------------------"
+print "Cluster size          N = ${N_cluster}"
+print "Incident speed       v0 = ${v0} sigma/tau"
+print "Impact angle      angle = ${angle} degrees"
+print "Surface temperature   T = ${T_target} eps/kB"
+print "eps_ps                  = ${eps_ps}"
+print "---------------------------------------------"
+print "Final COM vz             = $(v_vf_z_cm) sigma/tau"
+print "COR (COM)                = $(v_COR_cm)"
+print "Final COM KE             = $(v_ke_cm) eps"
+print "Final internal KE        = $(v_ke_internal) eps"
+print "Surface T (free layer)   = $(c_T_free_surf) eps/kB"
+print "============================================="
+
+write_data  data.after_cluster_impact

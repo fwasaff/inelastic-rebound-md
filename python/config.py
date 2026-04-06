@@ -361,6 +361,9 @@ class ImpactConfig(BaseConfig):
                                       doc="Thermo output frequency", unit="steps")
     dump_freq      = FieldDescriptor(int, 100,   validator=positive("dump_freq"),
                                       doc="Trajectory dump frequency", unit="steps")
+    eps_ps         = FieldDescriptor(float, 1.0, validator=positive("eps_ps"),
+                                      doc="Surface-projectile LJ epsilon (1.0=homoatomic)",
+                                      unit="eps")
 
     @property
     def vz0(self) -> float:
@@ -370,6 +373,59 @@ class ImpactConfig(BaseConfig):
     @property
     def vx0(self) -> float:
         """Tangential (x) component of incident velocity."""
+        return self.v0 * math.sin(math.radians(self.angle))
+
+    @property
+    def total_time(self) -> float:
+        """Total simulated time [tau]."""
+        return (self.steps_approach + self.steps_impact) * self.dt
+
+
+class ClusterImpactConfig(BaseConfig):
+    """Configuration for a cluster projectile impact (in.impact_cluster).
+
+    Extends ImpactConfig with cluster-specific parameters.
+    All values in LJ reduced units.
+    """
+
+    v0       = FieldDescriptor(float, 2.0,  validator=positive("v0"),
+                                doc="Incident speed of cluster COM", unit="sigma/tau")
+    angle    = FieldDescriptor(float, 0.0,  validator=in_range(0.0, 89.9, "angle"),
+                                doc="Impact angle from surface normal", unit="degrees")
+    T_target = FieldDescriptor(float, 0.1,  validator=positive("T_target"),
+                                doc="Surface temperature", unit="eps/kB")
+    T_damp   = FieldDescriptor(float, 1.0,  validator=positive("T_damp"),
+                                doc="Nose-Hoover damping time", unit="tau")
+    dt       = FieldDescriptor(float, 0.002, validator=positive("dt"),
+                                doc="Timestep", unit="tau")
+    z_gap    = FieldDescriptor(float, 10.0, validator=positive("z_gap"),
+                                doc="Vacuum gap above surface (larger for clusters)",
+                                unit="sigma")
+    steps_approach = FieldDescriptor(int, 10000, validator=positive("steps_approach"),
+                                      doc="Steps in approach phase")
+    steps_impact   = FieldDescriptor(int, 80000, validator=positive("steps_impact"),
+                                      doc="Steps in impact + rebound phase")
+    thermo_freq    = FieldDescriptor(int, 50,    validator=positive("thermo_freq"),
+                                      doc="Thermo output frequency", unit="steps")
+    dump_freq      = FieldDescriptor(int, 100,   validator=positive("dump_freq"),
+                                      doc="Trajectory dump frequency", unit="steps")
+    eps_ps         = FieldDescriptor(float, 1.0, validator=positive("eps_ps"),
+                                      doc="Surface-cluster LJ epsilon", unit="eps")
+    N_cluster      = FieldDescriptor(int, 13,    validator=positive("N_cluster"),
+                                      doc="Number of atoms in the projectile cluster")
+    cluster_file   = FieldDescriptor(str, "lammps/clusters/cluster_N13_min.dat",
+                                      doc="Path to minimised cluster LAMMPS data file")
+
+    @property
+    def vz0(self) -> float:
+        """Normal (z) component of incident velocity (negative = downward)."""
+        import math
+        return -self.v0 * math.cos(math.radians(self.angle))
+
+    @property
+    def vx0(self) -> float:
+        """Tangential (x) component of incident velocity."""
+        import math
         return self.v0 * math.sin(math.radians(self.angle))
 
     @property

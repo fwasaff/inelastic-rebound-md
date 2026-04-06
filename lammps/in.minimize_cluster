@@ -1,0 +1,57 @@
+# ==============================================================================
+# in.minimize_cluster
+# Inelastic Rebound MD – Utility: LJ cluster minimisation in vacuum
+#
+# Input:  clusters/cluster_N${N_cluster}_init.dat   (from cluster_gen.py)
+# Output: clusters/cluster_N${N_cluster}_min.dat    (minimised, COM at origin)
+#
+# Run with:
+#   lmp -in lammps/in.minimize_cluster -var N_cluster 13
+#
+# Or via Python runner:
+#   python -m python.runner cluster-setup --N-list 1,2,7,13,55
+# ==============================================================================
+
+units           lj
+atom_style      atomic
+boundary        s s s    # shrink-wrap: box adjusts to enclose all atoms
+
+# --- Overridable variables ----------------------------------------------------
+variable    N_cluster   index 13
+variable    init_file   index lammps/clusters/cluster_N13_init.dat
+variable    out_file    index lammps/clusters/cluster_N13_min.dat
+
+read_data   ${init_file}
+
+mass        1 1.0
+mass        2 1.0
+
+# --- Interatomic potential (all type-1 here; type-2 mass declared for safety) -
+pair_style  lj/cut 2.5
+pair_coeff  1 1 1.0 1.0 2.5
+pair_coeff  1 2 1.0 1.0 2.5
+pair_coeff  2 2 1.0 1.0 2.5
+
+# --- Thermo output ------------------------------------------------------------
+thermo          100
+thermo_style    custom step pe ke etotal fnorm
+thermo_modify   norm no
+
+# --- Minimisation -------------------------------------------------------------
+# Two-stage minimisation: CG to get close, then FIRE for precision.
+
+min_style   cg
+minimize    1.0e-12 1.0e-14 50000 200000
+
+min_style   fire
+minimize    1.0e-14 1.0e-16 50000 200000
+
+# --- Write minimised cluster --------------------------------------------------
+write_data  ${out_file}
+
+print "============================================="
+print "Cluster N=${N_cluster} minimised"
+print "  Potential energy : $(pe) eps"
+print "  Energy/atom      : $(pe/atoms) eps"
+print "  Output           : ${out_file}"
+print "============================================="
