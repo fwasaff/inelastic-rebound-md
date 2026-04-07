@@ -92,6 +92,12 @@ fix             f_nvt       thermo_atoms nvt temp 0.01 ${T_target} ${T_damp}
 # preventing surface atoms from flying out the non-periodic z boundary.
 fix             f_nvelim    free_atoms   nve/limit 0.05
 
+# Reflective wall at top z boundary: prevents mobile atoms from escaping through
+# the open (non-periodic) z face.  Without this, surface atoms at T*≥0.3 gain
+# enough thermal energy to leave the box and are lost permanently, corrupting
+# the restart file.  The wall has no effect below the box top.
+fix             f_wall      mobile       wall/reflect zhi EDGE
+
 # --- Initial velocities -------------------------------------------------------
 # Start from near-zero T; the NVT fix ramps the system to T_target.
 velocity        mobile create 0.01 ${seed} dist gaussian rot yes mom yes
