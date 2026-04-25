@@ -32,6 +32,8 @@ Conceptos de Programación Avanzada aplicados (MSC 005):
     - query() para filtrado declarativo (Unidad 2)
     - exportación CSV con to_csv() (Unidad 2)
     - describe() para estadísticas descriptivas (Unidad 2)
+    - scipy.optimize.curve_fit: regresión no-lineal con incertidumbre
+      en parámetros (BLAS/LAPACK vía LAPACK dgelsd internamente)
 """
 
 import sys
@@ -42,6 +44,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.optimize import curve_fit
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -452,20 +455,35 @@ def fig7_power_law_COR(df: pd.DataFrame) -> None:
                 if len(g) < 3:
                     continue
 
-                ax.errorbar(g["v0"], g["mean"], yerr=g["std"].fillna(0),
+                v0_arr  = g["v0"].to_numpy()
+                cor_arr = g["mean"].to_numpy()
+                sig_arr = g["std"].fillna(0).to_numpy()
+
+                ax.errorbar(v0_arr, cor_arr, yerr=sig_arr,
                             fmt=MARKERS[N] + "", color=COLORS_N[N],
                             capsize=3, markersize=5, linestyle="none",
                             label=f"N={N}")
 
-                # log-log linear fit: ln(COR) = ln(A) - β·ln(v0)
-                lnv = np.log(g["v0"].to_numpy())
-                lnc = np.log(np.maximum(g["mean"].to_numpy(), 1e-6))
-                beta, lnA = np.polyfit(lnv, lnc, 1)
-                A = np.exp(lnA)
-                v_fit = np.linspace(g["v0"].min(), g["v0"].max(), 50)
-                ax.plot(v_fit, A * v_fit ** beta, "--", color=COLORS_N[N],
-                        linewidth=1.2, alpha=0.7,
-                        label=f"  β={abs(beta):.2f}")
+                # Nonlinear fit: COR = A · v0^(-β)  via scipy.optimize.curve_fit
+                # sigma=None when all stds are 0 (single replica), use uniform weights
+                def _power_law(v, A, beta):
+                    return A * v ** (-beta)
+
+                try:
+                    weights = sig_arr if sig_arr.sum() > 0 else None
+                    popt, pcov = curve_fit(
+                        _power_law, v0_arr, cor_arr,
+                        p0=[1.0, 0.5], sigma=weights, absolute_sigma=True,
+                        bounds=([0, 0], [10, 5]),
+                    )
+                    A_fit, beta_fit = popt
+                    sigma_beta = float(np.sqrt(pcov[1, 1]))
+                    v_fit = np.linspace(v0_arr.min(), v0_arr.max(), 80)
+                    ax.plot(v_fit, _power_law(v_fit, A_fit, beta_fit),
+                            "--", color=COLORS_N[N], linewidth=1.2, alpha=0.7,
+                            label=fr"  $\beta$={beta_fit:.2f}±{sigma_beta:.2f}")
+                except RuntimeError:
+                    pass  # curve_fit did not converge — skip fit line
 
             ax.set_xscale("log")
             ax.set_yscale("log")

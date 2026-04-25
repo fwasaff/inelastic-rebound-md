@@ -7,6 +7,8 @@ Advanced Python features used:
 - Decorators: ``@timed``, ``@cached_property_invalidated``, ``@require_data``
 - Properties: lazy-loaded, auto-invalidated on data reload
 - Dataclasses: structured result containers
+- Generators: ``iter_frames()`` / ``iter_contacts()`` for lazy frame iteration
+- NamedTuple: ``ClusterFrame`` — lightweight typed snapshot for generator output
 - __slots__: memory-efficient storage for large trajectory arrays
 - Type annotations throughout
 
@@ -30,7 +32,7 @@ import time
 import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Optional, TypeVar
+from typing import Callable, Generator, NamedTuple, Optional, TypeVar
 
 import numpy as np
 
@@ -829,6 +831,22 @@ class ClusterReboundResult:
     alpha_E_tangential: float | None = None
 
 
+class ClusterFrame(NamedTuple):
+    """Single time-step snapshot of cluster COM kinematics.
+
+    Yielded by ``ClusterReboundAnalyzer.iter_frames()`` and
+    ``ClusterReboundAnalyzer.iter_contacts()``.
+    """
+
+    time:        float
+    z_cm:        float
+    vz_cm:       float
+    ke_cm:       float
+    ke_internal: float
+    T_surf:      float
+    vx_cm:       float | None = None
+
+
 @dataclass
 class ClusterTrajectoryData:
     """Parsed ``cluster_rebound_data.dat`` as numpy arrays.
@@ -1181,6 +1199,57 @@ class ClusterReboundAnalyzer:
         the surface bath (hyper-accommodation regime, α_E_int > 1 − COR²).
         """
         return float(1.0 - self.COR ** 2 - self.alpha_E_int)
+
+    # --- Generators -----------------------------------------------------------
+
+    def iter_frames(self) -> Generator[ClusterFrame, None, None]:
+        """Yield a :class:`ClusterFrame` for every recorded time step.
+
+        Example
+        -------
+        >>> for frame in analyzer.iter_frames():
+        ...     if frame.ke_internal > threshold:
+        ...         print(frame.time, frame.ke_internal)
+        """
+        self._require_data()
+        d = self._data
+        has_vx = d.vx_cm is not None
+        for i in range(len(d)):
+            yield ClusterFrame(
+                time=float(d.time[i]),
+                z_cm=float(d.z_cm[i]),
+                vz_cm=float(d.vz_cm[i]),
+                ke_cm=float(d.ke_cm[i]),
+                ke_internal=float(d.ke_internal[i]),
+                T_surf=float(d.T_surf[i]),
+                vx_cm=float(d.vx_cm[i]) if has_vx else None,
+            )
+
+    def iter_contacts(self) -> Generator[ClusterFrame, None, None]:
+        """Yield a :class:`ClusterFrame` for each step during the contact phase.
+
+        Contact is defined as cluster COM within ``lj_cutoff`` of
+        ``surface_top_z``.  Useful for per-frame analysis of the collision
+        event without iterating the full trajectory.
+
+        Example
+        -------
+        >>> ke_int_during_contact = [f.ke_internal for f in analyzer.iter_contacts()]
+        """
+        self._require_data()
+        d = self._data
+        mask = self._contact_mask()
+        has_vx = d.vx_cm is not None
+        for i in np.where(mask)[0]:
+            yield ClusterFrame(
+                time=float(d.time[i]),
+                z_cm=float(d.z_cm[i]),
+                vz_cm=float(d.vz_cm[i]),
+                ke_cm=float(d.ke_cm[i]),
+                ke_internal=float(d.ke_internal[i]),
+                T_surf=float(d.T_surf[i]),
+                vx_cm=float(d.vx_cm[i]) if has_vx else None,
+            )
 
     @require_data
     @timed
