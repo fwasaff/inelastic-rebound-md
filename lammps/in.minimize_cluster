@@ -47,6 +47,9 @@ min_style   fire
 minimize    1.0e-14 1.0e-16 50000 200000
 
 # --- Write minimised cluster --------------------------------------------------
+# Renumber atoms 1..N before writing to avoid duplicate or non-sequential IDs
+# that would cause "Duplicate atom IDs" when loading with read_data add append.
+reset_atom_ids
 write_data  ${out_file}
 
 print "============================================="

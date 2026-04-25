@@ -77,7 +77,7 @@ variable    z_proj_init equal $(v_z_surf_top+v_z_gap)
 # The cluster file has atoms as type 2, centred at origin.
 # shift moves the COM to (x_center, y_center, z_proj_init).
 # nocoeff: do not read pair/bond coefficients from the data file.
-read_data   ${cluster_file} add merge &
+read_data   ${cluster_file} add append &
             shift ${x_center} ${y_center} ${z_proj_init} &
             nocoeff
 
