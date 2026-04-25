@@ -2,7 +2,7 @@
 verificar_resultados.py
 ========================
 Script de verificación y análisis exploratorio de los resultados del sweep
-de clústeres. Produce 6 figuras de diagnóstico y 2 archivos CSV en
+de clústeres. Produce 7 figuras de diagnóstico y 2 archivos CSV en
 data/outputs/verificacion/.
 
 Ejecución:
@@ -15,8 +15,16 @@ Archivos generados:
     fig4_alpha_int_vs_N.pdf    — α_E_int(N) para cada v0 y ε_ps (T*=0.1, ang=0°)
     fig5_eps_comparacion.pdf   — comparación ε_ps=0.30 vs 1.00 para N=1 y N=13
     fig6_T_comparacion.pdf     — comparación T*=0.1 vs 0.3 para N=1 y N=13
-    resultados_raw.csv         — todos los runs, una fila por run
+    fig7_power_law_COR.pdf     — ley de potencia COR ~ A·v₀^{-β} en escala log-log
+    resultados_raw.csv         — todos los runs, una fila por run (incluye We)
     resultados_resumen.csv     — medias y std por condición (ang=0°)
+
+Cambios metodológicos implementados (basados en estado del arte, 2026-04):
+    - Número de Weber: We = E_inc / (N·ε_ps)  — variable de escala para
+      la transición rebote↔adhesión (Dahneke 1995, Hou et al. 2000)
+    - Ley de potencia COR(v₀) ~ A·v₀^{-β}: ajuste log-log sobre N=1 (fig7)
+    - Canal rotacional documentado: ke_internal incluye vibración+rotación;
+      vx_cm registrado en cluster_rebound_data.dat para análisis futuro
 
 Conceptos de Programación Avanzada aplicados (MSC 005):
     - pandas.DataFrame como estructura principal de datos (Unidad 2)
@@ -104,7 +112,8 @@ def load_all_results() -> pd.DataFrame:
         try:
             az = (ClusterReboundAnalyzer(
                     N_cluster=N, v0=v0, angle=ang,
-                    T_surface_init=T, surface_top_z=9.3)
+                    T_surface_init=T, surface_top_z=9.3,
+                    eps_ps=float(eps))
                   .load(dat))
             res = az.compute_all()
             rows.append({
@@ -119,6 +128,7 @@ def load_all_results() -> pd.DataFrame:
                 "alpha_surf": res.alpha_E_surf,
                 "dT":         res.dT_surface,
                 "E_inc":      res.E_incident,
+                "We":         res.Weber_number,
                 "balance":    az.energy_balance_residual(),
                 "sticking":   res.COR < 0.02,
             })
@@ -404,6 +414,73 @@ def fig6_T_comparacion(df: pd.DataFrame) -> None:
     print(f"  → {out.name}")
 
 
+def fig7_power_law_COR(df: pd.DataFrame) -> None:
+    """Ley de potencia COR(v₀) ~ A·v₀^{-β} en escala log-log (ang=0°).
+
+    El ajuste se realiza por regresión log-log:
+        ln(COR) = ln(A) − β · ln(v₀)
+
+    Solo se incluyen puntos con COR > 0.02 (excluir casos de sticking
+    donde la ley de potencia no aplica).  Se genera un subgráfico por
+    cada combinación (T*, ε_ps); dentro de cada panel, una curva por N.
+    """
+    sub0 = df.query("ang == 0.0 and not sticking and COR > 0.0")
+    if sub0.empty:
+        print("  fig7: sin datos no-sticking para ley de potencia — omitida")
+        return
+
+    Ns   = sorted(sub0["N"].unique())
+    Ts   = sorted(sub0["T"].unique())
+    epss = sorted(sub0["eps"].unique())
+
+    grp = (sub0.groupby(["T", "eps", "N", "v0"])["COR"]
+               .agg(mean="mean", std="std")
+               .reset_index())
+
+    fig, axes = plt.subplots(len(Ts), len(epss),
+                              figsize=(6 * len(epss), 4 * len(Ts)),
+                              squeeze=False)
+    fig.suptitle(r"Ley de potencia  COR $\sim A\,v_0^{-\beta}$  (ángulo = 0°, log-log)",
+                 fontsize=12)
+
+    for i, T in enumerate(Ts):
+        for j, eps in enumerate(epss):
+            ax = axes[i][j]
+            for N in Ns:
+                g = (grp.query("T == @T and eps == @eps and N == @N")
+                        .sort_values("v0"))
+                if len(g) < 3:
+                    continue
+
+                ax.errorbar(g["v0"], g["mean"], yerr=g["std"].fillna(0),
+                            fmt=MARKERS[N] + "", color=COLORS_N[N],
+                            capsize=3, markersize=5, linestyle="none",
+                            label=f"N={N}")
+
+                # log-log linear fit: ln(COR) = ln(A) - β·ln(v0)
+                lnv = np.log(g["v0"].to_numpy())
+                lnc = np.log(np.maximum(g["mean"].to_numpy(), 1e-6))
+                beta, lnA = np.polyfit(lnv, lnc, 1)
+                A = np.exp(lnA)
+                v_fit = np.linspace(g["v0"].min(), g["v0"].max(), 50)
+                ax.plot(v_fit, A * v_fit ** beta, "--", color=COLORS_N[N],
+                        linewidth=1.2, alpha=0.7,
+                        label=f"  β={abs(beta):.2f}")
+
+            ax.set_xscale("log")
+            ax.set_yscale("log")
+            ax.set_title(f"T*={T}, ε_ps={eps}")
+            ax.set_xlabel(r"$v_0$  [σ/τ]")
+            ax.set_ylabel("COR")
+            ax.legend(fontsize=7, ncol=2)
+
+    fig.tight_layout()
+    out = OUT_DIR / "fig7_power_law_COR.pdf"
+    fig.savefig(out, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  → {out.name}")
+
+
 # ═════════════════════════════════════════════════════════════════════════════
 # 3. Tabla resumen, estadísticas y exportación
 # ═════════════════════════════════════════════════════════════════════════════
@@ -440,8 +517,9 @@ def print_resumen_tabla(df: pd.DataFrame) -> None:
 
 def print_describe(df: pd.DataFrame) -> None:
     """Estadísticas descriptivas de las columnas físicas con describe()."""
+    cols = ["COR", "alpha_int", "alpha_surf", "E_inc", "We", "balance"]
     print("\n── Estadísticas descriptivas (describe) ─────────────────────────")
-    print(df[["COR", "alpha_int", "alpha_surf", "balance", "E_inc"]]
+    print(df[[c for c in cols if c in df.columns]]
           .describe()
           .round(4)
           .to_string())
@@ -464,6 +542,7 @@ def exportar_csv(df: pd.DataFrame) -> None:
          alpha_int_std  =("alpha_int",  "std"),
          alpha_surf_mean=("alpha_surf", "mean"),
          alpha_surf_std =("alpha_surf", "std"),
+         We_mean        =("We",         "mean"),
          stk_pct        =("sticking",   lambda x: 100.0 * x.mean()),
          n              =("COR",        "count"),
      )
@@ -492,6 +571,7 @@ if __name__ == "__main__":
     fig4_alpha_int_vs_N(df)
     fig5_eps_comparacion(df)
     fig6_T_comparacion(df)
+    fig7_power_law_COR(df)
 
     print_resumen_tabla(df)
 
@@ -505,5 +585,6 @@ if __name__ == "__main__":
     print("  fig4_alpha_int_vs_N.pdf    — energía interna del clúster vs N")
     print("  fig5_eps_comparacion.pdf   — efecto de ε_ps")
     print("  fig6_T_comparacion.pdf     — efecto de T* de la superficie")
-    print("  resultados_raw.csv         — todos los runs (una fila por run)")
-    print("  resultados_resumen.csv     — medias por condición")
+    print("  fig7_power_law_COR.pdf     — ley de potencia COR ~ A·v₀^{-β}")
+    print("  resultados_raw.csv         — todos los runs (una fila por run, incluye We)")
+    print("  resultados_resumen.csv     — medias por condición (incluye We_mean)")

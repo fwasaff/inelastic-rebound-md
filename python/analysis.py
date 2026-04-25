@@ -785,10 +785,11 @@ class ClusterReboundResult:
     COR : float
         Coefficient of restitution based on COM z-velocity.
     E_incident : float
-        Incident COM kinetic energy = 0.5 * N * v0^2  [eps].
+        Incident normal COM kinetic energy = 0.5 * N * (v0 cos θ)²  [eps].
     alpha_E_int : float
         Internal EAC: ΔKE_internal / E_incident.
-        Fraction of incident energy deposited into cluster vibrational modes.
+        Includes both vibrational and rotational modes of the cluster
+        (ke_internal = total cluster KE − COM KE, all directions).
     alpha_E_surf : float
         Surface EAC from energy balance: 1 − COR² − α_E_int.
         Negative values indicate hyper-accommodation (cluster gains thermal
@@ -801,6 +802,16 @@ class ClusterReboundResult:
         Initial surface temperature [eps/kB].
     angle : float
         Impact angle from normal [degrees].
+    Weber_number : float
+        Dimensionless impact energy: We = E_incident / (N_cluster * eps_ps).
+        Governs the adhesion transition: We >> 1 → rebound, We << 1 → sticking.
+        Requires eps_ps to be set in ClusterReboundAnalyzer (default 1.0).
+    alpha_E_tangential : float or None
+        Tangential COM KE gain normalised by E_incident:
+            α_tan = Δ(½ N vx_cm²) / E_incident
+        Non-zero only for oblique impacts. Requires vx_cm column in
+        cluster_rebound_data.dat (7-column format from in.impact_cluster).
+        None when the file has the legacy 6-column format.
     """
 
     N_cluster:    int
@@ -812,36 +823,42 @@ class ClusterReboundResult:
     alpha_E_surf: float
     dT_surface:   float
     contact_time: float
-    T_surface:    float = 0.1
-    angle:        float = 0.0
+    T_surface:          float        = 0.1
+    angle:              float        = 0.0
+    Weber_number:       float        = 0.0
+    alpha_E_tangential: float | None = None
 
 
 @dataclass
 class ClusterTrajectoryData:
     """Parsed ``cluster_rebound_data.dat`` as numpy arrays.
 
-    Columns written by in.impact_cluster:
-      time  z_cm  vz_cm  ke_cm  ke_internal  T_surf_free
+    6-column format (legacy): time  z_cm  vz_cm  ke_cm  ke_internal  T_surf_free
+    7-column format (current): adds vx_cm at the end (tangential COM velocity).
     """
 
-    __slots__ = ("time", "z_cm", "vz_cm", "ke_cm", "ke_internal", "T_surf")
-
-    time:        np.ndarray   # simulation time [tau]
-    z_cm:        np.ndarray   # cluster COM z-position [sigma]
-    vz_cm:       np.ndarray   # cluster COM z-velocity [sigma/tau]
-    ke_cm:       np.ndarray   # KE of cluster COM [eps]
-    ke_internal: np.ndarray   # cluster internal KE [eps]
-    T_surf:      np.ndarray   # surface free-layer temperature [eps/kB]
+    time:        np.ndarray        # simulation time [tau]
+    z_cm:        np.ndarray        # cluster COM z-position [sigma]
+    vz_cm:       np.ndarray        # cluster COM z-velocity [sigma/tau]
+    ke_cm:       np.ndarray        # KE of cluster COM [eps]
+    ke_internal: np.ndarray        # cluster internal KE (vibration + rotation) [eps]
+    T_surf:      np.ndarray        # surface free-layer temperature [eps/kB]
+    vx_cm:       np.ndarray | None = None  # tangential COM velocity [sigma/tau]; None for 6-col files
 
     def __len__(self) -> int:
         return len(self.time)
 
 
 class ClusterDataParser:
-    """Parses ``cluster_rebound_data.dat`` produced by in.impact_cluster."""
+    """Parses ``cluster_rebound_data.dat`` produced by in.impact_cluster.
 
-    COLUMNS = ("time", "z_cm", "vz_cm", "ke_cm", "ke_internal", "T_surf")
-    N_COLS = len(COLUMNS)
+    Accepts both the legacy 6-column format and the current 7-column format
+    (which adds ``vx_cm`` as the last column for oblique-impact analysis).
+    """
+
+    COLUMNS_6 = ("time", "z_cm", "vz_cm", "ke_cm", "ke_internal", "T_surf")
+    COLUMNS_7 = ("time", "z_cm", "vz_cm", "ke_cm", "ke_internal", "T_surf", "vx_cm")
+    VALID_NCOLS = (6, 7)
 
     @classmethod
     @timed
@@ -851,16 +868,24 @@ class ClusterDataParser:
             raise FileNotFoundError(path, role="cluster rebound tracking data")
 
         rows: list[list[float]] = []
+        n_cols: int | None = None
         with path.open() as fh:
             for lineno, raw in enumerate(fh, start=1):
                 line = raw.strip()
                 if not line or line.startswith("#"):
                     continue
                 tokens = line.split()
-                if len(tokens) != cls.N_COLS:
+                if n_cols is None:
+                    n_cols = len(tokens)
+                    if n_cols not in cls.VALID_NCOLS:
+                        raise ParseError(
+                            path.name, lineno, raw.rstrip(),
+                            f"expected {cls.VALID_NCOLS[0]} or {cls.VALID_NCOLS[1]} columns, got {n_cols}",
+                        )
+                elif len(tokens) != n_cols:
                     raise ParseError(
                         path.name, lineno, raw.rstrip(),
-                        f"expected {cls.N_COLS} columns, got {len(tokens)}",
+                        f"inconsistent column count: expected {n_cols}, got {len(tokens)}",
                     )
                 try:
                     rows.append([float(t) for t in tokens])
@@ -878,6 +903,7 @@ class ClusterDataParser:
             ke_cm=arr[3],
             ke_internal=arr[4],
             T_surf=arr[5],
+            vx_cm=arr[6] if n_cols == 7 else None,
         )
 
 
@@ -903,6 +929,8 @@ class ClusterReboundAnalyzer:
         Z-coordinate of unperturbed surface top [sigma].
     lj_cutoff : float
         LJ cutoff used as contact criterion [sigma].
+    eps_ps : float
+        Projectile–surface LJ epsilon [eps].  Used to compute Weber_number.
     """
 
     def __init__(
@@ -913,6 +941,7 @@ class ClusterReboundAnalyzer:
         T_surface_init: float = 0.1,
         surface_top_z: float = 9.3,
         lj_cutoff: float = 2.5,
+        eps_ps: float = 1.0,
     ) -> None:
         self.N_cluster = N_cluster
         self.v0 = v0
@@ -920,6 +949,7 @@ class ClusterReboundAnalyzer:
         self.T_surface_init = T_surface_init
         self.surface_top_z = surface_top_z
         self.lj_cutoff = lj_cutoff
+        self.eps_ps = eps_ps
         self._data: Optional[ClusterTrajectoryData] = None
         self._invalidate_cache()
 
@@ -1056,6 +1086,74 @@ class ClusterReboundAnalyzer:
 
     @property
     @cached
+    def Weber_number(self) -> float:
+        """Dimensionless impact energy: We = E_incident / (N_cluster * eps_ps).
+
+        Governs the adhesion transition:
+          We >> 1  →  rebound-dominated
+          We ~  1  →  transition (sticking probability rises)
+          We << 1  →  sticking
+
+        Uses the normal incident energy (E_incident) so that oblique and
+        normal impacts are compared on equal footing.
+        """
+        denom = self.N_cluster * self.eps_ps
+        if denom < 1e-15:
+            return float("inf")
+        return self.E_incident / denom
+
+    @property
+    @cached
+    def ke_cm_x_initial(self) -> float | None:
+        """Tangential COM KE before contact [eps].  None for 6-col data."""
+        self._require_data()
+        if self._data.vx_cm is None:
+            return None
+        i_end = self._approach_end_idx()
+        start = max(0, i_end - 200)
+        vx_mean = float(np.mean(self._data.vx_cm[start: i_end]))
+        return 0.5 * self.N_cluster * vx_mean ** 2
+
+    @property
+    @cached
+    def ke_cm_x_final(self) -> float | None:
+        """Tangential COM KE after rebound [eps].  None for 6-col data."""
+        self._require_data()
+        if self._data.vx_cm is None:
+            return None
+        i = self._rebound_start_idx()
+        window = self._data.vx_cm[i: i + 50]
+        vx_mean = float(np.mean(window))
+        return 0.5 * self.N_cluster * vx_mean ** 2
+
+    @property
+    @cached
+    def alpha_E_tangential(self) -> float | None:
+        """Tangential COM KE change normalised by E_incident.
+
+        α_tan = Δ(½ N vx_cm²) / E_incident
+
+        For normal incidence this is ~0 by symmetry.  For oblique impacts
+        it captures the tangential momentum exchange with the surface.
+
+        Note: ke_internal already includes rotational KE; α_tan measures
+        only the change in tangential *COM* translational energy, not
+        cluster spin.  True α_rot requires the angular-momentum tensor,
+        which is not tracked in the current output.
+
+        Returns None when vx_cm is not available (legacy 6-column files).
+        """
+        ki = self.ke_cm_x_initial
+        kf = self.ke_cm_x_final
+        if ki is None or kf is None:
+            return None
+        E_inc = self.E_incident
+        if E_inc < 1e-12:
+            return None
+        return float((kf - ki) / E_inc)
+
+    @property
+    @cached
     def dT_surface(self) -> float:
         """Surface free-layer temperature rise [eps/kB]."""
         self._require_data()
@@ -1088,8 +1186,6 @@ class ClusterReboundAnalyzer:
     @timed
     def compute_all(self) -> ClusterReboundResult:
         """Compute all cluster impact observables."""
-        import math
-        v0z = self.v0 * math.cos(math.radians(self.angle))
         return ClusterReboundResult(
             N_cluster=self.N_cluster,
             v0=self.v0,
@@ -1102,6 +1198,8 @@ class ClusterReboundAnalyzer:
             contact_time=self.contact_time,
             T_surface=self.T_surface_init,
             angle=self.angle,
+            Weber_number=self.Weber_number,
+            alpha_E_tangential=self.alpha_E_tangential,
         )
 
     def energy_balance_residual(self) -> float:

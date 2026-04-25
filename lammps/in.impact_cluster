@@ -164,11 +164,12 @@ dump    d_cluster all custom ${dump_freq} dump.cluster_impact.lammpstrj &
 dump_modify d_cluster sort id
 
 # --- High-frequency cluster tracking (every 10 steps) ------------------------
-# Format: time z_cm vz_cm ke_cm ke_internal T_free
+# Format: time z_cm vz_cm ke_cm ke_internal T_free vx_cm
+# vx_cm is the tangential COM velocity — required to compute α_rot for oblique impacts.
 fix     f_cluster_track all print 10 &
-        "${time} ${z_cm} ${vz_cm} ${ke_cm} ${ke_internal} ${T_free_v}" &
+        "${time} ${z_cm} ${vz_cm} ${ke_cm} ${ke_internal} ${T_free_v} ${vx_cm}" &
         file cluster_rebound_data.dat &
-        title "# time z_cm vz_cm ke_cm ke_internal T_surf_free" &
+        title "# time z_cm vz_cm ke_cm ke_internal T_surf_free vx_cm" &
         screen no
 
 variable time equal step*dt
