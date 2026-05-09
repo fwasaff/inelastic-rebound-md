@@ -125,6 +125,13 @@ class LAMMPSRunner:
         logger.info("Launching LAMMPS: %s", " ".join(cmd))
         logger.info("Working directory: %s", workdir)
 
+        # When lmp is MPI-linked, concurrent subprocess invocations conflict on
+        # shared PMIx/ORTE resources.  Point each job at its own tmpdir so the
+        # MPI daemon doesn't collide with sibling jobs.
+        env = os.environ.copy()
+        env["OMPI_MCA_orte_tmpdir_base"] = str(workdir)
+        env["PMIX_MCA_psec"] = "native"
+
         t0 = time.perf_counter()
         try:
             result = subprocess.run(
@@ -133,6 +140,7 @@ class LAMMPSRunner:
                 capture_output=True,
                 text=True,
                 timeout=self.timeout,
+                env=env,
             )
         except subprocess.TimeoutExpired as exc:
             elapsed = time.perf_counter() - t0

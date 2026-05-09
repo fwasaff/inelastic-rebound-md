@@ -117,6 +117,162 @@ def cached(func: F) -> F:
 # ==============================================================================
 
 @dataclass(frozen=True)
+class PowerLawFit:
+    """Result of a log-log power-law regression  y = A · x^exponent.
+
+    Attributes
+    ----------
+    A : float
+        Prefactor.
+    exponent : float
+        Raw regression coefficient of ln(x); negative when y decreases with x.
+    R2 : float
+        Coefficient of determination in log-log space.
+    se_lnA : float
+        Standard error of ln(A).
+    se_exponent : float
+        Standard error of the exponent.
+    n_points : int
+        Number of data points used in the fit.
+
+    Notes
+    -----
+    Supports backwards-compatible tuple unpacking::
+
+        A, beta = fit   # yields (A, abs(exponent))
+    """
+
+    A:            float
+    exponent:     float
+    R2:           float
+    se_lnA:       float
+    se_exponent:  float
+    n_points:     int
+
+    def __iter__(self):
+        """Unpack as (A, abs(exponent)) for backwards compatibility."""
+        yield self.A
+        yield abs(self.exponent)
+
+    @property
+    def A_ci95(self) -> tuple[float, float]:
+        """95 % confidence interval on A (asymmetric in linear scale)."""
+        from scipy.stats import t as t_dist
+        t_crit = float(t_dist.ppf(0.975, df=max(1, self.n_points - 2)))
+        ln_A = np.log(self.A)
+        return (float(np.exp(ln_A - t_crit * self.se_lnA)),
+                float(np.exp(ln_A + t_crit * self.se_lnA)))
+
+    @property
+    def exponent_ci95(self) -> tuple[float, float]:
+        """95 % confidence interval on the exponent."""
+        from scipy.stats import t as t_dist
+        t_crit = float(t_dist.ppf(0.975, df=max(1, self.n_points - 2)))
+        return (self.exponent - t_crit * self.se_exponent,
+                self.exponent + t_crit * self.se_exponent)
+
+    def __repr__(self) -> str:
+        lo_e, hi_e = self.exponent_ci95
+        return (
+            f"PowerLawFit(A={self.A:.4f}, exp={self.exponent:+.4f} "
+            f"[{lo_e:+.4f}, {hi_e:+.4f}], R²={self.R2:.4f}, n={self.n_points})"
+        )
+
+
+@dataclass
+class MultivariatePowerLawFit:
+    """Result of a multivariate log-log regression.
+
+    Model: ln(y) = ln(A) + Σ_k exponents[k] · ln(x_k)
+
+    Attributes
+    ----------
+    A : float
+        Prefactor.
+    predictor_names : tuple[str, ...]
+        Names of the predictors in order.
+    exponents : tuple[float, ...]
+        Regression coefficient for each predictor (same order).
+    R2 : float
+        Coefficient of determination in log-log space.
+    se_lnA : float
+        Standard error of ln(A).
+    se_exponents : tuple[float, ...]
+        Standard error for each exponent (same order as predictor_names).
+    n_points : int
+        Number of data points used.
+    """
+
+    A:               float
+    predictor_names: tuple
+    exponents:       tuple
+    R2:              float
+    se_lnA:          float
+    se_exponents:    tuple
+    n_points:        int
+
+    def exponent(self, name: str) -> float:
+        """Return the exponent for *name*."""
+        return self.exponents[self.predictor_names.index(name)]
+
+    def se(self, name: str) -> float:
+        """Return the standard error for *name*'s exponent."""
+        return self.se_exponents[self.predictor_names.index(name)]
+
+    def __repr__(self) -> str:
+        terms = "  ".join(
+            f"{n}^{e:+.3f}" for n, e in zip(self.predictor_names, self.exponents)
+        )
+        return (
+            f"MultivariatePowerLawFit(A={self.A:.4f}  {terms}  "
+            f"R²={self.R2:.4f}  n={self.n_points})"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Internal helper: ordinary least squares in log-log space
+# ---------------------------------------------------------------------------
+
+def _fit_log_log(
+    x: np.ndarray,
+    y: np.ndarray,
+    label: str = "fit",
+) -> PowerLawFit:
+    """Fit y = A · x^exp via OLS on ln(y) = ln(A) + exp·ln(x).
+
+    Parameters
+    ----------
+    x, y : 1-D arrays
+        Positive values only; non-positive entries are silently dropped.
+    label : str
+        Used in InsufficientDataError messages.
+    """
+    mask = (x > 0) & (y > 0)
+    n = int(mask.sum())
+    if n < 4:
+        raise InsufficientDataError(label, n, 4)
+    lx = np.log(x[mask])
+    ly = np.log(y[mask])
+    A_mat = np.column_stack([np.ones(n), lx])
+    coeffs, *_ = np.linalg.lstsq(A_mat, ly, rcond=None)
+    ln_A, exp_ = float(coeffs[0]), float(coeffs[1])
+    y_pred = A_mat @ coeffs
+    ss_res = float(np.sum((ly - y_pred) ** 2))
+    ss_tot = float(np.sum((ly - ly.mean()) ** 2))
+    R2     = 1.0 - ss_res / ss_tot if ss_tot > 1e-15 else 1.0
+    sigma2 = ss_res / max(1, n - 2)
+    ATA_inv = np.linalg.inv(A_mat.T @ A_mat)
+    return PowerLawFit(
+        A=float(np.exp(ln_A)),
+        exponent=exp_,
+        R2=float(R2),
+        se_lnA=float(np.sqrt(max(0.0, sigma2 * ATA_inv[0, 0]))),
+        se_exponent=float(np.sqrt(max(0.0, sigma2 * ATA_inv[1, 1]))),
+        n_points=n,
+    )
+
+
+@dataclass(frozen=True)
 class ReboundResult:
     """Immutable result container for a single impact event.
 
@@ -148,6 +304,9 @@ class ReboundResult:
         Tangential EAC α_t = 1 - (vf_x/v0_x)²  (0 for normal incidence).
     E_star : float
         Reduced incident energy E* = ½v₀²  [eps]  (in LJ units m=ε=1).
+    cor_systematic_error : float
+        Estimated systematic error in COR from finite output frequency.
+        Bounds the timing uncertainty at contact end by |Δvz| / v0_z.
     """
 
     v0_z: float
@@ -163,6 +322,7 @@ class ReboundResult:
     EAC_normal: float = 0.0
     EAC_tangential: float = 0.0
     E_star: float = 0.0
+    cor_systematic_error: float = 0.0
 
 
 @dataclass
@@ -530,6 +690,28 @@ class ReboundAnalyzer:
         # Clip to physical range; noise can push it slightly outside [0, 1]
         return float(np.clip(alpha_t, 0.0, 1.0))
 
+    # --- Error estimation -----------------------------------------------------
+
+    @property
+    @require_data
+    @cached
+    def cor_discretization_error(self) -> float:
+        """Estimated systematic error in COR from finite output frequency.
+
+        The contact phase ends somewhere within one output interval.  The
+        velocity changes by |vz[i_end] - vz[i_end-1]| over that interval,
+        which bounds the timing uncertainty in v_final:
+
+            σ_COR = |Δvz| / v0_z
+
+        This is a data-driven upper bound; real error is ≤ this value.
+        """
+        i_end = self._rebound_start_idx()
+        if i_end == 0:
+            return 0.0
+        delta_vz = abs(float(self._data.vz[i_end]) - float(self._data.vz[i_end - 1]))
+        return delta_vz / max(1e-10, self.v0_z)
+
     # --- Summary --------------------------------------------------------------
 
     @require_data
@@ -550,6 +732,7 @@ class ReboundAnalyzer:
             EAC_normal=self.eac_normal,
             EAC_tangential=self.eac_tangential,
             E_star=self.incident_energy,
+            cor_systematic_error=self.cor_discretization_error,
         )
 
     def __repr__(self) -> str:
@@ -692,62 +875,38 @@ class ParametricAnalyzer:
         return unique_T, means, stds
 
     @timed
-    def fit_eac_power_law(self) -> tuple[float, float]:
-        """Fit α_E ~ A * E*^β to the data via log-log regression.
+    def fit_eac_power_law(self) -> PowerLawFit:
+        """Fit α_E ~ A · E*^β via log-log OLS.
 
-        Returns
-        -------
-        A : float
-            Prefactor.
-        beta : float
-            Power-law exponent (positive → α_E increases with E*).
+        Returns a :class:`PowerLawFit` with R², 95 % CIs, and standard errors.
+        Supports backwards-compatible unpacking: ``A, beta = fit``.
 
         Notes
         -----
         Linearises via ln(α_E) = ln(A) + β·ln(E*).
-        Requires >= 4 distinct E* values.
+        Requires ≥ 4 distinct E* values.
         """
         self._require_results(4)
         E_stars, eacs, _ = self.eac_vs_Estar()
-        mask = (E_stars > 0) & (eacs > 0) & (eacs < 1)
-        if mask.sum() < 4:
-            raise InsufficientDataError("EAC power-law fit", int(mask.sum()), 4)
-        ln_E   = np.log(E_stars[mask])
-        ln_eac = np.log(eacs[mask])
-        A_mat = np.column_stack([np.ones_like(ln_E), ln_E])
-        coeffs, *_ = np.linalg.lstsq(A_mat, ln_eac, rcond=None)
-        ln_A, beta = coeffs
-        return float(np.exp(ln_A)), float(beta)
+        mask = (eacs > 0) & (eacs < 1)
+        return _fit_log_log(E_stars[mask], eacs[mask], label="EAC power-law fit")
 
     @timed
-    def fit_cor_power_law(self) -> tuple[float, float]:
-        """Fit COR ~ A * v0^(-beta) to the data.
+    def fit_cor_power_law(self) -> PowerLawFit:
+        """Fit COR ~ A · v0^exponent via log-log OLS.
 
-        Returns
-        -------
-        A : float
-            Prefactor.
-        beta : float
-            Power-law exponent (positive for decreasing COR with v0).
+        Returns a :class:`PowerLawFit` with R², 95 % CIs, and standard errors.
+        Supports backwards-compatible unpacking: ``A, beta = fit``
+        (yields ``(A, abs(exponent))`` so beta is always positive).
 
         Notes
         -----
-        Linearises via log-log regression:  ln(COR) = ln(A) - beta*ln(v0).
-        Requires >= 4 data points.
+        For inelastic COR the exponent is negative (COR decreases with v0).
+        Requires ≥ 4 distinct v0 values.
         """
         self._require_results(4)
         v0s, cors, _ = self.cor_vs_v0()
-        # Remove zeros/negatives to avoid log issues
-        mask = (v0s > 0) & (cors > 0)
-        if mask.sum() < 4:
-            raise InsufficientDataError("power-law fit", int(mask.sum()), 4)
-        ln_v0  = np.log(v0s[mask])
-        ln_cor = np.log(cors[mask])
-        # Least-squares: ln_cor = ln_A - beta * ln_v0
-        A_mat = np.column_stack([np.ones_like(ln_v0), ln_v0])
-        coeffs, *_ = np.linalg.lstsq(A_mat, ln_cor, rcond=None)
-        ln_A, neg_beta = coeffs
-        return float(np.exp(ln_A)), float(-neg_beta)
+        return _fit_log_log(v0s, cors, label="COR power-law fit")
 
     def summary(self) -> str:
         """Return a human-readable summary string."""
@@ -827,8 +986,9 @@ class ClusterReboundResult:
     contact_time: float
     T_surface:          float        = 0.1
     angle:              float        = 0.0
-    Weber_number:       float        = 0.0
-    alpha_E_tangential: float | None = None
+    Weber_number:        float        = 0.0
+    alpha_E_tangential:  float | None = None
+    cor_systematic_error: float       = 0.0
 
 
 class ClusterFrame(NamedTuple):
@@ -1251,6 +1411,27 @@ class ClusterReboundAnalyzer:
                 vx_cm=float(d.vx_cm[i]) if has_vx else None,
             )
 
+    # --- Error estimation -----------------------------------------------------
+
+    @property
+    @cached
+    def cor_discretization_error(self) -> float:
+        """Estimated systematic error in COR from finite output frequency.
+
+        Same logic as ``ReboundAnalyzer.cor_discretization_error`` but uses
+        the cluster COM z-velocity ``vz_cm`` instead of the projectile ``vz``.
+        """
+        self._require_data()
+        import math as _math
+        i_end = self._rebound_start_idx()
+        if i_end == 0:
+            return 0.0
+        delta_vz = abs(
+            float(self._data.vz_cm[i_end]) - float(self._data.vz_cm[i_end - 1])
+        )
+        v0z = self.v0 * _math.cos(_math.radians(self.angle))
+        return delta_vz / max(1e-10, v0z)
+
     @require_data
     @timed
     def compute_all(self) -> ClusterReboundResult:
@@ -1269,6 +1450,7 @@ class ClusterReboundAnalyzer:
             angle=self.angle,
             Weber_number=self.Weber_number,
             alpha_E_tangential=self.alpha_E_tangential,
+            cor_systematic_error=self.cor_discretization_error,
         )
 
     def energy_balance_residual(self) -> float:
@@ -1373,6 +1555,78 @@ class ClusterParametricAnalyzer:
             "as_m":  as_m,   "as_s":  as_s,
             "dT_m":  dT_m,   "dT_s":  dT_s,
         }
+
+    @timed
+    def fit_cor_multivariate(
+        self,
+        predictors: tuple[str, ...] = ("v0", "N_cluster", "T_surface"),
+    ) -> MultivariatePowerLawFit:
+        """Fit COR ~ A · v0^a · N^b · T*^c via multivariate log-log OLS.
+
+        Parameters
+        ----------
+        predictors : tuple[str, ...]
+            Names of predictor columns.  Each must be a field of
+            :class:`ClusterReboundResult` with positive values.
+            Default: ``("v0", "N_cluster", "T_surface")``.
+
+        Returns
+        -------
+        MultivariatePowerLawFit
+            Contains prefactor A, one exponent per predictor, R², and
+            standard errors.
+
+        Notes
+        -----
+        The model is: ln(COR) = ln(A) + Σ_k exp_k · ln(x_k).
+        Only rows with COR > 0 are used (sticking events are excluded).
+        Requires ≥ len(predictors) + 2 valid data points.
+        """
+        self._require(len(predictors) + 2)
+        cors = self.COR_array
+        rows = []
+        for name in predictors:
+            rows.append(np.array([getattr(r, name) for r in self.results], dtype=float))
+        X = np.column_stack(rows)
+
+        mask = cors > 0
+        for col in rows:
+            mask &= col > 0
+        n = int(mask.sum())
+        min_pts = len(predictors) + 2
+        if n < min_pts:
+            raise InsufficientDataError("multivariate COR fit", n, min_pts)
+
+        ln_cors = np.log(cors[mask])
+        ln_X    = np.log(X[mask])
+        A_mat   = np.column_stack([np.ones(n), ln_X])
+
+        coeffs, *_ = np.linalg.lstsq(A_mat, ln_cors, rcond=None)
+        ln_A  = float(coeffs[0])
+        exps  = tuple(float(c) for c in coeffs[1:])
+
+        y_pred = A_mat @ coeffs
+        ss_res = float(np.sum((ln_cors - y_pred) ** 2))
+        ss_tot = float(np.sum((ln_cors - ln_cors.mean()) ** 2))
+        R2     = 1.0 - ss_res / ss_tot if ss_tot > 1e-15 else 1.0
+
+        sigma2  = ss_res / max(1, n - len(predictors) - 1)
+        ATA_inv = np.linalg.inv(A_mat.T @ A_mat)
+        se_lnA  = float(np.sqrt(max(0.0, sigma2 * ATA_inv[0, 0])))
+        se_exps = tuple(
+            float(np.sqrt(max(0.0, sigma2 * ATA_inv[i + 1, i + 1])))
+            for i in range(len(predictors))
+        )
+
+        return MultivariatePowerLawFit(
+            A=float(np.exp(ln_A)),
+            predictor_names=predictors,
+            exponents=exps,
+            R2=float(R2),
+            se_lnA=se_lnA,
+            se_exponents=se_exps,
+            n_points=n,
+        )
 
     def summary(self) -> str:
         lines = [

@@ -20,7 +20,9 @@ import pytest
 
 # We test only pure-Python / numpy modules — no LAMMPS required.
 from python.analysis import (
+    MultivariatePowerLawFit,
     ParametricAnalyzer,
+    PowerLawFit,
     ReboundAnalyzer,
     ReboundDataParser,
     ReboundResult,
@@ -411,7 +413,17 @@ class TestParametricAnalyzer:
         v0s = np.linspace(1.0, 5.0, 10).tolist() * 2
         cors = [0.9 * v ** (-0.1) for v in v0s]
         pa = ParametricAnalyzer(self._make_results(v0s, cors))
-        A, beta = pa.fit_cor_power_law()
+        fit = pa.fit_cor_power_law()
+
+        # PowerLawFit object checks
+        assert isinstance(fit, PowerLawFit)
+        assert fit.R2 > 0.99
+        assert fit.n_points >= 4
+        lo, hi = fit.exponent_ci95
+        assert lo < fit.exponent < hi
+
+        # Backwards-compatible unpacking
+        A, beta = fit
         assert abs(A - 0.9) < 0.05
         assert abs(beta - 0.1) < 0.02
 
@@ -460,9 +472,26 @@ class TestParametricAnalyzer:
         v0s = np.linspace(1.0, 5.0, 10).tolist() * 2
         cors = [math.sqrt(max(0.0, 1.0 - 0.2 * (0.5 * v ** 2) ** 0.3)) for v in v0s]
         pa = ParametricAnalyzer(self._make_results(v0s, cors))
-        A, beta = pa.fit_eac_power_law()
+        fit = pa.fit_eac_power_law()
+        assert isinstance(fit, PowerLawFit)
+        A, beta = fit
         assert A > 0
         assert beta > 0
+        assert 0.0 <= fit.R2 <= 1.0
+
+    def test_cor_systematic_error_nonnegative(self, rebound_data_file):
+        """Systematic discretization error must be ≥ 0."""
+        analyzer = ReboundAnalyzer(v0=2.0)
+        analyzer.load(rebound_data_file)
+        assert analyzer.cor_discretization_error >= 0.0
+
+    def test_compute_all_includes_systematic_error(self, rebound_data_file):
+        """compute_all() must populate cor_systematic_error."""
+        analyzer = ReboundAnalyzer(v0=2.0)
+        analyzer.load(rebound_data_file)
+        result = analyzer.compute_all()
+        assert hasattr(result, "cor_systematic_error")
+        assert result.cor_systematic_error >= 0.0
 
 
 # ==============================================================================
