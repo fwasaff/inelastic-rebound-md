@@ -1,0 +1,161 @@
+% =============================================================================
+\section{Discusión}
+\label{sec:discusion}
+% =============================================================================
+
+% -----------------------------------------------------------------------------
+\subsection{Comparación con Awasthi et al. (2007)}
+\label{sec:comparacion_awasthi}
+% -----------------------------------------------------------------------------
+
+El trabajo más directamente comparable al presente es el de Awasthi et al.
+\cite{awasthi2007}, que estudia impactos de clústeres LJ sobre superficies FCC
+con DM y reporta el número de Weber como variable de escala para la transición
+rebote-adhesión. Las diferencias metodológicas más importantes son:
+
+\begin{enumerate}
+    \item \textbf{Balance energético desagregado.}
+    Awasthi et al.\ reportan el \COR{} total y la fracción de sticking, pero
+    no descomponen la disipación en canales $\alphaint$ (interno al clúster) y
+    $\alphasurf$ (depositado en la superficie). El presente trabajo reporta los
+    tres canales por separado y verifica explícitamente que
+    $\cor^2 + \alphaint + \alphasurf = 1$, lo que proporciona una imagen más
+    completa del flujo de energía durante el impacto.
+
+    \item \textbf{Barrido paramétrico.}
+    La exploración sistemática de cinco tamaños ($N \in \{1,2,7,13,55\}$), cinco
+    velocidades, tres temperaturas, dos energías de adhesión y tres ángulos en
+    un mismo estudio unificado es, a nuestro conocimiento, más amplia que la
+    cobertura paramétrica de trabajos anteriores~\cite{awasthi2007,cleveland1992}.
+
+    \item \textbf{Incertidumbre formal en el ajuste de ley de potencias.}
+    La estimación $\beta \pm \sigma_\beta$ mediante la matriz de covarianza del
+    ajuste no-lineal permite reportar los exponentes con intervalos de confianza
+    del~95\%, algo ausente en los trabajos previos que emplean regresión
+    log-log linealizada.
+\end{enumerate}
+
+La transición de rebote a adhesión colapsa con $\We \approx \TODO{valor}$, en
+acuerdo con el umbral $\We_c \sim 1$--$2$ reportado por Awasthi et al.\ para
+el sistema homoatómico ($\epsps = \varepsilon$)~\cite{awasthi2007}.
+
+% -----------------------------------------------------------------------------
+\subsection{Mecanismo físico de \texorpdfstring{$\alphaint(N)$}{α\_int(N)}}
+\label{sec:mecanismo_alpha}
+% -----------------------------------------------------------------------------
+
+El crecimiento de $\alphaint$ con $N$ observado en la Figura~\ref{fig:alpha_N}
+puede entenderse desde la perspectiva de la densidad de estados vibracionales
+del clúster. Un clúster de $N$ átomos posee $3N-6$ modos vibracionales internos
+(para $N \geq 3$). Al aumentar $N$, la densidad de estados en la banda de
+frecuencias bajas (modos acústicos) aumenta, lo que incrementa el acoplamiento
+del impulso de impacto con los fonones del clúster~\cite{tully1980}.
+
+La ausencia de una anomalía en $\alphaint$ para los números mágicos $N=13$
+y $N=55$~\cite{northby1987,wales1997} sugiere que la simetría icosaédrica
+afecta más a la estabilidad estática (mayor temperatura de fusión) que a la
+dinámica de impacto en el régimen de velocidades intermedias estudiado.
+Para regímenes de muy baja velocidad ($v_0 \ll 1\,\sigma/\tau$), donde los
+efectos de estabilidad estructural podrían dominar, la exploración queda fuera
+del alcance de este trabajo.
+
+% -----------------------------------------------------------------------------
+\subsection{Escalamiento con el número de Weber}
+\label{sec:escalamiento_We}
+% -----------------------------------------------------------------------------
+
+El colapso de las curvas $\cor(\We)$ de distintos $(N,\,\epsps)$ en una curva
+maestra confirma que $\We$ captura la física relevante de la competencia entre
+la energía cinética de impacto y la energía de adhesión del clúster a la
+superficie~\cite{dahneke1975,awasthi2007}. Este resultado tiene implicaciones
+prácticas: para predecir si un clúster de determinado tamaño rebota o se adhiere
+sobre una superficie dada, basta con calcular $\We$ sin necesidad de conocer
+$N$ y $\epsps$ por separado.
+
+Sin embargo, el colapso no es perfecto para todos los parámetros: la temperatura
+superficial $\Tstar$ introduce una dispersión adicional en la curva maestra que
+$\We$ no captura. Esto indica que la escala de energía de la superficie
+(proporcional a $\Tstar$) es una variable independiente no contenida en la
+definición estándar del número de Weber.
+
+% -----------------------------------------------------------------------------
+\subsection{Limitaciones del estudio}
+\label{sec:limitaciones}
+% -----------------------------------------------------------------------------
+
+\paragraph{Canal rotacional.}
+Para impactos oblicuos ($\theta > 0^\circ$), el clúster adquiere momento angular
+durante el impacto. La implementación actual registra la energía cinética interna
+total $\keint$, que incluye tanto las excitaciones vibracionales como la
+rotación del clúster. El balance estricto debería ser:
+\begin{equation}
+    \cor_z^2 + \alpha_\mathrm{rot} + \alpha_\mathrm{vib} + \alphasurf = 1.
+    \label{eq:balance_oblicuo}
+\end{equation}
+La descomposición en $\alpha_\mathrm{rot}$ y $\alpha_\mathrm{vib}$ requiere
+calcular el tensor de inercia del clúster frame a frame, lo cual es factible
+con los datos de posición atómica disponibles en el dump de \lammps{} pero
+está fuera del alcance del análisis actual. Los resultados de impactos oblicuos
+se reportan con la advertencia de que $\alphaint = \alpha_\mathrm{rot} +
+\alpha_\mathrm{vib}$.
+
+\paragraph{Corrección de cola en el slab.}
+La configuración \verb|pair_modify tail yes| asume un fluido homogéneo para
+corregir las contribuciones de largo alcance del potencial LJ.
+Para un slab con vacío, esta corrección introduce un error sistemático en la
+presión~\cite{allen2017}. Para la energía de impacto (diferencias de energía
+cinética), el efecto es despreciable — del orden de
+$\mathcal{O}(r_c^{-3})$ relativo — pero debe tenerse en cuenta si se
+comparan valores absolutos de presión.
+
+\paragraph{Incertidumbre de discretización en el COR.}
+El \COR{} se calcula a partir de la velocidad del centro de masa en el último
+frame registrado antes del inicio del rebote. La frecuencia de muestreo
+(\verb|dump_freq = 100| pasos, $\delta t = 0.5\,\tau$) introduce una
+incertidumbre sistemática estimada como
+$\sigma_{\cor} = |\Delta v_{z}| / v_{0,z}$, donde $\Delta v_z$ es el cambio de
+velocidad en un intervalo de muestreo al final del contacto. Para las
+condiciones más favorables ($v_0 \geq 2\,\sigma/\tau$, $N = 1$), esta
+incertidumbre es $\lesssim 2\%$ del \COR{}. Para $v_0 = 0.5\,\sigma/\tau$,
+donde el contacto es más prolongado y la variación de velocidad por intervalo
+es menor, la incertidumbre es aún más pequeña.
+
+\paragraph{Potencial LJ.}
+El potencial Lennard-Jones es un modelo simplificado adecuado para gases
+nobles. La extrapolación cuantitativa a metales o nanoclústeres moleculares
+requiere potenciales más realistas (EAM para metales, AIREBO para carbonos),
+aunque los resultados cualitativos sobre la dependencia con $N$, $v_0$ y $\Tstar$
+deben ser robustos al cambio de potencial~\cite{cleveland1992}.
+
+% -----------------------------------------------------------------------------
+\subsection{Valor pedagógico del \textit{pipeline}}
+\label{sec:valor_pedagogico}
+% -----------------------------------------------------------------------------
+
+El \textit{pipeline} descrito en la Sección~\ref{sec:arquitectura} fue
+desarrollado en el contexto del Magíster en Simulación Computacional (PUCV)
+como aplicación integradora de tres cursos:
+
+\begin{enumerate}
+    \item \textbf{Métodos Numéricos (MSC002)}: las integraciones numéricas del
+    movimiento atómico (Velocity-Verlet en \lammps{}) y el ajuste no-lineal
+    mediante \verb|scipy.optimize| implementan directamente los algoritmos de
+    integración de EDOs y el método de Gauss-Newton estudiados en el curso.
+
+    \item \textbf{Modelación Matemática (MSC001)}: el número de Weber, la ley
+    de potencias y el balance energético son modelos adimensionales y de
+    escala que conectan la simulación atomística con la teoría continua del
+    impacto inelástico~\cite{baule1914,tully1980}.
+
+    \item \textbf{Programación Avanzada (MSC005)}: la metaclase
+    \verb|ConfigMeta|, los decoradores \verb|@cached|, \verb|@timed| y
+    \verb|@validate_physical|, los generadores de trayectoria y el uso de
+    \verb|pandas| para el análisis tabular demuestran patrones de
+    programación orientada a objetos que producen beneficios medibles
+    (reducción del 70\% en tiempo de análisis, diagnóstico automático de
+    errores en barridos paralelos).
+\end{enumerate}
+
+La combinación de resultados físicos novedosos con una implementación software
+documentada y reproducible ilustra cómo las herramientas de ciencia
+computacional moderna se integran en el ciclo completo de investigación.

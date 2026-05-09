@@ -1,0 +1,79 @@
+% =============================================================================
+\section{Introducción}
+% =============================================================================
+
+El estudio del rebote inelástico de partículas y clústeres nanométricos sobre
+superficies cristalinas tiene relevancia directa en procesos de deposición de
+capas delgadas~\cite{Yamaguchi1992}, erosión superficial por impacto~\cite{Zimmermann2021},
+síntesis de nanopartículas~\cite{Kluge2020} y tribología a escala
+atómica~\cite{Szlufarska2008}. A escala nanométrica, los efectos cuánticos son
+despreciables pero los efectos térmicos y las fuerzas de adhesión superficial
+son comparables a la energía cinética del proyectil, dando lugar a regímenes de
+comportamiento cualitativamente distintos del caso macroscópico.
+
+La dinámica molecular (MD) es la herramienta natural para simular estos procesos:
+integra las ecuaciones de Newton para sistemas de $10^2$--$10^5$ átomos en
+tiempos de $10^{1}$--$10^3$~ps con potenciales empíricos bien validados para
+gases nobles~\cite{Lennard-Jones1931}. Sin embargo, el salto de ``correr una
+simulación'' a ``producir resultados publicables y reproducibles'' involucra
+desafíos de ingeniería de software que rara vez se discuten en la literatura
+científica: gestión de parámetros, validación de resultados, barridos
+paramétricos paralelos, caché de análisis y reproducibilidad del entorno.
+
+\subsection{Motivación pedagógica}
+
+Este trabajo nace en el contexto de un Magíster en Simulación Computacional
+(PUCV, Chile), donde uno de los objetivos es demostrar que los patrones de
+\textbf{programación avanzada} ---metaclases, descriptores, decoradores,
+generadores, jerarquías de excepciones y análisis tabular con
+\texttt{pandas}--- no son un fin en sí mismos, sino herramientas que resuelven
+problemas concretos y mensurables en investigación científica computacional.
+
+La pregunta pedagógica central es: \textit{¿qué aporta cada patrón de
+programación avanzada al flujo de trabajo de un investigador en MD?} Para
+responderla, se documentan explícitamente los problemas que cada patrón resuelve
+y la ganancia observada en reproducibilidad, mantenibilidad y eficiencia.
+
+\subsection{Contribuciones del trabajo}
+
+Este artículo presenta las siguientes contribuciones:
+
+\begin{enumerate}
+    \item Un \textit{pipeline} completo de MD en \python{}~3.12 +
+          \lammps{}~7~Feb~2024 para el estudio de rebote inelástico de
+          clústeres LJ, arquitecturado con patrones de programación avanzada
+          (Sección~\ref{sec:arquitectura}).
+
+    \item Resultados físicos de la dependencia $\cor(N, v_0, \Tstar, \theta,
+          \epsps)$ y la partición energética $\alphaint(N)$ para clústeres de
+          tamaños mágicos icosaédricos $N \in \{1, 2, 7, 13, 55\}$
+          (Sección~\ref{sec:resultados}).
+
+    \item La introducción del número de Weber $\We = \Einc/(N\epsps)$ como
+          variable de escala que colapsa las curvas de transición de adhesión
+          para distintos $N$ y $\epsps$ (Sección~\ref{sec:resultados}).
+
+    \item Una discusión explícita del valor pedagógico de cada decisión de
+          diseño del software (Sección~\ref{sec:discusion}).
+\end{enumerate}
+
+El código fuente completo está disponible
+en \url{https://github.com/fwasaff/inelastic-rebound-md} bajo licencia MIT,
+incluyendo scripts de \lammps{}, todos los módulos Python, conjuntos de datos
+procesados y este documento.
+
+\subsection{Trabajos relacionados}
+
+El rebote inelástico átomo-superficie ha sido ampliamente estudiado con MD para
+sistemas LJ~\cite{Tully1980, Head-Gordon1991, Binnie2004} y con potenciales más
+realistas (EAM, ReaxFF) para metales~\cite{Foiles1986}. Para clústeres, los
+trabajos de Zimmermann~et~al.~\cite{Zimmermann2021} y Kluge~et~al.~\cite{Kluge2020}
+han estudiado deposición sobre superficies metálicas, si bien con énfasis en
+morfología de depósito más que en energética del rebote. El número de Weber como
+parámetro de escala fue introducido por Dahneke~\cite{Dahneke1975} para
+aerosoles y posteriormente extendido a nanopartículas~\cite{Hou2000,Inaba2004}.
+
+En cuanto a la reproducibilidad computacional en MD, iniciativas como
+\textsc{Moltemplate}~\cite{Jewett2021} y \textsc{pyiron}~\cite{Janssen2019}
+abordan la gestión de flujos de trabajo, pero con énfasis en sistemas más
+complejos y menor énfasis en la pedagogía del diseño de software.

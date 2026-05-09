@@ -1,0 +1,96 @@
+% =============================================================================
+% preamble.tex  –  Paquetes, macros y configuración global
+% =============================================================================
+
+% --- Codificación y lengua ---------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla]{babel}
+
+% --- Matemáticas -------------------------------------------------------------
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{bm}          % negrita en modo matemático
+
+% --- Figuras y tablas --------------------------------------------------------
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{caption}
+\captionsetup{font=small, labelfont=bf, justification=raggedright}
+
+% --- Código fuente -----------------------------------------------------------
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codeframe}{RGB}{200,200,200}
+\definecolor{keyword}{RGB}{0,0,180}
+\definecolor{comment}{RGB}{100,100,100}
+\definecolor{string}{RGB}{180,0,0}
+\definecolor{decorator}{RGB}{0,130,0}
+
+\lstdefinestyle{python}{
+    language=Python,
+    backgroundcolor=\color{codebg},
+    frame=single, rulecolor=\color{codeframe},
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{keyword}\bfseries,
+    commentstyle=\color{comment}\itshape,
+    stringstyle=\color{string},
+    emphstyle=\color{decorator},
+    emph={@dataclass,@timed,@cached,@require_data,@validate_physical,
+          @classmethod,@property,@staticmethod},
+    numbers=left, numberstyle=\tiny\color{gray},
+    numbersep=5pt,
+    breaklines=true,
+    showstringspaces=false,
+    tabsize=4,
+    captionpos=b,
+}
+\lstset{style=python}
+
+% --- Hiperenlaces ------------------------------------------------------------
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    citecolor=blue!70!black,
+    urlcolor=blue!70!black,
+}
+
+% --- Geometría ---------------------------------------------------------------
+% Formato RBEF: A4, márgenes 2.5 cm, una columna para revisión
+% Para versión final de dos columnas: descomentar \twocolumn en main.tex
+\usepackage{geometry}
+\geometry{a4paper, margin=2.5cm, top=3cm, bottom=3cm}
+
+% --- Tipografía --------------------------------------------------------------
+\usepackage{microtype}
+\usepackage{parskip}
+\setlength{\parskip}{4pt}
+
+% --- Macros físicas ----------------------------------------------------------
+\newcommand{\eps}{\varepsilon}
+\newcommand{\epsps}{\varepsilon_{ps}}
+\newcommand{\cor}{e}                          % coeficiente de restitución
+\newcommand{\COR}{e}
+\newcommand{\alphaint}{\alpha_{E,\mathrm{int}}}
+\newcommand{\alphasurf}{\alpha_{E,\mathrm{surf}}}
+\newcommand{\Einc}{E_{\mathrm{inc}}}
+\newcommand{\We}{\mathrm{We}}
+\newcommand{\Tstar}{T^{*}}
+\newcommand{\vz}{v_{0,z}}
+\newcommand{\vcm}{\mathbf{v}_{\mathrm{CM}}}
+\newcommand{\keint}{E_k^{\mathrm{int}}}
+\newcommand{\kecm}{E_k^{\mathrm{CM}}}
+\newcommand{\lammps}{\textsc{Lammps}}
+\newcommand{\python}{\textsc{Python}}
+
+% --- Macros de texto ---------------------------------------------------------
+\newcommand{\TODO}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+\newcommand{\REF}[1]{\textcolor{blue}{[REF: #1]}}
+\newcommand{\FIG}[1]{\textcolor{orange!70!black}{[FIG: #1]}}
+
+% --- Entornos ----------------------------------------------------------------
+\newtheorem{observacion}{Observación}

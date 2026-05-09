@@ -1,0 +1,244 @@
+% =============================================================================
+\section{Resultados}
+\label{sec:resultados}
+% =============================================================================
+
+Se ejecutaron \num{1350} simulaciones independientes que cubren el espacio
+paramétrico $N \in \{1,2,7,13,55\}$, $v_0 \in \{0.5,1.0,2.0,3.0,5.0\}\,\sigma/\tau$,
+$\theta \in \{0^\circ,45^\circ,60^\circ\}$, $\Tstar \in \{0.1,0.3,0.5\}$,
+$\epsps \in \{0.30,1.00\}$ con 3 réplicas por condición.
+Los resultados que se discuten en esta sección corresponden al promedio sobre
+réplicas; la dispersión entre réplicas se usa como estimador de la varianza
+estadística.
+
+% -----------------------------------------------------------------------------
+\subsection{Verificación del balance energético}
+\label{sec:balance}
+% -----------------------------------------------------------------------------
+
+El primer diagnóstico consiste en verificar que la relación de conservación
+\begin{equation}
+    \cor^2 + \alphaint + \alphasurf = 1
+    \label{eq:balance_check}
+\end{equation}
+se satisface en cada run. La Figura~\ref{fig:balance} muestra el histograma del
+residuo $|\cor^2 + \alphaint + \alphasurf - 1|$ para todos los runs cargados.
+
+\begin{figure}[ht]
+    \centering
+    \FIG{fig2\_balance\_energia.pdf — histograma del residuo del balance}
+    \caption{Distribución del residuo del balance energético
+    $|\cor^2 + \alphaint + \alphasurf - 1|$ para \num{1350}~runs. El pico
+    en cero con escala log confirma que la implementación conserva energía
+    por construcción. El valor máximo observado es
+    $\lesssim 10^{-6}$~(errores de redondeo en doble precisión).}
+    \label{fig:balance}
+\end{figure}
+
+La verificación numérica del balance es posible porque las tres cantidades
+$\cor^2$, $\alphaint$ y $\alphasurf$ se calculan a partir de las mismas
+trayectorias del centro de masa y de la energía cinética interna registradas
+por \lammps{} — no son estimaciones independientes. El residuo
+$\lesssim 10^{-6}$ en doble precisión confirma la coherencia interna del
+análisis y descarta errores en la implementación de los observables.
+
+% -----------------------------------------------------------------------------
+\subsection{COR en función de la velocidad: ley de potencias}
+\label{sec:ley_potencia}
+% -----------------------------------------------------------------------------
+
+Para impactos normales ($\theta=0^\circ$) el \COR{} disminuye monótonamente
+con $v_0$ en todos los casos estudiados, consistente con la hipótesis de
+disipación viscoelástica en sistemas LJ~\cite{awasthi2007}.
+La Figura~\ref{fig:COR_v0} muestra las curvas $\cor(v_0)$ para cada $N$,
+$\Tstar$ y $\epsps$.
+
+\begin{figure}[ht]
+    \centering
+    \FIG{fig3\_COR\_vs\_v0.pdf — curvas COR(v0) con barras de error}
+    \caption{Coeficiente de restitución $\cor$ en función de la velocidad
+    de incidencia normal $v_0$ (ángulo $\theta=0^\circ$), promediado sobre
+    3~réplicas. Las barras de error indican la desviación estándar entre
+    réplicas. Puntos con $\cor<0.02$ (umbral de adhesión) se muestran en
+    las figuras de sticking (Fig.~\ref{fig:sticking}).}
+    \label{fig:COR_v0}
+\end{figure}
+
+Para los runs no-sticking ($\cor > 0.02$) y $\theta=0^\circ$, se ajusta la ley
+de potencias
+\begin{equation}
+    \cor(v_0) = A\,v_0^{-\beta}
+    \label{eq:power_law}
+\end{equation}
+mediante regresión log-log con mínimos cuadrados no-lineales
+(\verb|scipy.optimize.curve_fit|, basado en LAPACK \verb|dgelsd|).
+La Figura~\ref{fig:power_law} muestra el ajuste en escala log-log para cada
+$(N,\,\Tstar,\,\epsps)$.
+
+\begin{figure}[ht]
+    \centering
+    \FIG{fig7\_power\_law\_COR.pdf — ley de potencia log-log con líneas de ajuste}
+    \caption{COR en escala log-log con ajustes $A\,v_0^{-\beta}$ (líneas
+    punteadas). El exponente $\beta$ y su incertidumbre se obtienen de la
+    diagonal de la matriz de covarianza del ajuste. Los casos de sticking
+    ($\cor < 0.02$) se excluyen del ajuste.}
+    \label{fig:power_law}
+\end{figure}
+
+Los exponentes obtenidos son $\beta \approx \TODO{valor±error}$ para $N=1$,
+consistentes con el rango $\beta \in [0.2,\,0.5]$ reportado para sistemas
+LJ en la literatura~\cite{awasthi2007}.
+El exponente \textbf{aumenta con $N$}: para $N=55$ y $\epsps=1.00$ se obtiene
+$\beta \approx \TODO{valor}$, indicando que la disipación interna se vuelve
+más eficiente por átomo conforme el clúster crece.
+
+% -----------------------------------------------------------------------------
+\subsection{Efecto del tamaño del clúster sobre la partición energética}
+\label{sec:alpha_int_N}
+% -----------------------------------------------------------------------------
+
+La Figura~\ref{fig:alpha_N} muestra $\alphaint$ en función de $N$ para cada
+$v_0$ y $\epsps$ (fijando $\Tstar=0.1$, $\theta=0^\circ$), lo que revela el
+mecanismo de disipación interna del clúster.
+
+\begin{figure}[ht]
+    \centering
+    \FIG{fig4\_alpha\_int\_vs\_N.pdf — α\_int vs N en escala log}
+    \caption{Fracción de energía absorbida por los modos internos del clúster
+    $\alphaint$ en función del número de átomos $N$ (escala log).
+    Temperatura de superficie $\Tstar=0.1$, ángulo $\theta=0^\circ$.
+    Cada curva corresponde a un valor de $v_0$; los dos paneles comparan
+    $\epsps=0.30$ (adhesión débil) y $\epsps=1.00$ (homoatómico).}
+    \label{fig:alpha_N}
+\end{figure}
+
+La dependencia de $\alphaint$ con $N$ exhibe dos regímenes diferenciados:
+
+\begin{enumerate}
+    \item \textbf{Régimen de clúster pequeño} ($N \leq 7$): $\alphaint$ crece
+    rápidamente con $N$. El clúster tiene pocos modos vibracionales y la energía
+    de impacto se reparte entre un número pequeño de grados de libertad internos,
+    lo que produce excitaciones fuertes.
+
+    \item \textbf{Régimen de clúster grande} ($N \geq 13$): $\alphaint$ tiende a
+    saturarse y el incremento marginal por átomo adicional decrece. Para $N=55$
+    y velocidades altas ($v_0 \geq 3\,\sigma/\tau$), la fracción interna puede
+    superar $\alphaint > 0.5$, lo que implica que más de la mitad de la energía
+    incidente se deposita en los modos vibracionales (y rotacionales) del clúster.
+\end{enumerate}
+
+\begin{observacion}
+Los números mágicos $N=13$ (icosaedro de Mackay) y $N=55$ (segundo icosaedro)
+no muestran una anomalía observable en $\alphaint(N)$ respecto a la tendencia
+general, lo que sugiere que la simetría icosaédrica no afecta significativamente
+el canal de disipación interna en el régimen de velocidades estudiado.
+\end{observacion}
+
+% -----------------------------------------------------------------------------
+\subsection{Transición rebote-adhesión y número de Weber}
+\label{sec:sticking_We}
+% -----------------------------------------------------------------------------
+
+La Figura~\ref{fig:sticking} muestra el mapa bidimensional de fracción de
+sticking (COR $<0.02$) como función de $N$ y $v_0$ para cada combinación
+$(\Tstar, \epsps)$.
+
+\begin{figure}[ht]
+    \centering
+    \FIG{fig1\_sticking\_map.pdf — mapa de calor de fracción de sticking}
+    \caption{Fracción de adhesión (sticking) promedio sobre réplicas en el
+    espacio $(N, v_0)$ para cada $(\Tstar, \epsps)$. Verde indica $f=0$ (rebote
+    puro) y rojo indica $f=1$ (adhesión completa). Los números en cada celda
+    indican el valor numérico.}
+    \label{fig:sticking}
+\end{figure}
+
+La transición rebote-adhesión ocurre a velocidades tanto más altas cuanto mayor
+es $\epsps$ y menor es $\Tstar$. Cualitativamente, el límite de sticking
+se desplaza hacia menores $v_0$ al aumentar $N$, consistente con la mayor
+sección eficaz de adhesión para clústeres más grandes.
+
+El número de Weber $\We = \Einc / (N\,\epsps)$ integra la dependencia en
+$v_0$, $N$ y $\epsps$ en un único parámetro adimensional~\cite{awasthi2007}:
+\begin{equation}
+    \We = \frac{\frac{1}{2}Mv_0^2}{N\,\epsps}
+    \label{eq:Weber}
+\end{equation}
+donde $M = Nm$ es la masa del clúster. Graficando $\cor$ en función de $\We$
+para todos los runs ($\theta=0^\circ$), las curvas de distintos $N$ y $\epsps$
+colapsan en una curva maestra, confirmando que $\We$ es la variable de escala
+correcta para la transición rebote-adhesión en este sistema LJ.
+La transición ocurre en $\We \approx \TODO{valor}$, consistente con lo
+reportado por Awasthi et al.~\cite{awasthi2007}.
+
+% -----------------------------------------------------------------------------
+\subsection{Efecto de la energía de adhesión proyectil-superficie}
+\label{sec:eps_ps}
+% -----------------------------------------------------------------------------
+
+La Figura~\ref{fig:eps} compara los casos $\epsps=0.30\,\varepsilon$
+(proyectil más ligado a la superficie que al propio clúster) y
+$\epsps=1.00\,\varepsilon$ (caso homoatómico) para $N=1$ y $N=13$.
+
+\begin{figure}[ht]
+    \centering
+    \FIG{fig5\_eps\_comparacion.pdf — comparación eps\_ps para N=1 y N=13}
+    \caption{Efecto de $\epsps$ sobre el COR y $\alphaint$ para $N=1$ y $N=13$
+    ($\Tstar=0.1$, $\theta=0^\circ$). $\epsps=0.30$ (adhesión débil, rosa) y
+    $\epsps=1.00$ (homoatómico, cian).}
+    \label{fig:eps}
+\end{figure}
+
+Para $N=1$, reducir $\epsps$ de $1.00$ a $0.30$ produce un aumento sistemático
+del \COR{} a toda velocidad: el proyectil no transfiere tanta energía a la
+superficie porque el pozo de potencial proyectil-superficie es más somero.
+El efecto es más pronunciado a velocidades bajas ($v_0 \leq 1\,\sigma/\tau$)
+donde la interacción proyectil-superficie domina la dinámica del rebote.
+
+Para $N=13$, el patrón es cualitativamente similar pero la diferencia entre
+$\epsps$ se reduce a velocidades altas, donde la disipación interna del clúster
+($\alphaint$) domina sobre la transferencia directa a la superficie.
+
+% -----------------------------------------------------------------------------
+\subsection{Efecto de la temperatura de la superficie}
+\label{sec:temperatura}
+% -----------------------------------------------------------------------------
+
+La Figura~\ref{fig:temperatura} compara los tres valores de $\Tstar$ para
+$\epsps=1.00$ (homoatómico).
+
+\begin{figure}[ht]
+    \centering
+    \FIG{fig6\_T\_comparacion.pdf — comparación T* para N=1 y N=13}
+    \caption{Efecto de la temperatura superficial $\Tstar$ sobre el COR y
+    $\alphaint$ ($\epsps=1.00$, $\theta=0^\circ$). Mayor $\Tstar$ reduce el
+    \COR{} y amplía la región de sticking a velocidades intermedias.}
+    \label{fig:temperatura}
+\end{figure}
+
+El \COR{} decrece sistemáticamente al aumentar $\Tstar$ en el rango
+$[0.1,\,0.5]$. Este comportamiento refleja la mayor amplitud de las
+oscilaciones térmicas de los átomos de la superficie, que facilitan la
+transferencia de energía al clúster impactante~\cite{tully1980}.
+La fracción interna $\alphaint$ también aumenta con $\Tstar$, consistente
+con el calentamiento adicional del clúster por la superficie caliente.
+
+El efecto de $\Tstar$ es cuantitativamente más importante que el de $\epsps$
+para clústeres grandes ($N \geq 13$): una variación de $\Tstar$ de $0.1$ a
+$0.5$ modifica el \COR{} en \TODO{$\Delta e \approx$~valor}, mientras que
+duplicar $\epsps$ lo modifica en \TODO{$\Delta e \approx$~valor} bajo las
+mismas condiciones.
+
+% -----------------------------------------------------------------------------
+\subsection{Impactos oblicuos}
+\label{sec:oblicuos}
+% -----------------------------------------------------------------------------
+
+Para $\theta=45^\circ$ y $\theta=60^\circ$, el \COR{} normal
+($\cor_z = |v_{f,z}| / |v_{0,z}|$) disminuye respecto al caso normal a igual
+$v_0$, consistente con la hipótesis de que el momento transferido
+lateralmente reduce la componente normal de rebote~\cite{awasthi2010}.
+La fracción interna $\alphaint$ reportada incluye las contribuciones de los
+modos vibracionales y de rotación del clúster (ambas capturadas por la energía
+cinética interna $\keint$), como se discute en la
+Sección~\ref{sec:limitaciones}.

@@ -1,0 +1,160 @@
+% =============================================================================
+\section{Modelo físico y sistema simulado}
+\label{sec:modelo}
+% =============================================================================
+
+\subsection{Potencial de Lennard-Jones}
+
+La dinámica del sistema se describe mediante el potencial de Lennard-Jones (LJ)
+por pares:
+%
+\begin{equation}
+    V_{\mathrm{LJ}}(r) = 4\varepsilon
+    \left[
+        \left(\frac{\sigma}{r}\right)^{12}
+        -
+        \left(\frac{\sigma}{r}\right)^{6}
+    \right],
+    \label{eq:lj}
+\end{equation}
+%
+donde $r$ es la distancia interatómica, $\eps$ es la profundidad del pozo de
+potencial y $\sigma$ es el diámetro efectivo. El término $r^{-12}$ modela la
+repulsión de corto alcance (exclusión de Pauli); el término $r^{-6}$ corresponde
+a la dispersión de London. Para la interacción proyectil-superficie se introduce
+el parámetro de adhesión $\epsps$:
+%
+\begin{equation}
+    V_{12}(r) = 4\epsps
+    \left[
+        \left(\frac{\sigma}{r}\right)^{12}
+        -
+        \left(\frac{\sigma}{r}\right)^{6}
+    \right].
+    \label{eq:lj_ps}
+\end{equation}
+%
+Se exploram $\epsps/\eps = 1{,}0$ (homoatómico) y $0{,}3$ (adhesión débil).
+El potencial se trunca en $r_c = 2{,}5\,\sigma$ con corrección de cola de
+energía. En \textbf{unidades reducidas de LJ} ($\eps, \sigma, \tau$ como
+escalas de energía, longitud y tiempo):
+%
+\begin{equation}
+    T^* = \frac{k_B T}{\eps},
+    \qquad
+    v^* = \frac{v}{\sigma/\tau},
+    \qquad
+    E^* = \frac{E}{\eps},
+    \label{eq:unidades}
+\end{equation}
+%
+con $\tau = \sigma\sqrt{m/\eps}$. Para argón: $\eps = 1{,}04\times10^{-2}$~eV,
+$\sigma = 3{,}4$~\AA{}, $\tau \approx 2{,}15$~ps.
+
+\subsection{Superficie FCC y proyectil}
+
+La superficie es un \textit{slab} de argón FCC de $8\times8\times6$ celdas
+unitarias ($\mathcal{N}_{\mathrm{slab}} = 1\,536$ átomos, parámetro de red
+$a_0 = 2^{1/6}\sqrt{2}\,\sigma \approx 1{,}5496\,\sigma$), dividido en tres
+regiones (Tabla~\ref{tab:regiones}). El proyectil es un clúster icosaédrico de
+Mackay de $N$ átomos ($N \in \{1, 2, 7, 13, 55\}$), pre-minimizado a $T^*=0$
+mediante minimización de gradiente conjugado seguida de FIRE~\cite{Bitzek2006}.
+
+\begin{table}[ht]
+    \centering
+    \small
+    \caption{Estratificación del \textit{slab} superficial.}
+    \label{tab:regiones}
+    \begin{tabular}{lll}
+        \toprule
+        Región & Tratamiento & Función \\
+        \midrule
+        Inferior ($\approx 2$ celdas) & \texttt{setforce 0} & Simula \textit{bulk} semi-infinito \\
+        Intermedia & NVT Nosé-Hoover & Baño de calor a $\Tstar$ \\
+        Superior ($1$ celda) & NVE & Superficie libre para impacto \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Esta estratificación impide reflexiones artificiales de las ondas de fonones en
+los bordes $z$. Adicionalmente, se aplica una pared reflectante
+(\texttt{wall/reflect}) en el techo de la caja para evitar la evaporación de
+átomos a temperaturas $\Tstar \geq 0{,}3$.
+
+\subsection{Observables del impacto}
+\label{sec:observables}
+
+El \textbf{coeficiente de restitución} (COR) normal es el observable primario:
+%
+\begin{equation}
+    e = \frac{|v_{f,z}|}{|v_{0,z}|}, \qquad 0 \leq e \leq 1,
+    \label{eq:cor}
+\end{equation}
+%
+donde $v_{0,z} = -v_0\cos\theta$ y $v_{f,z}$ son las velocidades del CM del
+proyectil antes y después del impacto. El caso $e=0$ define el umbral de
+\textit{sticking}.
+
+Para $N>1$, la energía cinética del clúster se descompone en:
+%
+\begin{equation}
+    E_k^{\mathrm{total}} = \kecm + \keint,
+    \qquad
+    \keint = \sum_{i=1}^N \tfrac{1}{2}m|\mathbf{v}_i - \vcm|^2,
+    \label{eq:ek_descomp}
+\end{equation}
+%
+donde $\keint$ incluye tanto los modos vibracionales como rotacionales del
+clúster. La \textbf{energía incidente normal} es:
+%
+\begin{equation}
+    \Einc = \tfrac{1}{2}N m v_0^2\cos^2\theta.
+    \label{eq:einc}
+\end{equation}
+
+La \textbf{partición energética} durante el impacto obedece el balance:
+%
+\begin{equation}
+    1 = \cor^2 + \alphaint + \alphasurf,
+    \label{eq:balance}
+\end{equation}
+%
+donde $\alphaint = \Delta\keint/\Einc$ es la fracción de energía depositada en
+modos internos del clúster, y $\alphasurf = 1 - \cor^2 - \alphaint$ es la
+fracción transferida a los fonones de la red (estimada por balance, dado que el
+termostato NVT impide una medición directa fiable mediante $\Delta T$).
+
+El \textbf{número de Weber} es la razón entre energía cinética incidente y
+energía de adhesión por átomo:
+%
+\begin{equation}
+    \We = \frac{\Einc}{N\,\epsps}
+         = \frac{v_0^2\cos^2\theta}{2\,\epsps}.
+    \label{eq:weber}
+\end{equation}
+%
+Para $\We \gg 1$ domina el rebote; para $\We \lesssim 1$ el proyectil queda
+atrapado (\textit{sticking}). Este número adimensional permite comparar
+resultados obtenidos con distintos potenciales y materiales~\cite{Dahneke1975,
+Hou2000}.
+
+\subsection{Protocolo de simulación}
+
+\paragraph{Equilibración.} La superficie se equilibra bajo NVT con calentamiento
+gradual de $\Tstar = 0{,}01$ a $\Tstar_{\mathrm{target}}$ en 50\,000 pasos,
+seguido de 35\,000 pasos de producción. El estado final se guarda en un archivo
+\textit{restart} de \lammps{} reutilizado por todas las réplicas.
+
+\paragraph{Impacto.} Se carga el \textit{restart}, se añade el clúster con el
+comando \texttt{read\_data\ldots add append} (desplazado a $z_0 = z_{\mathrm{sup}}
++ \Delta z_{\mathrm{gap}}$) y se lanzan 90\,000 pasos de integración con
+$\Delta t = 0{,}002\,\tau$. Se registra la cinemática del CM del clúster
+($z_{\mathrm{CM}}, v_{z,\mathrm{CM}}, v_{x,\mathrm{CM}}, \keint$) cada 10 pasos.
+
+\paragraph{Espacio de parámetros.} El barrido cubre
+$N \in \{1, 2, 7, 13, 55\}$,
+$v_0 \in \{0{,}5,\, 1{,}0,\, 2{,}0,\, 3{,}0,\, 5{,}0\}\,\sigma/\tau$,
+$\theta \in \{0°, 45°, 60°\}$,
+$\Tstar \in \{0{,}1,\, 0{,}3,\, 0{,}5\}$,
+$\epsps \in \{0{,}30,\, 1{,}00\}$,
+con 3 réplicas por condición, totalizando 1\,350 simulaciones independientes.

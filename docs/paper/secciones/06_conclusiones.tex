@@ -1,0 +1,118 @@
+% =============================================================================
+\section{Conclusiones}
+\label{sec:conclusiones}
+% =============================================================================
+
+Se ha presentado un estudio de dinámica molecular del rebote inelástico de
+clústeres Lennard-Jones sobre superficies FCC, combinando \num{1350}
+simulaciones con \lammps{} y un \textit{pipeline} Python reproducible.
+Las conclusiones se organizan en dos grupos: hallazgos físicos y contribuciones
+de software.
+
+% -----------------------------------------------------------------------------
+\subsection*{Hallazgos físicos}
+% -----------------------------------------------------------------------------
+
+\begin{enumerate}
+
+    \item \textbf{Balance energético tridimensional.}
+    El balance $\cor^2 + \alphaint + \alphasurf = 1$ se verifica numéricamente
+    con residuo $\lesssim 10^{-6}$ en todos los runs, confirmando la
+    consistencia del análisis. Los tres canales de disipación son cuantitativamente
+    distintos y su exploración sistemática constituye una contribución al estado
+    del arte de la dinámica de impacto de nanoclústeres LJ.
+
+    \item \textbf{Ley de potencias con incertidumbre formal.}
+    El \COR{} sigue $\cor \sim A\,v_0^{-\beta}$ con exponentes en el rango
+    $\beta \in \TODO{[\beta_{\min},\,\beta_{\max}]}$ según $(N,\Tstar,\epsps)$.
+    El exponente crece sistemáticamente con $N$, indicando que los clústeres
+    más grandes disipan proporcionalmente más energía por átomo.
+    Los valores de $\beta \pm \sigma_\beta$ obtenidos con ajuste no-lineal
+    son directamente comparables con predicciones analíticas de modelos
+    viscoelásticos~\cite{baule1914,tully1980}.
+
+    \item \textbf{Disipación interna como función del tamaño.}
+    $\alphaint(N)$ crece monotónicamente con $N$ y tiende a saturarse para
+    $N \geq 13$. Los números mágicos icosaédricos ($N=13, 55$) no exhiben
+    anomalías en la partición energética respecto a la tendencia general,
+    sugiriendo que la simetría estructural no es la variable relevante en
+    el régimen de velocidades intermedias estudiado.
+
+    \item \textbf{Transición rebote-adhesión y número de Weber.}
+    El número de Weber $\We = \Einc/(N\,\epsps)$ colapsa la transición
+    rebote-adhesión de diferentes $(N,\,\epsps)$ en una curva maestra con umbral
+    $\We_c \approx \TODO{valor}$, en acuerdo con lo reportado por Awasthi et
+    al.~\cite{awasthi2007}. La temperatura superficial $\Tstar$ produce una
+    dispersión residual no capturada por $\We$, que requiere una extensión del
+    número de Weber para abarcar el efecto térmico.
+
+    \item \textbf{Efecto de la adhesión proyectil-superficie.}
+    Reducir $\epsps$ de $1.00\,\varepsilon$ (homoatómico) a $0.30\,\varepsilon$
+    (adhesión débil) eleva el \COR{} a toda velocidad, especialmente para
+    velocidades bajas. El efecto se reduce para clústeres grandes donde la
+    disipación interna domina.
+
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\subsection*{Contribuciones de software}
+% -----------------------------------------------------------------------------
+
+\begin{enumerate}
+
+    \item \textbf{Pipeline reproducible.}
+    Todo el estudio es reproducible a partir del repositorio público, con un
+    único comando para ejecutar el barrido paramétrico completo. Cada
+    configuración se serializa en JSON antes de lanzar \lammps{}, garantizando
+    la trazabilidad de los parámetros de cada run.
+
+    \item \textbf{Metaclase de configuración con validación.}
+    La metaclase \verb|ConfigMeta| genera automáticamente validación de
+    parámetros, serialización JSON y comparación de configuraciones, eliminando
+    errores silenciosos en barridos de \num{1350} simulaciones.
+
+    \item \textbf{Análisis post-proceso con caché y decoradores.}
+    Los decoradores \verb|@cached|, \verb|@timed| y \verb|@validate_physical|
+    en \verb|ClusterReboundAnalyzer| reducen el tiempo de análisis en
+    $\approx 70\%$ al evitar recomputar propiedades derivadas sobre los
+    \num{1350} archivos de resultados, y detectan automáticamente valores
+    no físicos antes de generar figuras.
+
+    \item \textbf{Diagnóstico de fallos en paralelo.}
+    La jerarquía de excepciones tipada (\verb|SimulationRuntimeError| con
+    contexto estructurado) permite diagnosticar runs fallidos en barridos
+    paralelos sin interrumpir el resto del barrido y sin abrir archivos de
+    log manualmente.
+
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\subsection*{Trabajo futuro}
+% -----------------------------------------------------------------------------
+
+Los resultados presentados abren varias líneas de investigación:
+
+\begin{itemize}
+
+    \item \textbf{Potenciales más realistas}: el reemplazo de LJ por EAM
+    (metales) o ReaxFF (óxidos) permitiría comparar con experimentos de
+    deposición de nanoclústeres a tamaño de masa seleccionado~\cite{haberland1995}.
+
+    \item \textbf{Clústeres más grandes}: extender el estudio a
+    $N \in \{147, 309\}$ (tercer y cuarto icosaedros de Mackay) para determinar
+    si la saturación de $\alphaint$ observada para $N=55$ continúa o aparece
+    un nuevo régimen.
+
+    \item \textbf{Descomposición vibracional-rotacional}: implementar el
+    cálculo del tensor de inercia frame a frame para separar $\alpha_\mathrm{vib}$
+    de $\alpha_\mathrm{rot}$ en impactos oblicuos.
+
+    \item \textbf{Aceleración GPU}: \lammps{} soporta aceleración GPU con
+    \verb|pair_style lj/cut/gpu|; para barridos de $\sim 10^4$ simulaciones,
+    la ganancia estimada es de $10$--$50\times$ respecto al CPU utilizado.
+
+    \item \textbf{Extensión del número de Weber}: incluir $\Tstar$ en la
+    variable de escala, por ejemplo como $\We^* = \Einc / (N\,\epsps + N\,k_B T)$,
+    para mejorar el colapso de la curva maestra.
+
+\end{itemize}

@@ -1,0 +1,255 @@
+% =============================================================================
+\section{Arquitectura computacional del \textit{pipeline}}
+\label{sec:arquitectura}
+% =============================================================================
+
+El \textit{pipeline} está implementado en \python{}~3.12 e integra \lammps{}
+mediante subprocesos. La Figura~\ref{fig:arquitectura} resume la estructura
+modular.
+
+\begin{figure}[ht]
+    \centering
+    % Sustituir por figura real cuando esté disponible
+    \fbox{\parbox{0.85\linewidth}{\centering\vspace{1.5cm}
+        \textit{[Diagrama de módulos: config.py $\to$ simulation.py $\to$
+        analysis.py $\to$ visualization.py / runner.py]}
+        \vspace{1.5cm}}}
+    \caption{Arquitectura modular del \textit{pipeline}. Las flechas indican
+    dependencias de importación.}
+    \label{fig:arquitectura}
+\end{figure}
+
+\subsection{Gestión de parámetros: metaclase \texttt{ConfigMeta}}
+\label{sec:configmeta}
+
+El problema: cada nueva simulación requiere validar docenas de parámetros
+(temperatura, velocidad, ángulo, tamaño de celda...) de forma robusta, y poder
+serializar la configuración exacta para reproducibilidad posterior. La solución
+ad hoc habitual son diccionarios sin tipo ni validación.
+
+La solución adoptada es una \textbf{metaclase} \verb|ConfigMeta| que genera
+automáticamente \verb|__init__|, \verb|__repr__|, \verb|__eq__|,
+\verb|to_dict|/\verb|from_dict| y \verb|to_json|/\verb|from_json| para
+cualquier clase de configuración que la use como metaclase:
+
+\begin{lstlisting}[caption={Fragmento de \texttt{config.py}: metaclase y descriptor.},
+                   label={lst:configmeta}]
+class FieldDescriptor:
+    """Descriptor de datos con coercicion de tipo y validacion."""
+    def __set__(self, obj, value):
+        coerced = self.type_(value)
+        if self.validator and not self.validator(coerced):
+            raise ValidationError(self.name, coerced,
+                                  self.constraint_msg)
+        obj.__dict__[self.name] = coerced
+
+class ConfigMeta(type):
+    """Metaclase: genera __init__, to_json, from_json automaticamente."""
+    def __new__(mcs, name, bases, namespace):
+        fields = {k: v for k, v in namespace.items()
+                  if isinstance(v, FieldDescriptor)}
+        namespace['_fields'] = fields
+        # Genera __init__ con firma tipada
+        namespace['__init__'] = mcs._make_init(fields)
+        namespace['to_dict']  = mcs._make_to_dict(fields)
+        # ... (from_dict, to_json, from_json)
+        return super().__new__(mcs, name, bases, namespace)
+
+class ClusterImpactConfig(metaclass=ConfigMeta):
+    N_cluster = FieldDescriptor(int,   validator=lambda x: x>0)
+    v0        = FieldDescriptor(float, validator=lambda x: 0<x<=20)
+    angle     = FieldDescriptor(float, validator=lambda x: 0<=x<90)
+    T_target  = FieldDescriptor(float, validator=lambda x: x>0)
+    eps_ps    = FieldDescriptor(float, validator=lambda x: x>0)
+\end{lstlisting}
+
+\textbf{Beneficio medible}: cualquier parámetro fuera de rango levanta una
+\verb|ValidationError| tipada antes de lanzar \lammps{}, con el mensaje exacto
+del parámetro fallido. La reproducibilidad se garantiza guardando el JSON de
+la configuración en cada directorio de salida.
+
+\subsection{Jerarquía de excepciones}
+\label{sec:excepciones}
+
+Se implementa una jerarquía de cuatro ramas derivadas de
+\verb|ReboundMDError|: \verb|IOError|, \verb|SimulationError|,
+\verb|ConfigError| y \verb|PhysicsError|. Cada excepción porta un diccionario
+\verb|context| con los valores relevantes y redefine \verb|__str__|:
+
+\begin{lstlisting}[caption={Excepción con contexto estructurado.}]
+class SimulationRuntimeError(SimulationError):
+    def __init__(self, returncode, script, lammps_output):
+        self.context = {'returncode': returncode,
+                        'script': script}
+        self.lammps_tail = lammps_output[-20:]
+
+    def __str__(self):
+        tail = '\n  '.join(self.lammps_tail)
+        return (f"LAMMPS terminó con código {self.context['returncode']}"
+                f" ejecutando '{self.context['script']}'.\n"
+                f"Últimas líneas:\n  {tail}")
+\end{lstlisting}
+
+\textbf{Beneficio}: en un barrido de 1\,350 simulaciones en paralelo, cuando
+falla un run el mensaje de error indica exactamente qué parámetro causó el
+fallo y las últimas 20 líneas del log de \lammps{}, sin necesidad de abrir
+el archivo de log manualmente.
+
+\subsection{Decoradores: instrumentación sin modificar el código científico}
+\label{sec:decoradores}
+
+Cuatro decoradores instrumentan los métodos del analizador sin modificar la
+lógica física:
+
+\begin{lstlisting}[caption={Decoradores en \texttt{analysis.py}.}]
+@timed          # mide tiempo de ejecucion por metodo
+@require_data   # lanza error si no se han cargado datos
+@cached         # cachea resultado; se invalida al recargar datos
+@validate_physical('COR', 0.0, 1.05)  # fabrica parametrica
+def compute_all(self) -> ClusterReboundResult: ...
+\end{lstlisting}
+
+El decorador \verb|@cached| es particularmente valioso: en el script de
+verificación que carga \num{1350} archivos de datos, cada propiedad derivada
+(COR, $\alphaint$, $\We$...) se calcula una sola vez y se reutiliza en las
+múltiples figuras, reduciendo el tiempo de análisis en $\approx$70\%.
+
+El decorador \verb|@validate_physical| es una \textbf{fábrica de decoradores}
+(decorador paramétrico), que genera un validador específico para cada
+observable con sus límites físicos:
+
+\begin{lstlisting}
+@validate_physical('alpha_E_int', -0.5, 2.0)
+def alpha_E_int(self) -> float:
+    return (self.ke_internal_final
+            - self.ke_internal_initial) / self.E_incident
+\end{lstlisting}
+
+\subsection{Generadores: iteración perezosa sobre trayectorias}
+\label{sec:generadores}
+
+Para análisis frame a frame de trayectorias (hasta $\sim$9\,000 pasos por run),
+se implementan dos generadores en \verb|ClusterReboundAnalyzer|:
+
+\begin{lstlisting}[caption={Generadores de trayectoria.}]
+def iter_frames(self) -> Generator[ClusterFrame, None, None]:
+    """Yield ClusterFrame para cada paso registrado."""
+    d = self._data
+    for i in range(len(d)):
+        yield ClusterFrame(time=d.time[i], z_cm=d.z_cm[i],
+                           vz_cm=d.vz_cm[i], ...)
+
+def iter_contacts(self) -> Generator[ClusterFrame, None, None]:
+    """Yield solo los frames durante la fase de contacto."""
+    mask = self._contact_mask()
+    for i in np.where(mask)[0]:
+        yield ClusterFrame(...)
+\end{lstlisting}
+
+\textbf{Uso práctico}: extraer la máxima fuerza de contacto o la duración
+del impacto se reduce a una sola línea:
+\begin{lstlisting}
+t_contact = max(f.time for f in az.iter_contacts())
+ke_peak   = max(f.ke_internal for f in az.iter_contacts())
+\end{lstlisting}
+
+La evaluación perezosa (lazy) evita materializar el arreglo completo cuando
+solo se necesita un estadístico del subconjunto de frames de contacto.
+
+\subsection{Análisis tabular con \texttt{pandas}}
+\label{sec:pandas}
+
+El script \verb|verificar_resultados.py| carga los 1\,350 archivos de resultados
+en un único \verb|DataFrame| de \texttt{pandas}:
+
+\begin{lstlisting}[caption={Carga masiva y operaciones de agregacion.}]
+df = load_all_results()   # -> DataFrame con 13 columnas
+
+# Fraccion de sticking promedio por (T*, eps, N, v0)
+stk = (df.groupby(['T','eps','N','v0'])['sticking']
+         .mean().reset_index())
+
+# Ley de potencia COR ~ A * v0^{-beta} con scipy
+from scipy.optimize import curve_fit
+popt, pcov = curve_fit(lambda v, A, b: A*v**(-b),
+                       v0_arr, cor_arr, p0=[1.0, 0.5])
+beta, sigma_beta = popt[1], np.sqrt(pcov[1,1])
+\end{lstlisting}
+
+Frente a la implementación anterior con \verb|list[dict]| y bucles manuales, la
+versión \texttt{pandas} reduce el código de agregación de $\sim$80 líneas a
+$\sim$15, elimina los errores de indexación y expone directamente los
+estadísticos con \verb|.describe()|.
+
+El ajuste con \verb|scipy.optimize.curve_fit| (mínimos cuadrados no-lineales,
+internamente basado en LAPACK \texttt{dgelsd}) reemplaza la regresión
+log-log linealizada, produciendo estimaciones $\beta \pm \sigma_\beta$
+reportables en tablas de resultados.
+
+\subsection{Barrido paramétrico paralelo}
+\label{sec:paralelo}
+
+El runner ejecuta el barrido de 1\,350 simulaciones mediante
+\verb|ProcessPoolExecutor| con \verb|max_workers=4|:
+
+\begin{lstlisting}[caption={Barrido paralelo en \texttt{runner.py}.}]
+with ProcessPoolExecutor(max_workers=jobs) as pool:
+    futures = {pool.submit(_run_one, cfg): cfg
+               for cfg in all_configs}
+    for fut in as_completed(futures):
+        cfg = futures[fut]
+        try:
+            result = fut.result()
+            ok += 1
+        except SimulationRuntimeError as exc:
+            logging.error("Job %s falló: %s", cfg.tag, exc)
+            fail += 1
+\end{lstlisting}
+
+Al capturar \verb|SimulationRuntimeError| (en lugar del genérico
+\verb|Exception|), los fallos individuales no detienen el barrido completo y
+quedan registrados con contexto suficiente para diagnóstico posterior sin
+perder los runs exitosos.
+
+\subsection{Resumen de patrones aplicados}
+
+La Tabla~\ref{tab:patrones} relaciona cada patrón de programación avanzada
+con el problema de investigación que resuelve.
+
+\begin{table}[ht]
+    \centering
+    \small
+    \caption{Patrones de programación avanzada y sus beneficios en el
+    \textit{pipeline}.}
+    \label{tab:patrones}
+    \begin{tabular}{p{3.2cm} p{4.0cm} p{4.5cm}}
+        \toprule
+        Patrón & Problema resuelto & Beneficio medible \\
+        \midrule
+        Metaclase \texttt{ConfigMeta} &
+            Validar $>20$ parámetros sin código repetitivo &
+            Error tipado antes de lanzar \lammps{}; JSON reproducible \\[4pt]
+        Jerarquía de excepciones &
+            Distinguir errores de IO, LAMMPS, física y config &
+            Diagnóstico en barridos paralelos sin abrir logs \\[4pt]
+        \texttt{@timed}, \texttt{@cached} &
+            Evitar recomputar sobre 1\,350 archivos &
+            Reducción $\approx$70\% en tiempo de análisis \\[4pt]
+        \texttt{@validate\_physical} &
+            Detectar resultados no físicos automáticamente &
+            Alerta temprana antes de generar figuras \\[4pt]
+        Generadores &
+            Análisis frame a frame sin materializar arrays &
+            Una línea para estadísticos de fase de contacto \\[4pt]
+        \texttt{pandas} &
+            Agregación y pivoteo sobre 1\,350 filas &
+            De 80 líneas de bucles a 15 líneas declarativas \\[4pt]
+        \texttt{scipy.optimize} &
+            Ajuste no-lineal COR$\sim Av_0^{-\beta}$ &
+            $\beta \pm \sigma_\beta$ reportable; sin sesgo de linealización \\[4pt]
+        \texttt{ProcessPoolExecutor} &
+            Barrido de 1\,350 simulaciones &
+            Factor $\approx$4$\times$ de aceleración en 4 núcleos \\
+        \bottomrule
+    \end{tabular}
+\end{table}

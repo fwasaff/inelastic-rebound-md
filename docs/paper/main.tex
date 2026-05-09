@@ -1,0 +1,91 @@
+% =============================================================================
+% main.tex  –  Documento maestro
+%
+% Compilar con:
+%   pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
+% O con latexmk:
+%   latexmk -pdf main.tex
+%
+% Para versión final de dos columnas (formato RBEF):
+%   Cambiar \documentclass abajo a \documentclass[twocolumn]{article}
+%   y ajustar figuras a [width=\columnwidth]
+% =============================================================================
+
+\documentclass[12pt,a4paper]{article}
+% \documentclass[10pt,a4paper,twocolumn]{article}  % versión final RBEF
+
+\input{preamble}
+
+% =============================================================================
+% Metadatos del documento
+% =============================================================================
+\title{%
+    \textbf{Diseño de un \textit{pipeline} de simulación de dinámica molecular
+    reproducible mediante \python{} avanzado:}\\[4pt]
+    \large rebote inelástico de clústeres Lennard-Jones sobre superficies
+    cristalinas FCC
+}
+
+\author{%
+    Felipe González$^{1}$\thanks{Autor de correspondencia: fegonzalezw@gmail.com}
+    \quad y \quad
+    Gonzalo [Apellido]$^{1}$\\[6pt]
+    \small $^{1}$Pontificia Universidad Católica de Valparaíso (PUCV),\\
+    \small Programa de Magíster en Simulación Computacional, Valparaíso, Chile
+}
+
+\date{\today}
+
+% =============================================================================
+\begin{document}
+
+\maketitle
+
+% --- Resumen -----------------------------------------------------------------
+\begin{abstract}
+\input{secciones/00_abstract}
+\end{abstract}
+
+\textbf{Palabras clave:} dinámica molecular, rebote inelástico, clústeres de
+Lennard-Jones, coeficiente de restitución, Python orientado a objetos,
+simulación reproducible, programación científica avanzada.
+
+\vspace{8pt}
+\hrule
+\vspace{8pt}
+
+% Resumen en inglés (requerido por RBEF)
+\noindent\textbf{Abstract. }\textit{\input{secciones/00_abstract_en}}
+
+\noindent\textbf{Keywords:} molecular dynamics, inelastic rebound, Lennard-Jones clusters,
+coefficient of restitution, object-oriented Python, reproducible simulation,
+advanced scientific programming.
+
+\hrule
+\vspace{12pt}
+
+% --- Cuerpo ------------------------------------------------------------------
+\tableofcontents
+\newpage
+
+\input{secciones/01_introduccion}
+\input{secciones/02_modelo_fisico}
+\input{secciones/03_arquitectura}
+\input{secciones/04_resultados}
+\input{secciones/05_discusion}
+\input{secciones/06_conclusiones}
+
+% --- Agradecimientos ---------------------------------------------------------
+\section*{Agradecimientos}
+Los autores agradecen al programa de Magíster en Simulación Computacional de la
+PUCV por el apoyo computacional y académico. Las simulaciones se realizaron en
+hardware de uso personal con \lammps{} 7~Feb~2024. El código fuente completo,
+incluyendo scripts de \lammps{}, módulos Python y datos de salida procesados,
+está disponible en el repositorio público
+\url{https://github.com/fwasaff/inelastic-rebound-md}.
+
+% --- Referencias -------------------------------------------------------------
+\bibliographystyle{unsrt}
+\bibliography{referencias}
+
+\end{document}
