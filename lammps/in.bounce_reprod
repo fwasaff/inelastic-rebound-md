@@ -1,0 +1,203 @@
+# ==============================================================================
+# in.bounce_reprod
+# Reproducción de Gutiérrez et al. 2012, Capítulo 12
+# "Inelastic Collisions and Hypervelocity Impacts at Nanoscopic Level"
+#
+# Sistema:
+#   Bola FCC argón (~79 átomos, r≈2.64σ) cae sobre superficie FCC argón
+#   (~1500 átomos) bajo campo gravitatorio constante. Interacción bola-
+#   superficie PURAMENTE REPULSIVA (c=0 en LJ). Sistema NVE completo (T=0).
+#
+# Diferencias respecto al estudio extendido (in.bounce):
+#   - c_ps = 0 (sin adhesión), vs c_ps > 0 en estudio extendido
+#   - T_inicial = 0 (minimización), vs T_inicial = T* en estudio extendido
+#   - Sin termostato en ninguna capa
+#
+# Observables (siguiendo notación de Gutiérrez et al.):
+#   K_B  = KE traslacional del CM de la bola
+#   T_B  = KE interna de la bola (relativa al CM)
+#   V_B  = PE intra-bola (interacciones bola-bola)
+#   U_c  = PE colisional (interacciones bola-superficie)
+#   U_F  = PE gravitatorio de la bola
+#   Z_cm = posición z del CM de la bola
+#
+# Uso:
+#   1. Generar tabla de potencial: python scripts/gen_tabla_repulsiva.py
+#   2. Correr: lmp -in lammps/in.bounce_reprod -var h0 11.03
+#
+# Variables configurables:
+#   h0   : altura inicial del CM de la bola sobre la superficie [sigma]
+#   g    : aceleración gravitacional reducida [sigma/tau^2]
+#   seed : semilla para velocidades iniciales (0 = sin velocidad inicial)
+# ==============================================================================
+
+# --- Configuración global -----------------------------------------------------
+units           lj
+atom_style      atomic
+boundary        p p f
+newton          on
+
+# --- Variables ----------------------------------------------------------------
+variable    h0      index 11.03      # altura inicial CM bola [sigma]
+variable    g       index 0.026      # gravedad [sigma/tau^2] (Gutiérrez 2012)
+variable    a0      equal 1.5496     # parámetro de red FCC argón LJ
+variable    Nx      equal 8          # celdas en x
+variable    Ny      equal 8          # celdas en y
+variable    Nz      equal 6          # capas de superficie
+variable    rball   equal 2.64       # radio de la bola [sigma]
+variable    dt      equal 0.005      # paso de tiempo [tau]
+variable    thermo_freq equal 100    # frecuencia thermo [pasos]
+variable    print_freq  equal 20     # frecuencia de salida energías [pasos]
+
+# Tiempo de simulación: suficiente para ≥5 rebotes incluso desde h0 grande.
+# Para h0=11.03, g=0.026: t_rebote ≈ 2*sqrt(2*h0/g) ≈ 58 tau
+# Corremos 400 tau = suficiente para ~6 rebotes desde cualquier h0
+variable    t_total equal 400.0
+variable    steps_total equal round(v_t_total/v_dt)
+
+# --- Caja y superficie --------------------------------------------------------
+# Para units lj, 'lattice fcc scale' interpreta scale como densidad reducida
+# ρ* = N/V (no como el parámetro de red). El valor correcto para que la celda
+# convencional tenga arista a0 = 1.5496 σ es ρ* = 4/a0^3 ≈ 1.0742.
+# Se usa $() para evaluación inmediata en tiempo de parseo.
+lattice         fcc $(4.0/(v_a0*v_a0*v_a0))
+region          box_surf block 0 ${Nx} 0 ${Ny} 0 ${Nz} units lattice
+create_box      2 box_surf
+create_atoms    1 box
+
+mass            1 1.0
+mass            2 1.0
+
+# Extender caja en z para acomodar la bola en su altura inicial.
+# z_surf_top ≈ Nz*a0; la bola (radio rball) se coloca con CM a h0 sobre eso.
+variable    z_surf_top  equal $(zhi)
+variable    z_ball_cm   equal $(v_z_surf_top + v_h0)
+variable    z_box_top   equal $(v_z_ball_cm + v_rball + 5.0)
+change_box  all z final -0.5 ${z_box_top} units box
+
+# --- Crear bola ---------------------------------------------------------------
+variable    Lx  equal xhi-xlo
+variable    Ly  equal yhi-ylo
+region      ball_region sphere $(v_Lx/2) $(v_Ly/2) ${z_ball_cm} ${rball} units box
+create_atoms 2 region ball_region
+
+# --- Potenciales --------------------------------------------------------------
+# Superficie-superficie y bola-bola: LJ completo (c=1), rc=2.5 sigma
+# Bola-superficie: puramente repulsivo (c=0), via tabla pre-generada
+#   Generar con: python scripts/gen_tabla_repulsiva.py
+pair_style  hybrid lj/cut 2.5 table linear 5000
+
+pair_coeff  1 1  lj/cut 1.0 1.0 2.5      # superficie-superficie: LJ completo
+pair_coeff  2 2  lj/cut 1.0 1.0 2.5      # bola-bola: LJ completo
+pair_coeff  1 2  table table_repulsiva.txt REPULSIVE_LJ  # repulsivo puro c=0
+
+# --- Grupos -------------------------------------------------------------------
+group       surface type 1
+group       ball    type 2
+
+# Capas fijas de la superficie: 2 capas inferiores
+variable    z_fixed_top equal 2.0
+region      reg_fixed block INF INF INF INF 0 ${z_fixed_top} units lattice
+group       fixed_surf   region reg_fixed
+group       mobile_surf  subtract surface fixed_surf
+
+# --- Minimización T=0 ---------------------------------------------------------
+# Las capas del fondo SIEMPRE están fijas para que no salgan del box.
+# La bola y la superficie no interactúan (separación > 8σ >> cutoff 2.5σ).
+fix         f_fix_bot   fixed_surf  setforce 0.0 0.0 0.0
+
+# Paso 1: minimizar solo la superficie (bola fija)
+fix         f_tmp_ball  ball        setforce 0.0 0.0 0.0
+minimize    1.0e-6 1.0e-8 5000 50000
+unfix       f_tmp_ball
+
+# Paso 2: minimizar solo la bola (superficie fija)
+fix         f_tmp_surf  mobile_surf setforce 0.0 0.0 0.0
+minimize    1.0e-6 1.0e-8 5000 50000
+unfix       f_tmp_surf
+
+unfix       f_fix_bot
+velocity    all set 0.0 0.0 0.0
+
+# --- Computes para descomposición energética ----------------------------------
+# Siguiendo la notación de Gutiérrez et al. 2012.
+# Nota: LAMMPS no tiene compute style 'vcm'; se usan las funciones
+# xcm(group,dim) y vcm(group,dim) disponibles en expresiones de variable.
+
+compute     ball_ke      ball    ke
+compute     surf_ke      surface ke
+compute     Uc           ball    group/group surface
+compute     pe_atom      all     pe/atom
+compute     pe_ball      ball    reduce sum c_pe_atom
+
+# --- Variables derivadas (descomposición de Gutiérrez et al.) ----------------
+variable    N_ball  equal   count(ball)
+variable    M_ball  equal   v_N_ball*1.0
+variable    M_surf  equal   count(surface)*1.0
+
+# Posición y velocidad del CM de la bola
+variable    Zcm   equal  xcm(ball,z)
+variable    Vcmz  equal  vcm(ball,z)
+variable    Vcmx  equal  vcm(ball,x)
+variable    Vcmy  equal  vcm(ball,y)
+
+# K_B: KE traslacional del CM (z únicamente, y 3D)
+variable    KB    equal  0.5*v_M_ball*v_Vcmz^2
+variable    KB3d  equal  0.5*v_M_ball*(v_Vcmx^2+v_Vcmy^2+v_Vcmz^2)
+
+# T_B: KE interna = KE total bola - KE traslacional CM
+variable    TB    equal  c_ball_ke-v_KB3d
+
+# V_B: PE intra-bola = PE total bola - mitad de interacción cruzada
+variable    VB    equal  c_pe_ball-0.5*c_Uc
+
+# U_F: PE gravitatoria = M * g * Z_cm
+variable    UF    equal  v_M_ball*${g}*v_Zcm
+
+# K_S y T_S para referencia
+variable    Vcmz_surf  equal  vcm(surface,z)
+variable    KS         equal  0.5*v_M_surf*v_Vcmz_surf^2
+variable    TS         equal  c_surf_ke-v_KS
+
+# Wrapper para c_Uc (fix print solo acepta variables, no computes directamente)
+variable    Uc_out  equal  c_Uc
+
+# Tiempo
+variable    time  equal  step*${dt}
+
+# --- Dinámica NVE (sin termostato, reproducción exacta del 2012) -------------
+fix         f_freeze_fixed  fixed_surf  setforce 0.0 0.0 0.0
+fix         f_nve           all         nve
+
+# Pared reflectante en zlo para átomos móviles de la superficie:
+# evita que átomos con impulso hacia abajo escapen por el borde inferior.
+fix         f_wall_bot  mobile_surf  wall/reflect zlo EDGE
+
+# Gravedad aplicada SOLO a la bola
+fix         f_grav  ball    gravity ${g} vector 0 0 -1
+
+# --- Salida thermo -------------------------------------------------------------
+timestep    ${dt}
+thermo      ${thermo_freq}
+thermo_style custom step time v_Zcm v_Vcmz v_KB v_TB v_VB c_Uc v_UF etotal
+thermo_modify norm no lost warn flush yes
+
+# --- Salida de energías (para comparar con Fig. 9 de Gutiérrez et al.) --------
+fix print_energy all print ${print_freq} &
+    "${time} ${Zcm} ${Vcmz} ${KB} ${TB} ${VB} ${Uc_out} ${UF} ${KB3d}" &
+    file bounce.dat &
+    title "# time Zcm Vcmz KB TB VB Uc UF KB3d" &
+    screen no
+
+# --- Correr -------------------------------------------------------------------
+run     ${steps_total}
+
+# --- Resumen final ------------------------------------------------------------
+print "======================================================="
+print "BOUNCE REPROD COMPLETO"
+print "h0 inicial = ${h0} sigma"
+print "g = ${g} sigma/tau^2"
+print "N_ball = $(count(ball)) atoms"
+print "Pasos totales = ${steps_total}"
+print "Tiempo total = ${t_total} tau"
+print "======================================================="
