@@ -30,59 +30,61 @@ def cargar_datos(path: Path) -> dict:
     return {col: data[:, i] for i, col in enumerate(COLS)}
 
 
-def encontrar_rebotes(d: dict, z_surf_top: float = 9.3,
-                      ventana: int = 5) -> list[dict]:
+def encontrar_rebotes(d: dict) -> tuple[list[dict], float]:
     """
-    Detecta eventos de rebote como mínimos locales de Zcm.
-    Devuelve lista de dicts con: idx, time, h_antes, h_despues, Vcmz_antes, Vcmz_despues
+    Detecta eventos de rebote a partir de mínimos locales de Zcm.
+
+    Las alturas h_n se miden sobre el nivel de contacto efectivo z0, definido
+    como la media de los Zcm en los mínimos (profundidad de penetración promedio).
+    El COR se calcula a partir de alturas: e_n = sqrt(h_{n+1} / h_n).
+
+    Returns
+    -------
+    rebotes : list[dict]
+        Cada dict tiene: idx, time, h_n (altura apogeo post-rebote sobre z0), e_n
+    z0 : float
+        Nivel de contacto efectivo en coordenadas de caja [sigma]
     """
     Zcm  = d["Zcm"]
-    Vcmz = d["Vcmz"]
     time = d["time"]
 
-    # Mínimos de Zcm: el CM de la bola toca la superficie
-    # La distancia de contacto es aproximadamente z_surf_top + rball
-    # Usamos find_peaks sobre -Zcm para encontrar mínimos
     min_idx, _ = find_peaks(-Zcm, prominence=0.5, distance=50)
+    max_idx, _ = find_peaks( Zcm, prominence=0.5, distance=50)
 
-    rebotes = []
-    for idx in min_idx:
-        # Ventana antes y después del mínimo
-        i0 = max(0, idx - ventana)
-        i1 = min(len(Zcm) - 1, idx + ventana)
+    if len(min_idx) == 0:
+        return [], float(Zcm.min())
 
-        # Velocidad antes (máxima en módulo, descendente) y después (ascendente)
-        vz_antes  = Vcmz[i0]   # negativo (bajando)
-        vz_despues = Vcmz[i1]  # positivo (subiendo)
+    # Nivel de contacto efectivo: media de los mínimos (ajusta por deformación surface)
+    z0 = float(np.mean(Zcm[min_idx]))
 
-        if vz_antes >= 0 or vz_despues <= 0:
-            continue  # no es un rebote real
-
-        # Altura antes: máximo de Zcm en la fase de caída previa
-        if rebotes:
-            last_idx = rebotes[-1]["idx"]
-            h_antes = np.max(Zcm[last_idx:idx])
-        else:
-            h_antes = np.max(Zcm[:idx])
-
-        # Altura después: máximo de Zcm en la fase de subida siguiente
-        next_idx = min_idx[list(min_idx).index(idx) + 1] \
-                   if idx != min_idx[-1] else len(Zcm) - 1
-        h_despues = np.max(Zcm[idx:next_idx])
-
-        cor = abs(vz_despues) / abs(vz_antes)
-
-        rebotes.append({
-            "idx":       idx,
-            "time":      time[idx],
-            "h_antes":   h_antes,
-            "h_despues": h_despues,
-            "Vcmz_antes":  vz_antes,
-            "Vcmz_despues": vz_despues,
-            "e_n":       cor,
+    # Construir lista de apogeos ENTRE contactos consecutivos
+    # apogeo[n] = max(Zcm) entre contacto n y n+1
+    apogeos = []
+    for k, idx in enumerate(min_idx):
+        next_idx = min_idx[k + 1] if k + 1 < len(min_idx) else len(Zcm) - 1
+        apex_idx = idx + np.argmax(Zcm[idx:next_idx])
+        apogeos.append({
+            "idx":  int(apex_idx),
+            "time": float(time[apex_idx]),
+            "Zcm_apex": float(Zcm[apex_idx]),
+            "h_n":  float(Zcm[apex_idx] - z0),   # altura sobre nivel contacto
         })
 
-    return rebotes
+    # Calcular e_n = sqrt(h_{n+1} / h_n) entre apogeos consecutivos
+    rebotes = []
+    for k, ap in enumerate(apogeos):
+        h_n      = ap["h_n"]
+        h_n_prev = float(Zcm[0] - z0) if k == 0 else apogeos[k - 1]["h_n"]
+        # COR basado en alturas; puede ser >1 si energía interna → CM
+        e_n = float(np.sqrt(abs(h_n / h_n_prev))) if h_n_prev > 0.01 else float("nan")
+        rebotes.append({
+            "idx":    int(min_idx[k]),
+            "time":   float(time[min_idx[k]]),
+            "h_n":    h_n,
+            "e_n":    e_n,
+        })
+
+    return rebotes, z0
 
 
 # ---------------------------------------------------------------------------
@@ -91,7 +93,7 @@ def encontrar_rebotes(d: dict, z_surf_top: float = 9.3,
 
 def fig_alturas(resultados: dict, outdir: Path):
     """
-    resultados: {h0: {"data": d, "rebotes": rebotes}}
+    resultados: {h0: {"data": d, "rebotes": rebotes, "z0": z0}}
     """
     fig, ax = plt.subplots(figsize=(7, 5))
 
@@ -100,11 +102,14 @@ def fig_alturas(resultados: dict, outdir: Path):
 
     for i, (h0, res) in enumerate(sorted(resultados.items())):
         rebotes = res["rebotes"]
+        z0      = res["z0"]
+        d       = res["data"]
         if not rebotes:
             continue
 
-        # Bounce 0 = altura inicial
-        alturas = [h0] + [r["h_despues"] for r in rebotes]
+        # n=0: altura inicial sobre nivel de contacto
+        h_init  = float(d["Zcm"][0] - z0)
+        alturas = [h_init] + [r["h_n"] for r in rebotes]
         bounces = list(range(len(alturas)))
 
         ax.plot(bounces, alturas,
@@ -114,7 +119,7 @@ def fig_alturas(resultados: dict, outdir: Path):
                 label=f"$h_0 = {h0}\\,\\sigma$")
 
     ax.set_xlabel("Número de rebote $n$", fontsize=12)
-    ax.set_ylabel("Altura máxima $h_n$ ($\\sigma$)", fontsize=12)
+    ax.set_ylabel("Altura $h_n$ sobre superficie ($\\sigma$)", fontsize=12)
     ax.set_title("Reproducción Fig. 7 — Gutiérrez et al. 2012", fontsize=12)
     ax.legend(fontsize=9, loc="upper right")
     ax.set_xlim(-0.2, None)
@@ -131,7 +136,7 @@ def fig_alturas(resultados: dict, outdir: Path):
 # Figura R2: evolución energética (reproduce Fig. 9 de Gutiérrez 2012)
 # ---------------------------------------------------------------------------
 
-def fig_energia(h0: float, d: dict, rebotes: list, outdir: Path):
+def fig_energia(h0: float, d: dict, rebotes: list, z0: float, outdir: Path):
     """Evolución temporal de K_B, T_B, V_B, U_c, U_F para un h0."""
     time = d["time"]
     KB   = d["KB3d"]   # KE traslacional 3D del CM
@@ -183,7 +188,7 @@ def fig_cor_secuencia(resultados: dict, outdir: Path):
         if not rebotes:
             continue
 
-        en = [r["e_n"] for r in rebotes]
+        en = [r["e_n"] for r in rebotes if not np.isnan(r["e_n"])]
         ns = list(range(1, len(en) + 1))
 
         ax.plot(ns, en,
@@ -199,17 +204,17 @@ def fig_cor_secuencia(resultados: dict, outdir: Path):
                     color=colores[i % len(colores)], alpha=0.4, lw=1.0)
 
     ax.set_xlabel("Número de rebote $n$", fontsize=12)
-    ax.set_ylabel("Coeficiente de restitución $e_n$", fontsize=12)
+    ax.set_ylabel("Coeficiente de restitución $e_n = \\sqrt{h_{n}/h_{n-1}}$", fontsize=12)
     ax.set_title("Secuencia $\\{e_n\\}$ — observable no reportado en 2012", fontsize=12)
     ax.legend(fontsize=9, loc="upper right")
     ax.set_xlim(0.5, None)
-    ax.set_ylim(0, 1.05)
+    ax.set_ylim(0, None)
+    ax.axhline(1.0, color="k", lw=0.8, ls="--", alpha=0.5, label="$e_n=1$")
     ax.grid(True, alpha=0.3)
-    ax.axhline(0, color="k", lw=0.5)
 
-    # Nota aclaratoria
+    # e_n > 1 es físicamente válido: energía interna → KE traslacional
     ax.text(0.02, 0.05,
-            "Líneas discontinuas: predicción geométrica con $e_n = e_1 = $ const.",
+            "$e_n>1$: energía interna de la bola → KE traslacional CM",
             transform=ax.transAxes, fontsize=8, color="gray")
 
     out = outdir / "fig_R3_COR_secuencia.pdf"
@@ -223,14 +228,18 @@ def fig_cor_secuencia(resultados: dict, outdir: Path):
 # ---------------------------------------------------------------------------
 
 def imprimir_tabla_rebotes(resultados: dict):
-    print("\n" + "=" * 60)
-    print(f"{'h0':>8} {'n_rebote':>9} {'h_n (σ)':>10} {'e_n':>8}")
-    print("-" * 60)
+    print("\n" + "=" * 65)
+    print(f"{'h0_param':>9} {'h0_eff':>7} {'n':>4} {'h_n (σ)':>10} {'e_n':>8}")
+    print("-" * 65)
     for h0, res in sorted(resultados.items()):
+        z0     = res["z0"]
+        h_init = float(res["data"]["Zcm"][0] - z0)
         for n, rb in enumerate(res["rebotes"], start=1):
-            print(f"{h0:>8.2f} {n:>9d} {rb['h_despues']:>10.4f} {rb['e_n']:>8.4f}")
+            print(f"{h0:>9.2f} {h_init:>7.2f} {n:>4d} {rb['h_n']:>10.4f} {rb['e_n']:>8.4f}")
         print()
-    print("=" * 60)
+    print("=" * 65)
+    print("h0_param: parámetro LAMMPS (desde cima box)")
+    print("h0_eff  : altura efectiva inicial sobre nivel de contacto z0")
 
 
 # ---------------------------------------------------------------------------
@@ -264,9 +273,10 @@ def main():
 
         print(f"  Cargando h0={h0}...")
         d = cargar_datos(dat_file)
-        rebotes = encontrar_rebotes(d)
-        resultados[h0] = {"data": d, "rebotes": rebotes}
-        print(f"    → {len(rebotes)} rebotes detectados")
+        rebotes, z0 = encontrar_rebotes(d)
+        resultados[h0] = {"data": d, "rebotes": rebotes, "z0": z0}
+        h_init = float(d["Zcm"][0] - z0)
+        print(f"    → {len(rebotes)} rebotes detectados, z0={z0:.3f}σ, h_init={h_init:.2f}σ")
 
     if not resultados:
         print("No se encontraron datos. Correr primero: bash scripts/run_reprod.sh")
@@ -278,7 +288,7 @@ def main():
     fig_alturas(resultados, outdir)
 
     for h0, res in resultados.items():
-        fig_energia(h0, res["data"], res["rebotes"], outdir)
+        fig_energia(h0, res["data"], res["rebotes"], res["z0"], outdir)
 
     fig_cor_secuencia(resultados, outdir)
 
