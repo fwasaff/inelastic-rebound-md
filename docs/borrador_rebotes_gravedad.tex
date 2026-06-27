@@ -441,11 +441,15 @@ No se impone termostato en ninguna capa durante los rebotes (NVE global).
 
 \paragraph{Resultados de validación.}
 La Figura~\ref{fig:reprod_alturas} muestra las alturas máximas $h_n$ alcanzadas
-por el CM de la bola tras cada rebote para las seis alturas iniciales, en
-comparación directa con la Fig.~7 de \cite{Gutierrez2012}. El acuerdo es
-cuantitativo: las curvas convergen al mismo valor asintótico $h_\infty \approx
-\TODO{11}\,\sigma$, y para $h_0 > 41\,\sigma$ se recuperan los dos únicos
-rebotes antes del colapso estructural.
+por el CM de la bola tras cada rebote para las seis alturas iniciales.
+Las curvas convergen al mismo valor asintótico $h_\infty \approx
+1.0\text{--}1.5\,\sigma$ sobre el nivel de contacto efectivo $z_0 \approx
+11.6\,\sigma$, equivalente a $Z_{\mathrm{cm}} \approx 12.7\,\sigma$ en
+coordenadas absolutas de caja, en acuerdo razonable con el valor reportado
+$\approx 11\,\sigma$ en \cite{Gutierrez2012} (diferencia atribuible a la
+geometría de la superficie).  Para $h_0 \geq 41\,\sigma$ la altura cae más
+del 90\% en los primeros dos rebotes, consistente con la termalización interna
+intensa descrita en el trabajo original.
 
 \begin{figure}[ht]
     \centering
@@ -493,20 +497,24 @@ y $U_F$ (energía gravitatoria). Se observan los mismos rasgos cualitativos:
     \label{fig:reprod_energia}
 \end{figure}
 
-Adicionalmente, extraemos la secuencia $\{\coR{n}\}$ de los datos de 2012 —
-un observable que el trabajo original no reportó explícitamente:
-$\coR{1} = \TODO{0.??}$, $\coR{2} = \TODO{0.??}$, $\coR{3} = \TODO{0.??}$
-para $h_0 = 28.15\,\sigma$. Este decaimiento supone la transición de una pelota
-«casi elástica» ($h_0 = 11\,\sigma$) a una que pierde el $\TODO{50}\%$ de su
-energía en el segundo rebote ($h_0 = 58.6\,\sigma$), en un rango de apenas
+Adicionalmente, extraemos la secuencia $\{\coR{n}\}$ —
+un observable que el trabajo original no reportó explícitamente—:
+$\coR{1} = 0.66$, $\coR{2} = 0.56$, $\coR{3} = 0.80$
+para $h_0 = 28.15\,\sigma$ (definido como $\coR{n} = \sqrt{h_n/h_{n-1}}$).
+Este decaimiento supone la transición de una pelota
+«casi elástica» ($\coR{1} \approx 0.91$ para $h_0 = 11\,\sigma$) a una que
+pierde el $86\%$ de su energía en el segundo rebote
+($\coR{2} \approx 0.37$ para $h_0 = 58.6\,\sigma$), en un rango de apenas
 cuatro alturas de caída.
 
-\paragraph{Extensión al régimen de fusión.}
-Para $h_0 \geq 41.47\,\sigma$, la bola pierde su estructura FCC (visible en
-$g(r)$, Fig.~8 de \cite{Gutierrez2012}) y deja de rebotar tras el segundo
-impacto. Nuestra reproducción con \lammps{} recupera este umbral de fusión con
-diferencia $< 5\%$ en $h_0$, lo que confirma que el código captura correctamente
-la termalización interna extrema.
+\paragraph{Régimen de alta energía y termalización interna.}
+Para $h_0 \geq 41.47\,\sigma$, la bola almacena una energía interna
+$T_B \geq 28\,\eps$ tras el primer rebote, suficiente para fundir la
+estructura FCC (consistente con la Fig.~8 de \cite{Gutierrez2012}).
+La altura predita por equipartición es $h^* = T_B/(M_b g) \approx 13\,\sigma$,
+pero convergir a este plateau requiere cientos de rebotes más allá de
+los $400\,\tau$ simulados. Nuestra reproducción captura correctamente
+el mecanismo de termalización interna y su umbral en $h_0$.
 
 \medskip
 Con la validación establecida, las secciones siguientes presentan los resultados
