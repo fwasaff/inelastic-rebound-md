@@ -22,12 +22,15 @@ from scipy.signal import find_peaks
 # Carga de datos
 # ---------------------------------------------------------------------------
 
-COLS = ["time", "Zcm", "Vcmz", "KB", "TB", "VB", "Uc", "UF", "KB3d"]
+COLS = ["time", "Zcm", "Vcmz", "KB", "TB", "VB", "Uc", "UF", "KB3d",
+        "KS", "PE_surf", "TS"]
 
 def cargar_datos(path: Path) -> dict:
-    """Lee bounce_h0_XX.dat y devuelve dict con arrays por columna."""
+    """Lee bounce.dat y devuelve dict con arrays por columna."""
     data = np.loadtxt(path, comments="#")
-    return {col: data[:, i] for i, col in enumerate(COLS)}
+    n_cols = data.shape[1]
+    cols = COLS[:n_cols]
+    return {col: data[:, i] for i, col in enumerate(cols)}
 
 
 def encontrar_rebotes(d: dict) -> tuple[list[dict], float]:

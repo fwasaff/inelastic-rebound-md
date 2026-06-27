@@ -129,6 +129,7 @@ compute     surf_ke      surface ke
 compute     Uc           ball    group/group surface
 compute     pe_atom      all     pe/atom
 compute     pe_ball      ball    reduce sum c_pe_atom
+compute     pe_surf_r    surface reduce sum c_pe_atom   # PE átomos sup (incluye 0.5*Uc)
 
 # --- Variables derivadas (descomposición de Gutiérrez et al.) ----------------
 variable    N_ball  equal   count(ball)
@@ -154,10 +155,19 @@ variable    VB    equal  c_pe_ball-0.5*c_Uc
 # U_F: PE gravitatoria = M * g * Z_cm
 variable    UF    equal  v_M_ball*${g}*v_Zcm
 
-# K_S y T_S para referencia
+# K_S y T_S (energía de la superficie)
 variable    Vcmz_surf  equal  vcm(surface,z)
-variable    KS         equal  0.5*v_M_surf*v_Vcmz_surf^2
-variable    TS         equal  c_surf_ke-v_KS
+variable    Vcmx_surf  equal  vcm(surface,x)
+variable    Vcmy_surf  equal  vcm(surface,y)
+variable    KS         equal  0.5*v_M_surf*(v_Vcmx_surf^2+v_Vcmy_surf^2+v_Vcmz_surf^2)
+variable    TS         equal  c_surf_ke-v_KS   # KE interna superficie (fonones)
+
+# Energía total de la superficie: KE + PE (para balance energético)
+# E_surf = c_surf_ke + c_pe_surf_r
+# E_ball = c_ball_ke + c_pe_ball + v_UF  (nota: pe_ball incluye 0.5*Uc, pe_surf_r incluye el otro 0.5*Uc)
+# E_ball + E_surf = etotal + v_UF = constante en NVE con gravedad externa
+variable    KS_out     equal  c_surf_ke
+variable    PE_surf_out equal c_pe_surf_r
 
 # Wrapper para c_Uc (fix print solo acepta variables, no computes directamente)
 variable    Uc_out  equal  c_Uc
@@ -184,9 +194,9 @@ thermo_modify norm no lost warn flush yes
 
 # --- Salida de energías (para comparar con Fig. 9 de Gutiérrez et al.) --------
 fix print_energy all print ${print_freq} &
-    "${time} ${Zcm} ${Vcmz} ${KB} ${TB} ${VB} ${Uc_out} ${UF} ${KB3d}" &
+    "${time} ${Zcm} ${Vcmz} ${KB} ${TB} ${VB} ${Uc_out} ${UF} ${KB3d} ${KS_out} ${PE_surf_out} ${TS}" &
     file bounce.dat &
-    title "# time Zcm Vcmz KB TB VB Uc UF KB3d" &
+    title "# time Zcm Vcmz KB TB VB Uc UF KB3d KS PE_surf TS" &
     screen no
 
 # --- Correr -------------------------------------------------------------------

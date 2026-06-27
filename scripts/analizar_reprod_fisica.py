@@ -1,31 +1,37 @@
 """
 Análisis físico detallado de la reproducción de Gutiérrez et al. 2012.
 
-Genera cuatro figuras centradas en la física del impacto:
+Genera cinco figuras:
   Fig 1 – Cascada de alturas normalizadas h_n/h0 (escala log)
-  Fig 2 – Partición de energía en el primer rebote (3 canales)
-  Fig 3 – e₁ vs velocidad de impacto (ley empírica central)
-  Fig 4 – Acumulación de energía interna T_B/E₀ por rebote
+  Fig 2 – Partición CORRECTA de energía en el primer rebote (4 contribuciones)
+  Fig 3 – e₁ vs velocidad de impacto
+  Fig 4 – Acumulación de T_B/E₀ y evolución de α_ball(n) por rebote
+  Fig 5 – Balance directo de energía: E_ball(t) + E_surf(t) vs tiempo
 
-Las figuras están diseñadas para comparación directa con el estudio extendido
-(N variable, T*>0, c_ps>0) que viene a continuación.
+Partición correcta (3 canales, suman 1.000):
+  α_CM   = M*g*h1 / E0               → fracción en CM gravitatorio
+  α_surf = ΔE_surf / E0              → DIRECTA desde KS + PE_surf (fonones)
+  α_ball = 1 − α_CM − α_surf        → energía interna de la bola
+           = α_TB + α_VB            (TB cinético + ΔVB potencial anarmónico)
+
+Nota sobre ΔVB: al calentarse, la bola LJ se expande (anarmónico). La PE media
+por par sube (menos negativa), por lo que ΔVB > 0. Para v_imp ≳ 0.9 σ/τ,
+ΔVB > TB; el canal potencial domina el calentamiento interno.
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
+import matplotlib.patches as mpatches
 from scipy.signal import find_peaks
 from pathlib import Path
 
-# ---------------------------------------------------------------------------
-# Configuración
-# ---------------------------------------------------------------------------
 H0S   = [11.03, 18.64, 28.15, 41.47, 58.6, 79.53]
-M     = 83        # átomos en la bola
-G     = 0.026     # gravedad [sigma/tau^2]
+M     = 83
+G     = 0.026
 OUTDIR = Path("data/outputs/reprod_2012")
 FIGDIR = OUTDIR
 
+COLS  = "time Zcm Vcmz KB TB VB Uc UF KB3d KS PE_surf TS".split()
 COLORES = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b"]
 MARKERS = ["o", "s", "^", "D", "v", "P"]
 
@@ -42,42 +48,59 @@ plt.rcParams.update({
 
 
 # ---------------------------------------------------------------------------
-# Extracción de datos por simulación
+# Extracción de datos
 # ---------------------------------------------------------------------------
 
 def cargar_rebotes(h0: float) -> dict:
     """
-    Devuelve dict con:
-      z0, h0_eff, v_imp0, apogeos:[{n, h_n, TB, KB3d, time}], ...
+    Devuelve dict con energías, alturas y partición completa para una altura h0.
+
+    Partición en el primer rebote (3 canales):
+      a_CM   = M*g*h1 / E0
+      a_surf = ΔE_surf / E0  (medido directamente)
+      a_ball = 1 − a_CM − a_surf
+      a_TB   = TB(ap1) / E0  (sub-canal cinético de a_ball)
+      a_VB   = a_ball − a_TB (sub-canal potencial de a_ball = ΔVB/E0)
     """
     path = OUTDIR / f"h0_{h0}" / "bounce.dat"
-    d    = np.loadtxt(path, comments="#")
-    time, Zcm, Vcmz, KB, TB, VB, Uc, UF, KB3d = d.T
+    d = np.loadtxt(path, comments="#")
+    cols = COLS[:d.shape[1]]
+    arr = {c: d[:, i] for i, c in enumerate(cols)}
+
+    Zcm = arr["Zcm"];  TB = arr["TB"];  KB3d = arr["KB3d"]
+    KS = arr.get("KS", np.zeros_like(Zcm))
+    PE_surf = arr.get("PE_surf", np.zeros_like(Zcm))
 
     mins, _ = find_peaks(-Zcm, prominence=0.5, distance=50)
     maxs, _ = find_peaks( Zcm, prominence=0.5, distance=50)
 
     z0     = float(Zcm[mins].mean())
     h0_eff = float(Zcm[0] - z0)
-    E0     = M * G * h0_eff        # energía gravitatoria inicial
+    E0     = M * G * h0_eff
+
+    # Energía superficial inicial y en el primer apogeo
+    E_surf0  = KS[0] + PE_surf[0]
+    E_surf_1 = KS[maxs[0]] + PE_surf[maxs[0]]
+    dE_surf  = float(E_surf_1 - E_surf0)
+
+    h1   = float(Zcm[maxs[0]] - z0)
+    TB1  = float(TB[maxs[0]])
+
+    a_CM   = h1 / h0_eff
+    a_surf = dE_surf / E0
+    a_ball = 1.0 - a_CM - a_surf
+    a_TB   = TB1 / E0
+    a_VB   = a_ball - a_TB
 
     apogeos = []
     for k, m in enumerate(maxs):
-        h_n = float(Zcm[m] - z0)
         apogeos.append({
             "n":    k + 1,
-            "time": float(time[m]),
-            "h_n":  h_n,
+            "time": float(arr["time"][m]),
+            "h_n":  float(Zcm[m] - z0),
             "TB":   float(TB[m]),
             "KB3d": float(KB3d[m]),
         })
-
-    # Partición de energía en el PRIMER rebote
-    TB1   = TB[maxs[0]] if len(maxs) else 0.0
-    h1    = float(Zcm[maxs[0]] - z0) if len(maxs) else 0.0
-    a_CM  = h1 / h0_eff
-    a_int = TB1 / E0
-    a_surf = max(0.0, 1.0 - a_CM - a_int)
 
     return {
         "h0":    h0,
@@ -85,16 +108,23 @@ def cargar_rebotes(h0: float) -> dict:
         "h0_eff": h0_eff,
         "E0":    E0,
         "v_imp": float(np.sqrt(2 * G * h0_eff)),
-        "e1":    float(np.sqrt(h1 / h0_eff)) if h0_eff > 0 else 0.0,
+        "h1":    h1,
+        "e1":    float(np.sqrt(h1 / h0_eff)),
         "a_CM":  a_CM,
-        "a_int": a_int,
         "a_surf": a_surf,
+        "a_ball": a_ball,
+        "a_TB":  a_TB,
+        "a_VB":  a_VB,
+        "dE_surf": dE_surf,
         "apogeos": apogeos,
+        "arr":   arr,
+        "mins":  mins,
+        "maxs":  maxs,
     }
 
 
 # ---------------------------------------------------------------------------
-# Fig 1 – Cascada de alturas normalizadas h_n/h0  (escala log)
+# Fig 1 – Cascada de alturas normalizadas
 # ---------------------------------------------------------------------------
 
 def fig_cascada(datos: list[dict], outdir: Path):
@@ -102,84 +132,75 @@ def fig_cascada(datos: list[dict], outdir: Path):
 
     for i, dat in enumerate(datos):
         h0_eff = dat["h0_eff"]
-        ns     = [0] + [a["n"] for a in dat["apogeos"]]
-        hs_norm = [1.0] + [a["h_n"] / h0_eff for a in dat["apogeos"]]
+        ns  = [0] + [a["n"] for a in dat["apogeos"]]
+        hs  = [1.0] + [a["h_n"] / h0_eff for a in dat["apogeos"]]
+        ax.semilogy(ns, hs, color=COLORES[i], marker=MARKERS[i],
+                    label=f"$h_0^\\mathrm{{eff}} = {h0_eff:.1f}\\,\\sigma$")
 
-        ax.semilogy(
-            ns, hs_norm,
-            color=COLORES[i], marker=MARKERS[i],
-            label=f"$h_0^\\mathrm{{eff}} = {h0_eff:.1f}\\,\\sigma$",
-        )
-
-    # Líneas de referencia: e=const (decaimiento geométrico puro)
-    n_ref = np.linspace(0, 12, 100)
+    n_ref = np.linspace(0, 12, 200)
     for e_ref, ls in [(0.9, ":"), (0.7, "--")]:
-        ax.semilogy(n_ref, e_ref ** (2 * n_ref),
-                    color="gray", ls=ls, lw=0.8, alpha=0.6,
-                    label=f"$e_n = {e_ref}$ (geométrico)")
+        ax.semilogy(n_ref, e_ref**(2*n_ref), color="gray", ls=ls, lw=0.8, alpha=0.6,
+                    label=f"$e={e_ref}$ (geométrico)")
 
     ax.set_xlabel("Número de rebote $n$")
     ax.set_ylabel("Altura normalizada $h_n / h_0$")
     ax.set_title("Cascada de alturas — reproducción Gutiérrez et al. 2012")
-    ax.set_xlim(-0.3, 13)
-    ax.set_ylim(5e-3, 2)
+    ax.set_xlim(-0.3, 13); ax.set_ylim(5e-3, 2)
     ax.legend(loc="upper right", ncol=2)
-
     out = outdir / "fig_A1_cascada.pdf"
-    fig.savefig(out, bbox_inches="tight")
-    plt.close(fig)
+    fig.savefig(out, bbox_inches="tight"); plt.close(fig)
     print(f"  Guardado: {out}")
 
 
 # ---------------------------------------------------------------------------
-# Fig 2 – Partición de energía en el primer rebote (stacked bar)
+# Fig 2 – Partición CORRECTA de energía en el primer rebote
 # ---------------------------------------------------------------------------
 
 def fig_particion(datos: list[dict], outdir: Path):
-    fig, ax = plt.subplots(figsize=(7, 4.5))
+    """
+    Barras apiladas con 4 capas:
+      α_CM (azul) | α_TB (rojo) | α_VB (naranja) | α_surf (gris)
 
-    v_imps  = [d["v_imp"]  for d in datos]
-    a_CMs   = [d["a_CM"]   for d in datos]
-    a_ints  = [d["a_int"]  for d in datos]
-    a_surfs = [d["a_surf"] for d in datos]
-    h0_effs = [d["h0_eff"] for d in datos]
+    α_ball = α_TB + α_VB es la energía interna total de la bola.
+    α_VB (anarmónico) domina para v > 0.9 σ/τ.
+    """
+    fig, ax = plt.subplots(figsize=(8, 5))
+    x = np.arange(len(datos)); w = 0.55
 
-    x = np.arange(len(datos))
-    w = 0.55
+    a_CMs   = np.array([d["a_CM"]   for d in datos])
+    a_TBs   = np.array([d["a_TB"]   for d in datos])
+    a_VBs   = np.array([d["a_VB"]   for d in datos])
+    a_surfs = np.array([d["a_surf"] for d in datos])
 
-    b0 = ax.bar(x, a_CMs,   w, label="$K_B$ (CM conservado)",      color="#2196F3")
-    b1 = ax.bar(x, a_ints,  w, bottom=a_CMs,
-                label="$\\Delta T_B$ (modos internos bola)",       color="#F44336")
-    b2 = ax.bar(x, a_surfs, w, bottom=[c+i for c,i in zip(a_CMs, a_ints)],
-                label="Fonones superficie",                        color="#9E9E9E")
+    ax.bar(x, a_CMs,  w, label="$\\alpha_\\mathrm{CM}$  KE traslacional conservada",
+           color="#2196F3")
+    ax.bar(x, a_TBs,  w, bottom=a_CMs,
+           label="$\\alpha_{T_B}$  KE interna (fonones bola)",  color="#F44336")
+    ax.bar(x, a_VBs,  w, bottom=a_CMs+a_TBs,
+           label="$\\alpha_{\\Delta V_B}$  PE anarmónico (expansión bola)", color="#FF9800")
+    ax.bar(x, a_surfs, w, bottom=a_CMs+a_TBs+a_VBs,
+           label="$\\alpha_\\mathrm{surf}$  Fonones superficie (directo)", color="#9E9E9E")
 
-    # Anotar el valor de e1 sobre cada barra
     for j, d in enumerate(datos):
         ax.text(j, 1.02, f"$e_1={d['e1']:.2f}$",
                 ha="center", va="bottom", fontsize=8.5)
 
     ax.set_xticks(x)
-    ax.set_xticklabels([f"$h_0={d['h0_eff']:.1f}$\n$v={d['v_imp']:.2f}$"
-                        for d in datos], fontsize=8.5)
-    ax.set_xlabel("Altura inicial $h_0^\\mathrm{eff}$ (σ)  /  velocidad $v_0$ (σ/τ)")
-    ax.set_ylabel("Fracción de $E_\\mathrm{grav,0} = Mgh_0$")
-    ax.set_title("Partición de energía en el primer rebote")
-    ax.set_ylim(0, 1.12)
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.22),
-              ncol=3, frameon=True)
-
-    # Línea horizontal en α_int ≈ 0.22
+    ax.set_xticklabels([f"$h_0={d['h0_eff']:.1f}$\n$v={d['v_imp']:.2f}\\,\\sigma/\\tau$"
+                        for d in datos], fontsize=8)
+    ax.set_ylabel("Fracción de $E_0 = Mgh_0$")
+    ax.set_title("Partición de energía en el primer rebote — 3 canales + detalle interno")
+    ax.set_ylim(0, 1.14)
     ax.axhline(1.0, color="k", lw=0.7, ls="--", alpha=0.4)
-
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=2)
     fig.tight_layout()
     out = outdir / "fig_A2_particion.pdf"
-    fig.savefig(out, bbox_inches="tight")
-    plt.close(fig)
+    fig.savefig(out, bbox_inches="tight"); plt.close(fig)
     print(f"  Guardado: {out}")
 
 
 # ---------------------------------------------------------------------------
-# Fig 3 – e₁ vs velocidad de impacto  (ley empírica)
+# Fig 3 – e₁ vs velocidad de impacto
 # ---------------------------------------------------------------------------
 
 def fig_e1_vs_v(datos: list[dict], outdir: Path):
@@ -188,102 +209,150 @@ def fig_e1_vs_v(datos: list[dict], outdir: Path):
     v_imp = np.array([d["v_imp"] for d in datos])
     e1    = np.array([d["e1"]    for d in datos])
 
-    # Scatter e1 (primer rebote)
-    ax.scatter(v_imp, e1, s=80, zorder=5,
-               c=COLORES[:len(datos)], marker="o",
-               label="$e_1$ (primer rebote)", edgecolors="k", linewidths=0.5)
+    ax.scatter(v_imp, e1, s=80, zorder=5, c=COLORES[:len(datos)], marker="o",
+               edgecolors="k", linewidths=0.5, label="$e_1$ (primer rebote)")
 
-    # También mostrar e2, e3 para contexto
     for i, dat in enumerate(datos):
         aps = dat["apogeos"]
-        h0e = dat["h0_eff"]
         if len(aps) >= 2:
             e2 = float(np.sqrt(abs(aps[1]["h_n"] / aps[0]["h_n"])))
-            ax.scatter(v_imp[i], e2, s=40, marker="s",
-                       color=COLORES[i], alpha=0.5, zorder=4)
+            ax.scatter(v_imp[i], e2, s=40, marker="s", color=COLORES[i], alpha=0.5)
         if len(aps) >= 3:
             e3 = float(np.sqrt(abs(aps[2]["h_n"] / aps[1]["h_n"])))
-            ax.scatter(v_imp[i], e3, s=20, marker="^",
-                       color=COLORES[i], alpha=0.35, zorder=3)
+            ax.scatter(v_imp[i], e3, s=20, marker="^", color=COLORES[i], alpha=0.35)
 
-    # Ajuste power-law solo para los 4 puntos intermedios (excluir saturación)
     mask = (v_imp > 0.8) & (v_imp < 2.1)
     if mask.sum() >= 3:
         coeffs = np.polyfit(np.log(v_imp[mask]), np.log(e1[mask]), 1)
-        v_fit  = np.linspace(0.6, 2.1, 100)
-        e_fit  = np.exp(coeffs[1]) * v_fit ** coeffs[0]
+        v_fit  = np.linspace(0.6, 2.2, 100)
+        e_fit  = np.exp(coeffs[1]) * v_fit**coeffs[0]
         ax.plot(v_fit, e_fit, "k--", lw=1.2, alpha=0.6,
                 label=f"$e_1 \\propto v^{{{coeffs[0]:.2f}}}$")
 
-    # Dummy markers para leyenda
-    ax.scatter([], [], s=80, marker="o", color="gray", label="$e_1$ (n=1)")
-    ax.scatter([], [], s=40, marker="s", color="gray", alpha=0.5, label="$e_2$ (n=2)")
-    ax.scatter([], [], s=20, marker="^", color="gray", alpha=0.35, label="$e_3$ (n=3)")
-
+    ax.scatter([], [], s=80, marker="o", color="gray", label="$e_1$ ($n=1$)")
+    ax.scatter([], [], s=40, marker="s", color="gray", alpha=0.5, label="$e_2$ ($n=2$)")
+    ax.scatter([], [], s=20, marker="^", color="gray", alpha=0.35, label="$e_3$ ($n=3$)")
     ax.axhline(1.0, color="k", lw=0.8, ls=":", alpha=0.5)
-    ax.set_xlabel("Velocidad de impacto $v_0 = \\sqrt{2gh_0}$ (σ/τ)")
+    ax.set_xlabel("Velocidad de impacto $v_0 = \\sqrt{2gh_0}$ ($\\sigma/\\tau$)")
     ax.set_ylabel("Coeficiente de restitución $e_n$")
     ax.set_title("COR vs velocidad de impacto")
-    ax.set_xlim(0.5, 2.2)
-    ax.set_ylim(0.0, 1.05)
+    ax.set_xlim(0.5, 2.3); ax.set_ylim(0.0, 1.10)
     ax.legend(loc="lower left")
-
     out = outdir / "fig_A3_e1_vs_v.pdf"
-    fig.savefig(out, bbox_inches="tight")
-    plt.close(fig)
+    fig.savefig(out, bbox_inches="tight"); plt.close(fig)
     print(f"  Guardado: {out}")
 
 
 # ---------------------------------------------------------------------------
-# Fig 4 – Acumulación de T_B / E₀ por rebote
+# Fig 4 – Acumulación de energía interna por rebote (TB y E_ball total)
 # ---------------------------------------------------------------------------
 
 def fig_TB_acumulacion(datos: list[dict], outdir: Path):
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.5))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.5))
 
-    # Panel izquierdo: T_B/E0 vs rebote n
     for i, dat in enumerate(datos):
-        ns   = [a["n"]             for a in dat["apogeos"]]
+        ns   = [a["n"]              for a in dat["apogeos"]]
         tbno = [a["TB"] / dat["E0"] for a in dat["apogeos"]]
         ax1.plot(ns, tbno, color=COLORES[i], marker=MARKERS[i],
                  label=f"$h_0={dat['h0_eff']:.1f}\\,\\sigma$")
 
-    ax1.axhline(0.22, color="k", ls="--", lw=1.0, alpha=0.5,
-                label="$\\alpha_\\mathrm{int} \\approx 0.22$")
     ax1.set_xlabel("Número de rebote $n$")
-    ax1.set_ylabel("Energía interna bola $T_B / E_0$")
-    ax1.set_title("Calentamiento interno de la bola")
-    ax1.set_xlim(0.5, 13)
-    ax1.set_ylim(0, 0.55)
-    ax1.legend(fontsize=8, loc="upper left")
+    ax1.set_ylabel("$T_B / E_0$ (KE interna cinética)")
+    ax1.set_title("Calentamiento cinético interno de la bola")
+    ax1.set_xlim(0.5, 13); ax1.set_ylim(0, 0.55)
+    ax1.legend(fontsize=8)
 
-    # Panel derecho: h_n/h0 vs TB/E0  (espacio de fase energético)
+    # Panel derecho: trayectoria (h_n/h0, TB/E0) — espacio de fase simplificado
     for i, dat in enumerate(datos):
         h0e  = dat["h0_eff"]
         hn   = [a["h_n"] / h0e   for a in dat["apogeos"]]
         tbno = [a["TB"] / dat["E0"] for a in dat["apogeos"]]
-        # Trayectoria: flecha del primero al último
         ax2.plot(tbno, hn, color=COLORES[i], marker=MARKERS[i],
                  label=f"$h_0={h0e:.1f}$", alpha=0.8)
-        # Punto inicial (n=1)
         if hn:
-            ax2.annotate("", xy=(tbno[0], hn[0]),
-                         xytext=(0, 1.0),
+            ax2.annotate("", xy=(tbno[0], hn[0]), xytext=(0, 1.0),
                          arrowprops=dict(arrowstyle="->", color=COLORES[i],
-                                         lw=0.8, alpha=0.4))
+                                         lw=0.8, alpha=0.5))
 
-    ax2.scatter([0], [1.0], s=60, c="black", zorder=5, label="n=0 (todos)")
-    ax2.set_xlabel("Energía interna $T_B / E_0$")
+    ax2.scatter([0], [1.0], s=60, c="black", zorder=5, label="$n=0$ (todos)")
+    ax2.set_xlabel("$T_B / E_0$ (KE interna)")
     ax2.set_ylabel("Altura normalizada $h_n / h_0$")
-    ax2.set_title("Espacio de fase $(T_B, h_n)$ — rebotes sucesivos")
-    ax2.set_xlim(-0.01, 0.55)
-    ax2.set_ylim(-0.02, 1.05)
-    ax2.legend(fontsize=8, loc="upper right")
-
+    ax2.set_title("Espacio de fase $(T_B, h_n)$")
+    ax2.set_xlim(-0.01, 0.55); ax2.set_ylim(-0.02, 1.05)
+    ax2.legend(fontsize=8)
     fig.tight_layout()
     out = outdir / "fig_A4_TB_acumulacion.pdf"
-    fig.savefig(out, bbox_inches="tight")
-    plt.close(fig)
+    fig.savefig(out, bbox_inches="tight"); plt.close(fig)
+    print(f"  Guardado: {out}")
+
+
+# ---------------------------------------------------------------------------
+# Fig 5 – Balance directo de energía E_ball(t) + E_surf(t) = cte
+# ---------------------------------------------------------------------------
+
+def fig_balance_energia(datos: list[dict], outdir: Path):
+    """
+    Muestra E_ball(t) y E_surf(t)−E_surf(0) para verificar conservación y
+    cuantificar el flujo de energía bola → superficie.
+    Solo para el caso h0=28.15 (v≈1.16, más ilustrativo).
+    """
+    # Elegir h0=28.15 como caso representativo
+    dat = next((d for d in datos if abs(d["h0"] - 28.15) < 0.1), datos[2])
+    arr  = dat["arr"]
+    maxs = dat["maxs"]
+
+    time    = arr["time"]
+    KB3d    = arr["KB3d"]
+    TB      = arr["TB"]
+    VB      = arr["VB"]
+    Uc      = arr["Uc"]
+    UF      = arr["UF"]
+    KS      = arr.get("KS", np.zeros_like(time))
+    PE_surf = arr.get("PE_surf", np.zeros_like(time))
+
+    # Energía total bola (con gravedad)
+    E_ball = KB3d + TB + VB + 0.5*Uc + UF
+    # Energía total superficie
+    E_surf = KS + PE_surf
+
+    # Normalizar: mostrar cambio respecto a t=0
+    dE_ball = E_ball - E_ball[0]
+    dE_surf = E_surf - E_surf[0]
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 7), sharex=True)
+
+    # Panel superior: componentes de E_ball
+    ax1.plot(time, KB3d, label="$K_B$ (CM traslacional)", color="black", lw=1.2)
+    ax1.plot(time, TB,   label="$T_B$ (KE interna bola)", color="#F44336", lw=1.2)
+    ax1.plot(time, VB - VB[0], label="$\\Delta V_B$ (PE interna bola)", color="#FF9800",
+             lw=1.2)
+    ax1.plot(time, UF - UF[0], label="$\\Delta U_F$ (gravitatorio)", color="purple",
+             lw=1.2, ls="--")
+
+    for m in maxs[:4]:
+        ax1.axvline(time[m], color="gray", lw=0.6, ls=":")
+    ax1.set_ylabel("Energía ($\\varepsilon$)")
+    ax1.set_title(f"Balance energético — $h_0={dat['h0_eff']:.1f}\\,\\sigma$, "
+                  f"$v_0={dat['v_imp']:.2f}\\,\\sigma/\\tau$")
+    ax1.legend(fontsize=8.5, ncol=2, loc="upper right")
+
+    # Panel inferior: flujo bola → superficie
+    ax2.plot(time, dE_surf, color="#4CAF50", lw=1.5, label="$\\Delta E_\\mathrm{surf}$")
+    ax2.plot(time, -dE_ball + dE_surf, color="k", lw=0.8, ls="--", alpha=0.5,
+             label="$E_\\mathrm{total}$ − $E_0$ (drift)")
+    for m in maxs[:4]:
+        ax2.axvline(time[m], color="gray", lw=0.6, ls=":")
+
+    ax2.axhline(0, color="k", lw=0.5, alpha=0.4)
+    ax2.set_xlabel("Tiempo ($\\tau$)")
+    ax2.set_ylabel("Cambio de energía ($\\varepsilon$)")
+    ax2.set_title(f"Flujo bola → superficie: $\\alpha_\\mathrm{{surf}} = {dat['a_surf']:.3f}$ "
+                  f"al primer apogeo")
+    ax2.legend(fontsize=8.5)
+
+    fig.tight_layout()
+    out = outdir / "fig_A5_balance_energia.pdf"
+    fig.savefig(out, bbox_inches="tight"); plt.close(fig)
     print(f"  Guardado: {out}")
 
 
@@ -295,18 +364,24 @@ def main():
     print("Cargando datos...")
     datos = [cargar_rebotes(h0) for h0 in H0S]
 
-    # Tabla de partición de energía
-    print("\n=== PARTICIÓN DE ENERGÍA — PRIMER REBOTE ===")
-    print(f"{'h0_eff':>8} {'v_imp':>6} {'e1':>6} {'α_CM':>7} {'α_int':>7} {'α_surf':>7}")
+    print("\n=== PARTICIÓN DE ENERGÍA CORRECTA — PRIMER REBOTE ===")
+    print(f"{'h0_eff':>8} {'v_imp':>6} {'e1':>6} | "
+          f"{'α_CM':>6} {'α_TB':>6} {'α_VB':>6} {'α_surf':>7} | suma")
     for d in datos:
-        print(f"{d['h0_eff']:8.2f} {d['v_imp']:6.3f} {d['e1']:6.3f} "
-              f"{d['a_CM']:7.3f} {d['a_int']:7.3f} {d['a_surf']:7.3f}")
+        s = d["a_CM"] + d["a_TB"] + d["a_VB"] + d["a_surf"]
+        print(f"{d['h0_eff']:8.2f} {d['v_imp']:6.3f} {d['e1']:6.3f} | "
+              f"{d['a_CM']:6.3f} {d['a_TB']:6.3f} {d['a_VB']:6.3f} {d['a_surf']:7.3f} | "
+              f"{s:.3f}")
+
+    print("\n  Nota: α_ball = α_TB + α_VB = energía interna TOTAL de la bola")
+    print("  α_VB domina para v > 0.9 σ/τ: expansión anarmónica del cluster LJ")
 
     print("\nGenerando figuras...")
     fig_cascada(datos, FIGDIR)
     fig_particion(datos, FIGDIR)
     fig_e1_vs_v(datos, FIGDIR)
     fig_TB_acumulacion(datos, FIGDIR)
+    fig_balance_energia(datos, FIGDIR)
     print(f"\nFiguras guardadas en: {FIGDIR}")
 
 
