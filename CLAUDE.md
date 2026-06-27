@@ -1,116 +1,38 @@
-# CLAUDE.md – Inelastic Rebound MD
+# CLAUDE.md – Distribución de energía en impactos de nanocúmulos LJ
 
-Guía de referencia para trabajar en este repositorio con Claude Code.
-
----
-
-## Estado del repositorio y flujo de trabajo confirmado
-
-**Rama principal de desarrollo:** `claude/review-lammps-project-hra1A`
-**Remote:** `https://github.com/fwasaff/inelastic-rebound-md`
-
-El repositorio local y GitHub están **sincronizados** (verificado 2026-04-05).
-
-### Workflow estándar con Claude Code
-
-```bash
-# Siempre trabajar desde la rama de desarrollo
-git checkout claude/review-lammps-project-hra1A
-
-# Antes de empezar a editar: verificar que estamos sincronizados
-git fetch origin && git status
-
-# Después de cambios: commit + push
-git add -p
-git commit -m "descripción concisa"
-git push
-```
-
-Claude Code opera directamente sobre este directorio. No clonar salvo que la rama local
-esté desincronizada respecto a origin (verificar con `git fetch && git status`).
-
----
-
-## Tiempos de simulación (medidos en este notebook)
-
-**Hardware:** CPU único, benchmark LAMMPS 7 Feb 2024 → **~1.37 M atom-steps/s**
-
-| Fase                    | Pasos    | Átomos | Tiempo estimado |
-|-------------------------|----------|--------|-----------------|
-| Equilibración (default) | 85 000   | 1 536  | ~1.5 min        |
-| Un impacto (default)    | 90 000   | 1 537  | ~1.7 min        |
-| Pipeline completo       | 175 000  | 1 537  | ~3.5 min        |
-| Sweep 10×1×3 replicas   | 30 runs  | —      | ~13 min (4 cores) |
-| Sweep 10×3×3 replicas   | 90 runs  | —      | ~38 min (4 cores) |
-
-Para acelerar: aumentar `--jobs` hasta el número de cores disponibles.
-
----
-
-## Visualización: OVITO y ParaView
-
-### Archivos generados para visualización
-
-| Script          | Archivo dump                | Coordenadas | Campos extra        |
-|-----------------|-----------------------------|-------------|---------------------|
-| in.equilibrate  | `dump.equil.lammpstrj`      | **scaled** (xs ys zs) | pe/atom |
-| in.impact       | `dump.impact.lammpstrj`     | **real** (x y z)      | pe/atom |
-
-Ambos archivos están en `data/outputs/<fase>/` tras correr el runner Python.
-
-### OVITO (recomendado)
-
-**Instalación:**
-```bash
-pip install ovito          # OVITO Python API (headless + scripting)
-# o descargar OVITO Pro/Basic desde https://www.ovito.org/
-```
-
-**Abrir dump en OVITO GUI:**
-1. File → Open → seleccionar `dump.impact.lammpstrj`
-2. OVITO detecta automáticamente el formato LAMMPS custom
-3. Para `dump.equil.lammpstrj`: las coordenadas son **scaled** — OVITO las convierte solas
-4. Colorear por `pe` (energía potencial por átomo) para ver la perturbación del impacto
-
-**Nota:** OVITO no está instalado en este sistema. ParaView sí está disponible (`/usr/bin/paraview`).
-
-### ParaView (disponible en este sistema)
-
-**Abrir dump:**
-1. File → Open → seleccionar `dump.impact.lammpstrj`
-2. En el diálogo de formato: seleccionar **"LAMMPS Dump"** (no CSV)
-3. Apply → usar "Point Gaussian" representation para ver los átomos
-
-**Colorear por energía potencial:**
-- En el panel izquierdo: cambiar "Solid Color" → `c_pe_atom`
-- Ajustar escala de colores con el botón de rescale
-
-**Animación del impacto:**
-- Play en la barra inferior para animar frames del dump
-- `dump_freq = 100` → 1 frame cada 100 pasos = 900 frames totales para in.impact
-
-**Filtros útiles en ParaView:**
-- `Threshold` sobre `c_pe_atom` → aislar átomos perturbados
-- `Glyph` → representar átomos como esferas con radio = 0.5 sigma
+Guía de referencia para el proyecto activo con Claude Code.
 
 ---
 
 ## Descripción del proyecto
 
-Simulación de **dinámica molecular de rebote inelástico** a escala nanométrica.
+Simulación de dinámica molecular (LAMMPS, unidades LJ) del impacto de un
+nanocúmulo Lennard-Jones sobre una superficie FCC bajo gravedad constante.
 
-**Física simulada:**
-Un átomo proyectil Lennard-Jones impacta sobre un cristal FCC Argón
-y rebota inelásticamente: parte de la energía cinética normal se transfiere
-a fonones de la superficie (calor). El observable principal es el
-**Coeficiente de Restitución (COR)**:
+**Pregunta central:**
+> Dado un impacto con energía E₀, ¿cómo se distribuye entre los tres canales:
+> CM de la bola / modos internos de la bola / fonones de la superficie?
+
+**Observable clave:** La fracción α_int ≈ 22% que va a modos internos es
+~constante para v > 0.9 σ/τ (con N=83). La hipótesis a verificar es:
 
 ```
-e = |v_f,z| / |v_0,z|   (0 ≤ e ≤ 1)
+α_int(N) = (3N - 3) / (3N - 3 + 3·N_c)
 ```
 
-**Unidades:** LJ reducidas (eps, sigma, tau).  
-Para Argón: eps ≈ 0.0104 eV, sigma ≈ 3.4 Å, tau ≈ 2.15 ps.
+donde N_c es el número efectivo de átomos de superficie en la huella del impacto.
+
+---
+
+## Rama y remote
+
+**Rama activa:** `claude/review-lammps-project-hra1A`
+**Remote:** `https://github.com/fwasaff/inelastic-rebound-md`
+
+```bash
+git checkout claude/review-lammps-project-hra1A
+git fetch origin && git status
+```
 
 ---
 
@@ -118,251 +40,167 @@ Para Argón: eps ≈ 0.0104 eV, sigma ≈ 3.4 Å, tau ≈ 2.15 ps.
 
 ```
 inelastic-rebound-md/
-├── CLAUDE.md                  ← este archivo
+├── CLAUDE.md                           ← este archivo
 ├── lammps/
-│   ├── in.equilibrate         ← Fase 1: equilibrar superficie FCC
-│   └── in.impact              ← Fase 2: lanzar proyectil y registrar rebote
-├── python/
-│   ├── __init__.py
-│   ├── exceptions.py          ← jerarquía de excepciones del proyecto
-│   ├── config.py              ← metaclase ConfigMeta + dataclasses de configuración
-│   ├── simulation.py          ← wrappers OOP sobre subprocess LAMMPS
-│   ├── analysis.py            ← análisis físico con decoradores y caché
-│   ├── visualization.py       ← figuras matplotlib (context manager de estilo)
-│   └── runner.py              ← CLI: equilibrate / impact / sweep / analyze / plot
+│   ├── in.bounce_reprod                ← script principal de simulación
+│   └── clusters/                       ← geometrías de bola pre-minimizadas
+│       ├── cluster_N1_min.dat          (1 átomo)
+│       ├── cluster_N2_min.dat          (2 átomos)
+│       ├── cluster_N7_min.dat          (7 átomos)
+│       ├── cluster_N13_min.dat         (13 átomos)
+│       └── cluster_N55_min.dat         (55 átomos)
 ├── scripts/
-│   ├── run.sh                 ← pipeline completo en bash
-│   └── analyze.sh             ← análisis post-simulación
-├── tests/
-│   ├── __init__.py
-│   └── test_analysis.py       ← tests unitarios con datos sintéticos (sin LAMMPS)
-├── data/
-│   └── outputs/               ← salida de simulaciones (ignorado por git)
+│   ├── gen_tabla_repulsiva.py          ← genera tabla LJ repulsiva (c=0)
+│   ├── run_reprod.sh                   ← corre las 6 alturas del paper 2012
+│   ├── analizar_reprod.py              ← extrae rebotes, alturas, COR
+│   └── analizar_reprod_fisica.py       ← partición energética (4 figuras)
 ├── docs/
-│   └── physics_notes.md       ← notas de física (opcional)
-└── requirements.txt
+│   └── borrador_rebotes_gravedad.tex   ← borrador del artículo
+└── data/
+    └── outputs/
+        └── reprod_2012/                ← resultados (ignorado por git)
 ```
 
 ---
 
-## Dependencias
+## Hoja de ruta del estudio
 
-### LAMMPS
-```
-LAMMPS >= 23 Jun 2022 (stable)
-Estilos requeridos: MANYBODY, GRANULAR, EXTRA-PAIR (o compilación estándar)
-Variables de entorno:
-  LAMMPS_EXE=lmp              # nombre del ejecutable (por defecto: lmp)
-  LAMMPS_EXE=lmp_mpi          # para versión MPI
-```
+### Paso 1 — Cerrar el balance energético (T_S en LAMMPS)
+Agregar medición de energía de la superficie en `in.bounce_reprod`:
+- `compute pe_surf_r surface reduce sum c_pe_atom`
+- Sacar `c_surf_ke` y `c_pe_surf_r` en `bounce.dat`
+- Verificar: E_ball + E_surf + U_grav = const rebote a rebote
 
-Verificar:
-```bash
-lmp -version
-```
+### Paso 2 — Baseline N=1 (c_ps=0)
+Correr las mismas 6 alturas con un átomo proyectil.
+Esto mide α_surf(v) directamente (sin canal interno).
 
-### Python
-```
-Python >= 3.10  (se usan union types: Path | str, match/case futuro)
-numpy >= 1.24
-matplotlib >= 3.7
-pytest >= 7.0
-```
+### Paso 3 — Variación sistemática N ∈ {2, 7, 13, 55} (c_ps=0)
+Usar los clusters pre-minimizados en `lammps/clusters/`.
+Comparar α_int(N) con la predicción analítica.
 
-Instalar:
-```bash
-pip install -r requirements.txt
-```
+### Paso 4 — Observar h* (simulación larga)
+Correr h₀=28σ, N=83, 5000τ para verificar convergencia al plateau
+h* = T_B/(Mg) predicho por Gutiérrez 2012.
+
+### Paso 5 — Adhesión c_ps=1
+Repetir Pasos 2-3 con LJ completo. Medir umbral h₀*(N) donde la bola
+no rebota (KE < energía de adhesión).
 
 ---
 
-## Cómo ejecutar
+## Script LAMMPS principal: `in.bounce_reprod`
 
-### Flujo completo (recomendado)
+**Variables configurables vía `-var`:**
 
-```bash
-# 1. Equilibrar la superficie FCC
-python -m python.runner equilibrate --T 0.1 --Nx 8 --Ny 8 --Nz 6
+| Variable  | Defecto | Descripción |
+|-----------|---------|-------------|
+| h0        | 11.03   | Altura inicial del CM [sigma] |
+| g         | 0.026   | Gravedad [sigma/tau²] |
+| a0        | 1.5496  | Parámetro de red FCC argón LJ |
+| Nx,Ny,Nz | 8,8,6   | Celdas de la superficie |
+| rball     | 2.64    | Radio de la bola [sigma] |
+| dt        | 0.005   | Paso de tiempo [tau] |
+| t_total   | 400.0   | Tiempo de simulación [tau] |
 
-# 2. Simular un impacto
-python -m python.runner impact --v0 2.0 --angle 0.0
+**Nota crítica sobre `lattice fcc`:** En `units lj`, el parámetro de
+`lattice fcc scale` es la densidad reducida ρ* = N/V, NO el parámetro de
+red. Para a₀ = 1.5496σ se usa `$(4/(a0³)) ≈ 1.0742`.
 
-# 3. Analizar resultados
-python -m python.runner analyze \
-    --data data/outputs/v0_2.00_ang_0.0/rebound_data.dat \
-    --v0 2.0
-
-# 4. Generar figuras
-python -m python.runner plot trajectory \
-    --data data/outputs/v0_2.00_ang_0.0/rebound_data.dat \
-    --output-dir data/outputs/figures
+**Observables en `bounce.dat`:**
 ```
-
-### Script shell todo-en-uno
-
-```bash
-bash scripts/run.sh
+time  Zcm  Vcmz  KB  TB  VB  Uc  UF  KB3d
 ```
+- KB  = KE traslacional z del CM de la bola
+- TB  = KE interna de la bola (= c_ball_ke - KB3d)
+- VB  = PE intra-bola (= c_pe_ball - 0.5·c_Uc)
+- Uc  = PE colisional bola-superficie (compute group/group)
+- UF  = PE gravitatoria = M·g·Zcm
+- KB3d= KE traslacional 3D del CM
 
-### Barrido paramétrico
+---
 
-```bash
-python -m python.runner sweep \
-    --v0-min 0.5 --v0-max 5.0 --v0-steps 10 \
-    --angles 0.0 30.0 60.0 \
-    --replicas 3 --jobs 4
-```
+## Cómo correr
 
-### Sólo LAMMPS (sin Python)
+### Reproducción Gutiérrez 2012 (N=83, c_ps=0)
 
 ```bash
-cd data/outputs/equilibration
-lmp -in ../../../lammps/in.equilibrate
-lmp -in ../../../lammps/in.impact -var v0 2.0 -var angle 0.0
+# Generar tabla de potencial repulsivo
+python3 scripts/gen_tabla_repulsiva.py \
+    --output data/outputs/reprod_2012/table_repulsiva.txt
+
+# Correr las 6 alturas
+bash scripts/run_reprod.sh --jobs 4
+
+# Analizar
+python3 scripts/analizar_reprod.py --outdir data/outputs/reprod_2012
+python3 scripts/analizar_reprod_fisica.py
 ```
 
----
-
-## Variables LAMMPS sobreescribibles desde CLI
-
-Ambos scripts aceptan `-var nombre valor` desde la línea de comandos.
-
-| Script           | Variable         | Defecto | Unidades   |
-|------------------|------------------|---------|------------|
-| in.equilibrate   | T_target         | 0.1     | eps/kB     |
-| in.equilibrate   | Nx, Ny, Nz       | 8,8,6   | celdas     |
-| in.equilibrate   | steps_equil      | 50000   | pasos      |
-| in.equilibrate   | dt               | 0.005   | tau        |
-| in.impact        | v0               | 2.0     | sigma/tau  |
-| in.impact        | angle            | 0.0     | grados     |
-| in.impact        | T_target         | 0.1     | eps/kB     |
-| in.impact        | steps_impact     | 80000   | pasos      |
-
----
-
-## Tests
-
-Los tests NO requieren LAMMPS (usan datos sintéticos).
+### Una simulación individual
 
 ```bash
-pytest tests/ -v
-```
-
-Cobertura esperada: config, parsers, análisis físico, excepciones, análisis paramétrico.
-
----
-
-## Arquitectura Python – decisiones de diseño
-
-### Jerarquía de excepciones (`exceptions.py`)
-```
-ReboundMDError
-├── IOError
-│   ├── FileNotFoundError
-│   ├── ParseError
-│   └── RestartNotFoundError
-├── SimulationError
-│   ├── LAMMPSNotFoundError
-│   ├── SimulationRuntimeError
-│   └── TimeoutError
-├── ConfigError
-│   ├── ValidationError
-│   └── MissingParameterError
-└── PhysicsError
-    ├── InsufficientDataError
-    ├── NonPhysicalResultError
-    └── ConvergenceError
-```
-
-### Metaprogramación en `config.py`
-- `FieldDescriptor`: descriptor de datos con coerción de tipo y validación.
-- `ConfigMeta` (metaclase): genera automáticamente `__init__`, `__repr__`, `__eq__`, `to_dict`, `from_dict`, `to_json`, `from_json`.
-- `ConfigRegistry` + `__init_subclass__`: registro automático de subclases para deserialización JSON por tipo.
-
-### Decoradores en `analysis.py`
-- `@timed`: mide tiempo de ejecución de métodos.
-- `@require_data`: guarda para métodos que necesitan datos cargados.
-- `@cached`: caché por instancia, invalidada al recargar datos.
-- `@validate_physical(qty, lo, hi)`: fábrica de decoradores paramétrica; verifica bounds físicos.
-
-### Gestores de contexto
-- `EquilibrationSimulation` / `ImpactSimulation`: crean directorio de trabajo, cleanup en `__exit__`.
-- `publication_style()` en `visualization.py`: cambia `rcParams` temporalmente.
-
----
-
-## Lógica física de los scripts LAMMPS
-
-### `in.equilibrate` – evaluación de la lógica
-
-**Correcto:**
-- Lattice FCC con `a0 = 1.5496 sigma` (valor de literatura para LJ Ar a T*=0.1).
-- Capa inferior fija (`setforce 0 0 0`) → absorbe momento, simula bulk semi-infinito.
-- Capa intermedia con termostato Nosé-Hoover NVT → baño de calor.
-- Capa superior NVE libre → superficie limpia para impacto.
-- Cutoff LJ 2.5 sigma con corrección de cola (`pair_modify tail yes`).
-- Rampa de temperatura al inicio para evitar inestabilidades de energía.
-
-**Punto a vigilar:** La corrección de cola (`tail yes`) asume bulk homogéneo.
-Para un slab con vacío, introduce un error pequeño pero sistemático en la presión.
-Para impacto (energía relativa), el efecto es despreciable.
-
-### `in.impact` – evaluación de la lógica
-
-**Correcto:**
-- Lee restart → la superficie ya está equilibrada.
-- Proyectil tipo 2, mismo potencial LJ (homoatómico: Ar-Ar).
-- Termostat NVT sólo en capas internas, proyectil en NVE → no hay sesgo artificial.
-- Registro de alta frecuencia del proyectil con `fix print` (cada 10 pasos).
-- Variables `vz0` y `vx0` calculadas correctamente con cos/sin del ángulo.
-
-**Punto a vigilar:** `z_surf_top = 9.3` es una estimación (Nz=6, a0=1.5496).
-El valor exacto depende de la relajación térmica. Para análisis preciso,
-calcular como `max(z[type==1])` en el post-procesado Python.
-
----
-
-## ¿Por qué Python avanzado + LAMMPS es una buena idea?
-
-| Necesidad de investigación       | Herramienta Python usada            |
-|----------------------------------|-------------------------------------|
-| Validar parámetros de simulación | `ConfigMeta` + `FieldDescriptor`    |
-| No perder resultados por errores | Jerarquía de excepciones tipada     |
-| Reproducir experimentos          | `to_json` / `from_json` en configs  |
-| Barrido paramétrico masivo       | `ProcessPoolExecutor` en `runner.py`|
-| Evitar recalcular análisis       | `@cached` en `ReboundAnalyzer`      |
-| Figuras reproducibles            | `publication_style()` context mgr   |
-| Tests sin LAMMPS                 | Datos sintéticos + pytest           |
-
----
-
-## Convenciones de código
-
-- **PEP 8** estricto. Líneas ≤ 99 caracteres.
-- **Type hints** en todas las firmas públicas (Python 3.10+).
-- **Docstrings** en formato NumPy para clases y funciones públicas.
-- **No** usar `print()` en módulos library; usar `logging`.
-- **No** modificar scripts LAMMPS directamente en producción; usar `-var` overrides.
-- Nuevos tests deben correr sin LAMMPS instalado.
-
----
-
-## Flujo de trabajo Git
-
-```bash
-git checkout claude/review-lammps-project-hra1A   # rama de desarrollo
-# ... editar ...
-git add -p                                          # staging selectivo
-git commit -m "descripción concisa del cambio"
-git push -u origin claude/review-lammps-project-hra1A
+cd data/outputs/mi_run
+cp ../../reprod_2012/table_repulsiva.txt .
+lmp -in ../../../lammps/in.bounce_reprod \
+    -var h0 28.15 -log lammps.log -screen none
 ```
 
 ---
 
-## Extensiones futuras sugeridas
+## Hardware y tiempos de referencia
 
-1. **Potenciales más realistas**: EAM (metales) usando `pair_style eam/fs`.
-2. **Cluster proyectil**: crear con `create_atoms region` para estudiar tamaño de impacto.
-3. **OVITO**: integrar `ovito` Python API para análisis estructural (CNA, DXA).
-4. **Jupyter notebooks**: en `docs/notebooks/` para resultados interactivos.
-5. **Comparación con teoría de Hertz**: superponer `delta ~ F^(2/3)` en curvas de fuerza.
+**CPU:** benchmark LAMMPS 7 Feb 2024 → ~1.37 M atom-steps/s
+
+| Simulación          | Átomos | Pasos     | Tiempo estimado |
+|---------------------|--------|-----------|-----------------|
+| Un rebote (400τ)    | ~1620  | 80 000    | ~1.5 min        |
+| 6 alturas en serie  | ~1620  | 480 000   | ~9 min          |
+| Largo (5000τ)       | ~1620  | 1 000 000 | ~12 min         |
+
+---
+
+## Resultados de la reproducción (N=83, c_ps=0)
+
+### Partición de energía en el primer rebote
+
+| h₀_eff (σ) | v_imp (σ/τ) | e₁    | α_CM  | α_int | α_surf |
+|------------|-------------|-------|-------|-------|--------|
+| 8.53       | 0.666       | 0.906 | 0.822 | 0.068 | 0.110  |
+| 16.21      | 0.918       | 0.697 | 0.486 | 0.211 | 0.303  |
+| 25.77      | 1.158       | 0.662 | 0.438 | 0.178 | 0.384  |
+| 38.94      | 1.423       | 0.660 | 0.435 | 0.223 | 0.342  |
+| 56.41      | 1.713       | 0.618 | 0.382 | 0.219 | 0.399  |
+| 77.24      | 2.004       | 0.503 | 0.253 | 0.233 | 0.514  |
+
+**Hallazgo:** α_int ≈ 0.20–0.23 constante para v > 0.9 σ/τ.
+
+### Nivel de contacto efectivo
+z₀ ≈ 11.6–11.8 σ (media de los mínimos de Zcm). Todas las alturas h_n
+se miden relativas a z₀. El parámetro LAMMPS h0 se mide desde z_box_top
+(= Nz·a₀ ≈ 9.30σ); la diferencia es z₀ - z_box_top ≈ 2.3σ.
+
+---
+
+## Física de los scripts LAMMPS
+
+### Potenciales
+- Superficie-superficie: LJ completo, rc=2.5σ
+- Bola-bola: LJ completo, rc=2.5σ
+- Bola-superficie: puramente repulsivo (c=0), tabla pre-generada
+  - Para c_ps=1 (Paso 5): `pair_coeff 1 2 lj/cut 1.0 1.0 2.5`
+
+### Dinámica
+- NVE global, sin termostato (reproduce Gutiérrez 2012)
+- Capas inferiores fijas: `fix setforce 0 0 0` (2 capas del fondo)
+- Gravedad solo en la bola: `fix gravity vector 0 0 -1`
+- Pared reflectante en zlo: `fix wall/reflect` solo en `mobile_surf`
+
+---
+
+## Convenciones
+
+- Unidades LJ: longitud en σ, energía en ε, tiempo en τ, masa en m
+- Argón: ε ≈ 0.0104 eV, σ ≈ 3.4 Å, τ ≈ 2.15 ps, m = 39.95 uma
+- Scripts de análisis: Python simple (numpy + matplotlib + scipy)
+- No usar framework OOP; un script por tarea

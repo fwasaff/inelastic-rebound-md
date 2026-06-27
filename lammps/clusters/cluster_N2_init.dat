@@ -1,0 +1,18 @@
+# LJ cluster N=2, centered at origin, atom type=2
+
+2 atoms
+2 atom types
+
+-6.00000000 6.00000000 xlo xhi
+-6.00000000 6.00000000 ylo yhi
+-6.56123102 6.56123102 zlo zhi
+
+Masses
+
+1 1.0
+2 1.0
+
+Atoms  # atomic
+
+1 2 0.0000000000 0.0000000000 -0.5612310242
+2 2 0.0000000000 0.0000000000 0.5612310242
