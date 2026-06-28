@@ -1,0 +1,148 @@
+# ==============================================================================
+# in.bounce_cluster
+# Impacto de un nanocúmulo LJ pre-minimizado sobre superficie FCC, NVE.
+#
+# Generaliza in.bounce_reprod para N variable: en vez de crear la bola con
+# create_atoms+region, lee el cluster desde un archivo de datos LAMMPS
+# pre-minimizado, centrado en el origen, con átomos tipo 2.
+#
+# Uso:
+#   lmp -in lammps/in.bounce_cluster \
+#       -var cluster_file lammps/clusters/cluster_N1_min.dat \
+#       -var h0 11.03
+#
+# Variables configurables:
+#   cluster_file : ruta al archivo .dat del cluster pre-minimizado
+#   h0           : altura inicial del CM de la bola sobre la superficie [sigma]
+#   g            : gravedad [sigma/tau^2]
+# ==============================================================================
+
+# --- Configuración global -----------------------------------------------------
+units           lj
+atom_style      atomic
+boundary        p p f
+newton          on
+
+# --- Variables ----------------------------------------------------------------
+variable    cluster_file  index lammps/clusters/cluster_N1_min.dat
+variable    h0            index 11.03
+variable    g             index 0.026
+variable    a0            equal 1.5496
+variable    Nx            equal 8
+variable    Ny            equal 8
+variable    Nz            equal 6
+variable    dt            equal 0.005
+variable    thermo_freq   equal 100
+variable    print_freq    equal 20
+variable    t_total       equal 400.0
+variable    steps_total   equal round(v_t_total/v_dt)
+
+# --- Caja y superficie --------------------------------------------------------
+lattice         fcc $(4.0/(v_a0*v_a0*v_a0))
+region          box_surf block 0 ${Nx} 0 ${Ny} 0 ${Nz} units lattice
+create_box      2 box_surf
+create_atoms    1 box
+
+mass            1 1.0
+mass            2 1.0
+
+# Extender caja en z para la trayectoria de la bola
+variable    z_surf_top  equal $(zhi)
+variable    z_ball_cm   equal $(v_z_surf_top + v_h0)
+variable    z_box_top   equal $(v_z_ball_cm + 10.0)
+change_box  all z final -0.5 ${z_box_top} units box
+
+# --- Leer cluster pre-minimizado y posicionar ---------------------------------
+# El cluster está centrado en el origen. Lo desplazamos al centro de la caja
+# en x,y y a la altura h0 sobre la superficie en z.
+variable    Lx  equal xhi-xlo
+variable    Ly  equal yhi-ylo
+read_data   ${cluster_file} add append shift $(v_Lx/2) $(v_Ly/2) ${z_ball_cm}
+
+# --- Potenciales --------------------------------------------------------------
+pair_style  hybrid lj/cut 2.5 table linear 5000
+pair_coeff  1 1  lj/cut 1.0 1.0 2.5
+pair_coeff  2 2  lj/cut 1.0 1.0 2.5
+pair_coeff  1 2  table table_repulsiva.txt REPULSIVE_LJ
+
+# --- Grupos -------------------------------------------------------------------
+group       surface type 1
+group       ball    type 2
+
+variable    z_fixed_top equal 2.0
+region      reg_fixed block INF INF INF INF 0 ${z_fixed_top} units lattice
+group       fixed_surf  region reg_fixed
+group       mobile_surf subtract surface fixed_surf
+
+# --- Minimización T=0 ---------------------------------------------------------
+# El cluster ya está minimizado en aislamiento; solo minimizamos la superficie.
+# La bola se mantiene fija durante la minimización de la superficie.
+fix         f_fix_bot   fixed_surf  setforce 0.0 0.0 0.0
+fix         f_tmp_ball  ball        setforce 0.0 0.0 0.0
+minimize    1.0e-6 1.0e-8 5000 50000
+unfix       f_tmp_ball
+unfix       f_fix_bot
+
+velocity    all set 0.0 0.0 0.0
+
+# --- Variables derivadas de energía -------------------------------------------
+variable    N_ball  equal count(ball)
+variable    M_ball  equal v_N_ball*1.0
+variable    M_surf  equal count(surface)*1.0
+
+variable    Zcm   equal  xcm(ball,z)
+variable    Vcmz  equal  vcm(ball,z)
+variable    Vcmx  equal  vcm(ball,x)
+variable    Vcmy  equal  vcm(ball,y)
+
+variable    KB    equal  0.5*v_M_ball*v_Vcmz^2
+variable    KB3d  equal  0.5*v_M_ball*(v_Vcmx^2+v_Vcmy^2+v_Vcmz^2)
+
+compute     ball_ke   ball    ke
+compute     surf_ke   surface ke
+compute     Uc        ball    group/group surface
+compute     pe_atom   all     pe/atom
+compute     pe_ball   ball    reduce sum c_pe_atom
+compute     pe_surf_r surface reduce sum c_pe_atom
+
+variable    TB    equal  c_ball_ke-v_KB3d
+variable    VB    equal  c_pe_ball-0.5*c_Uc
+variable    UF    equal  v_M_ball*${g}*v_Zcm
+
+variable    Vcmz_surf  equal  vcm(surface,z)
+variable    Vcmx_surf  equal  vcm(surface,x)
+variable    Vcmy_surf  equal  vcm(surface,y)
+variable    KS         equal  0.5*v_M_surf*(v_Vcmx_surf^2+v_Vcmy_surf^2+v_Vcmz_surf^2)
+
+variable    KS_out      equal  c_surf_ke
+variable    PE_surf_out equal  c_pe_surf_r
+variable    Uc_out      equal  c_Uc
+variable    time        equal  step*${dt}
+
+# --- Dinámica NVE -------------------------------------------------------------
+fix         f_freeze_fixed  fixed_surf  setforce 0.0 0.0 0.0
+fix         f_nve           all         nve
+fix         f_wall_bot  mobile_surf  wall/reflect zlo EDGE
+fix         f_grav      ball         gravity ${g} vector 0 0 -1
+
+# --- Salida -------------------------------------------------------------------
+timestep    ${dt}
+thermo      ${thermo_freq}
+thermo_style custom step time v_Zcm v_Vcmz v_KB v_TB v_VB c_Uc v_UF etotal
+thermo_modify norm no lost warn flush yes
+
+fix print_energy all print ${print_freq} &
+    "${time} ${Zcm} ${Vcmz} ${KB} ${TB} ${VB} ${Uc_out} ${UF} ${KB3d} ${KS_out} ${PE_surf_out}" &
+    file bounce.dat &
+    title "# time Zcm Vcmz KB TB VB Uc UF KB3d KS PE_surf" &
+    screen no
+
+# --- Correr -------------------------------------------------------------------
+run     ${steps_total}
+
+print "======================================================="
+print "BOUNCE CLUSTER COMPLETO"
+print "cluster_file = ${cluster_file}"
+print "N_ball = $(count(ball)) atoms"
+print "h0 = ${h0} sigma"
+print "======================================================="
