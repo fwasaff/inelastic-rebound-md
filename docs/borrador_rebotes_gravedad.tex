@@ -36,8 +36,9 @@
 \newcommand{\TODO}[1]{\textbf{[TODO: #1]}}
 
 \title{%
-    \textbf{Cascada de disipación energética en rebotes sucesivos\\
-    de nanocúmulos Lennard-Jones bajo campo gravitatorio}
+    \textbf{Partición de energía en el impacto de nanocúmulos\\
+    Lennard-Jones sobre superficies FCC: cuatro canales\\
+    y escalado con el tamaño del proyectil}
 }
 
 \author{%
@@ -151,7 +152,9 @@ grandes ($h_0 > 41\,\sigma$), la bola se funde durante el impacto. Sin embargo,
 ese trabajo utilizó una interacción bola-superficie \emph{puramente repulsiva}
 ($c = 0$), por lo que la adhesión era imposible por construcción, y no estudió la
 dependencia con el tamaño del cúmulo $N$ ni la influencia de la temperatura de
-la superficie.
+la superficie. Adicionalmente, su descomposición energética agrupa en un único
+canal «superficial» la variación de la PE intra-bola y la excitación fonónica
+directa de la red, lo que sobreestima esta última en un factor $\sim 3$--$5$.
 
 Estudios de impacto único de cúmulos LJ sobre superficies FCC
 \cite{Awasthi2007, Awasthi2010} han establecido la dependencia de $\cor(v_0, N,
@@ -174,10 +177,21 @@ Motivaciones concretas para este estudio incluyen:
     ($3N-6$ modos) acoplado a un baño de calor macroscópico (la superficie).
 \end{itemize}
 
-En este trabajo presentamos simulaciones de dinámica molecular de cúmulos LJ de
-$N \in \{1, 2, 7, 13, 55\}$ átomos cayendo sobre una superficie FCC de argón
-bajo gravedad reducida $\gstar$, y caracterizamos la secuencia $\{\coR{n}\}$,
-el crecimiento de $\Tint(n)$ y el tiempo de termalización $n^*(N)$.
+En este trabajo reproducimos los experimentos de Gutiérrez et al.\ con
+\lammps{} ($c_{ps}=0$, $T=0$, mismos parámetros) y extendemos su análisis en
+dos direcciones. \textbf{(i)}~Descomponemos la energía del primer rebote en
+\emph{cuatro} canales medidos de forma independiente, separando la variación
+neta de la PE intra-bola ($\alpha_{\Delta V_B}$, expansión anarmónica
+post-impacto) de la excitación directa de la superficie ($\alpha_{\mathrm{surf}}$),
+con la identidad $\alpha_{\mathrm{cm}} + \alpha_{T_B} + \alpha_{\Delta V_B}
++ \alpha_{\mathrm{surf}} = 1$ exacta rebote a rebote.
+\textbf{(ii)}~Extendemos el barrido a $N \in \{1, 2, 7, 13, 55, 83\}$ y
+mostramos que la fórmula de equipartición de Gutiérrez describe los datos con
+$N_c \approx N_{\mathrm{bola}}$ solo al usar la fracción interna total
+$\alpha_{\mathrm{bola}} = \alpha_{T_B} + \alpha_{\Delta V_B}$, lo que
+implica que cada átomo de la bola se acopla efectivamente con un oscilador
+de la superficie y que $\alpha_{\mathrm{bola}} \to \tfrac{1}{2}$ para
+$N \to \infty$.
 
 % =============================================================================
 \section{Modelo y definiciones}
@@ -720,230 +734,43 @@ rango $N\in\{2,\ldots,83\}$.
     \label{fig:B_consolid}
 \end{figure}
 
-% -----------------------------------------------------------------------------
-\subsection{Trayectoria representativa: la pelota que se para}
-\label{sec:trayectoria}
-
-La Figura~\ref{fig:zcm} muestra $Z_{\mathrm{cm}}(t)$ para $N=13$,
-$\gstar=0.01$, $\Tstar=0.1$, $\epsps=1.00$ durante los primeros \TODO{n*}
-rebotes. Los máximos sucesivos $h_0 > h_1 > h_2 > \cdots$ son visualmente
-distintos de la serie geométrica $h_n = h_0 \cor^{2n}$ con $\cor$ constante:
-la separación entre alturas consecutivas \emph{aumenta} con $n$, lo que refleja
-que $\coR{n}$ decrece.
-
-\begin{figure}[ht]
-    \centering
-    % \includegraphics[width=0.8\textwidth]{fig1_zcm_trayectoria.pdf}
-    \fbox{\parbox{0.8\textwidth}{\centering\vspace{2cm}
-    FIGURA 1: $Z_{\mathrm{cm}}(t)$ para $N=13$.
-    Comparación con serie geométrica (línea discontinua).\\
-    Destacar los máximos $h_n$ y el momento de adhesión.
-    \vspace{2cm}}}
-    \caption{Trayectoria del CM del cúmulo $N=13$ bajo gravedad $\gstar=0.01$.
-    La línea discontinua muestra la predicción de altura constante
-    $h_n = h_0 \cor_1^{2n}$ (pelota clásica sin modos internos). La
-    discrepancia crece con $n$ y es atribuible al calentamiento progresivo
-    del cúmulo.}
-    \label{fig:zcm}
-\end{figure}
-
-\subsection{Caso de referencia \texorpdfstring{$N=1$}{N=1}: pelota clásica}
-\label{sec:N1}
-
-Para el proyectil monoatómico, $E_{\mathrm{int}} \equiv 0$ en todo momento.
-La Figura~\ref{fig:en_N1} muestra que $\coR{n}$ es \textbf{independiente de $n$}
-dentro del error estadístico: los valores obtenidos son $\coR{n} \approx
-\TODO{0.52}$ (incertidumbre $\TODO{0.03}$) para $\Tstar=0.1$ y $\gstar=0.01$.
-
-La secuencia de alturas sigue exactamente
-\begin{equation}
-    h_n = h_0\,\coR{}^{2n},
-    \label{eq:serie_geo}
-\end{equation}
-y la suma total de distancias recorridas converge a
-$d_{\mathrm{tot}} = h_0(1+\cor^2)/(1-\cor^2)$, consistente con el tiempo
-finito de la serie de rebotes (el cúmulo se adhiere en tiempo finito). Este
-caso valida tanto el protocolo de detección de rebotes como la ausencia de
-artefactos numéricos en la descomposición energética.
-
-\begin{figure}[ht]
-    \centering
-    \fbox{\parbox{0.8\textwidth}{\centering\vspace{2cm}
-    FIGURA 2: $\coR{n}$ vs $n$ para $N=1$ (línea plana) y $N=7,13,55$
-    (curvas decrecientes). Todos para $\gstar=0.01$, $\Tstar=0.1$,
-    $\epsps=1.00$.
-    \vspace{2cm}}}
-    \caption{Secuencia del coeficiente de restitución $\coR{n}$ en función del
-    número de rebote $n$. Para $N=1$ (cuadrados negros), $\coR{n}$ es
-    constante: es la pelota rebotante clásica. Para $N \geq 2$ (líneas
-    de color), $\coR{n}$ decrece con $n$, y la tasa de decaimiento aumenta con
-    $N$.}
-    \label{fig:en_N1}
-\end{figure}
-
-\subsection{Sobrecalentamiento interno: $\Delta\Tint(n)$}
-\label{sec:calentamiento}
-
-La Figura~\ref{fig:Tint} muestra el sobrecalentamiento $\Delta\Tint(n) =
-\Tint(n) - \Tstar$ para los cinco tamaños estudiados. Todos los cúmulos parten
-de $\Delta\Tint(0) = 0$ (equilibrio), pero inmediatamente tras el primer
-rebote $\Delta\Tint(1) > 0$ para $N \geq 2$.
-
-La curva $\Delta\Tint(n)$ tiene dos fases:
-\begin{enumerate}
-    \item \textbf{Fase ascendente} ($n < n_{\mathrm{pico}}$): cada rebote
-    deposita energía gravitatoria en los modos internos a una tasa que supera
-    la disipación de calor por contacto con la superficie. $\Delta\Tint$ crece
-    aproximadamente de forma lineal.
-    \item \textbf{Fase descendente} ($n > n_{\mathrm{pico}}$): la energía
-    mecánica disponible $\Ecm{n}^{-}$ ha disminuido tanto (rebotes más bajos)
-    que la tasa de inyección de calor cae por debajo de la tasa de pérdida al
-    sustrato. $\Delta\Tint$ disminuye hacia cero.
-\end{enumerate}
-El rebote $n_{\mathrm{pico}}(N)$ en el que $\Delta\Tint$ es máximo es la
-\textbf{temperatura de pico} del cúmulo durante toda su historia de rebotes.
-Esta temperatura de pico es relevante para decidir si el cúmulo puede
-fragmentarse: si $\Tint^{\mathrm{pico}} = \Tstar + \Delta\Tint^{\mathrm{pico}}$
-supera la temperatura de fusión del cúmulo aislado, el impacto puede provocar
-la fusión parcial del proyectil antes de la adhesión.
-
-\begin{table}[ht]
-\centering
-\caption{Rebote de pico $n_{\mathrm{pico}}$ y sobrecalentamiento máximo
-$\Delta\Tint^{\mathrm{pico}}$ para $\gstar=0.01$, $\Tstar=0.1$, $\epsps=1.00$.
-Promedio de 3 réplicas.}
-\label{tab:nstar}
-\begin{tabular}{cccc}
-\toprule
-$N$ & $n_{\mathrm{pico}}$ & $\Delta\Tint^{\mathrm{pico}}\,[\eps/k_B]$ & $n_{\mathrm{adh}}$ \\
-\midrule
-1  & ---        & $0$ (sin modos internos)      & $\TODO{??}$ \\
-2  & $\TODO{??}$ & $\TODO{??}$                  & $\TODO{??}$ \\
-7  & $\TODO{??}$ & $\TODO{??}$                  & $\TODO{??}$ \\
-13 & $\TODO{??}$ & $\TODO{??}$                  & $\TODO{??}$ \\
-55 & $\TODO{??}$ & $\TODO{??}$                  & $\TODO{??}$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{figure}[ht]
-    \centering
-    \fbox{\parbox{0.8\textwidth}{\centering\vspace{2cm}
-    FIGURA 3: $\Delta\Tint(n)\,[\eps/k_B]$ vs $n$ para $N=2,7,13,55$.
-    Todos parten de $\Delta\Tint=0$.
-    Indicar $n_{\mathrm{pico}}(N)$ con puntos llenos.
-    \vspace{2cm}}}
-    \caption{Sobrecalentamiento $\Delta\Tint(n) = \Tint(n) - \Tstar$ del cúmulo
-    en función del número de rebote. El sistema parte siempre de $\Delta\Tint=0$
-    (equilibrio con la superficie). La gravedad inyecta calor interno hasta
-    $n_{\mathrm{pico}}$; después, la pérdida al sustrato domina y $\Delta\Tint$
-    decrece hasta la adhesión. Las curvas no se cruzan: a mayor $N$, mayor pico
-    pero alcanzado en menos rebotes.}
-    \label{fig:Tint}
-\end{figure}
-
-\subsection{Descomposición de la disipación: \texorpdfstring{$\ain{n}$}{α\_int}
-vs \texorpdfstring{$\asu{n}$}{α\_sup}}
-\label{sec:particion}
-
-La Figura~\ref{fig:alphas} muestra $\ain{n}$ y $\asu{n}$ como función de $n$
-para $N=13$. La suma $\ain{n} + \asu{n} = 1 - \coR{n}^2$ es la disipación
-total; lo que cambia con $n$ es el \emph{reparto} entre los dos canales.
-
-Para los primeros rebotes (cúmulo frío, $\Tint \approx 0$), $\ain{n}$ es
-pequeño y $\asu{n}$ domina: la disipación va principalmente a la superficie,
-como en el caso $N=1$. A medida que $\Tint$ crece, $\ain{n}$ aumenta y $\asu{n}$
-disminuye. Para $n > n^*$ (cúmulo termalizado), el reparto se estabiliza: el
-canal interno ya no crece porque el cúmulo está en equilibrio con la superficie.
-
-Este resultado tiene una implicación directa: \textbf{los primeros rebotes de
-un cúmulo frío son análogos al impacto de un átomo sobre la superficie} (dominados
-por $\asu{}$); es sólo a partir de $n \sim n^*/3$ que la contribución interna
-se vuelve comparable a la superficial.
-
-\begin{figure}[ht]
-    \centering
-    \fbox{\parbox{0.8\textwidth}{\centering\vspace{2cm}
-    FIGURA 4: $\ain{n}$ (rojo) y $\asu{n}$ (azul) vs $n$ para $N=13$.
-    Mostrar la suma total $= 1 - e_n^2$ también.
-    \vspace{2cm}}}
-    \caption{Partición de la disipación por rebote para $N=13$. La fracción
-    interna $\ain{n}$ crece con $n$ mientras la superficial $\asu{n}$
-    decrece. La suma total $\ain{n}+\asu{n}$ también crece (es decir, $\coR{n}$
-    decrece), pero más lentamente que $\ain{n}$ solo.}
-    \label{fig:alphas}
-\end{figure}
-
-\subsection{Vida del rebote: tiempo hasta la adhesión}
-\label{sec:vida}
-
-La adhesión final ocurre cuando $\We_n < \We_c$. Para $N=1$, con $\cor$
-constante, la altura cae geométricamente y el cúmulo se adhiere al rebote
-$n_{\mathrm{adh}}$ tal que
-\begin{equation}
-    n_{\mathrm{adh}}^{N=1} = \left\lceil \frac{\ln(\We_c/\We_0)}{2\ln \cor}
-    \right\rceil.
-    \label{eq:nadh_N1}
-\end{equation}
-Para $N \geq 2$, el decaimiento de $\coR{n}$ es más rápido que geométrico:
-$n_{\mathrm{adh}}$ es \emph{menor} que la predicción de la ec.~\eqref{eq:nadh_N1}
-con el mismo $\coR{1}$. La discrepancia $\Delta n_{\mathrm{adh}}(N) =
-n_{\mathrm{adh}}^{N=1} - n_{\mathrm{adh}}(N)$ mide cuántos rebotes
-``adelanta'' la adhesión debido al calentamiento interno.
-
-La Figura~\ref{fig:vida} muestra $n_{\mathrm{adh}}(N, \gstar, \Tstar)$. El
-resultado más destacado es que $n_{\mathrm{adh}}$ decrece con $N$
-aproximadamente como $n_{\mathrm{adh}} \sim N^{-\nu}$ con exponente
-$\nu \approx \TODO{0.3}$, sugiriendo una relación de escala entre el número de
-modos vibracionales ($\propto N$) y la tasa de disipación interna.
-
-\begin{figure}[ht]
-    \centering
-    \fbox{\parbox{0.8\textwidth}{\centering\vspace{2cm}
-    FIGURA 5: $n_{\mathrm{adh}}$ vs $N$ en escala log-log.
-    Cada punto: promedio de 3 réplicas.
-    Mostrar distintos $\gstar$ y $\Tstar$.
-    \vspace{2cm}}}
-    \caption{Número de rebotes hasta la adhesión $n_{\mathrm{adh}}$ vs tamaño
-    del cúmulo $N$ (escala log-log). La línea discontinua muestra la predicción
-    para COR constante (caso $N=1$ extrapolado). Los cúmulos más grandes se
-    adhieren en menos rebotes.}
-    \label{fig:vida}
-\end{figure}
-
 % =============================================================================
 \section{Discusión}
 \label{sec:discusion}
 % =============================================================================
 
-\subsection{Por qué el decaimiento no es geométrico}
-\label{sec:nogeo}
+\subsection{Origen físico de \texorpdfstring{$\alpha_{\Delta V_B}$}{α\_ΔVB}:
+expansión anarmónica post-impacto}
+\label{sec:anarmonico}
 
-El modelo más simple para una secuencia de rebotes asume $\coR{n} = \cor =
-\mathrm{const}$, lo que da $h_n = h_0 \cor^{2n}$ (pelota de goma clásica). Este
-modelo predice correctamente el caso $N=1$ pero falla para $N \geq 2$. La razón
-es la retroalimentación positiva entre $\Tint$ y $\ain{n}$:
+El canal $\alpha_{\Delta V_B}$ no tiene análogo en modelos de impacto de esferas
+rígidas ni en la aproximación armónica. Su origen es la \emph{asimetría temporal}
+del proceso de compresión-expansión del cúmulo LJ durante el contacto.
 
+Durante la compresión (cúmulo decelerando hacia la superficie), el impulso de
+la pared convierte KE del CM en energía potencial de la red intra-bola. A las
+velocidades estudiadas ($v_{\mathrm{imp}} \geq 0.9\,\sigma/\tau$), la compresión
+supera el rango harmónico y la bola queda en un estado de PE mayor que su
+referencia de equilibrio. Al rebotar, la KE del CM se restaura, pero la relajación
+de la PE interna hacia el equilibrio tarda varias vibraciones internas
+($\sim 1$--$5\,\tau$), tiempo durante el cual el cúmulo ya se aleja de la
+superficie. En el primer apogeo, $V_B > V_B^{(0)}$ y la diferencia
+$\alpha_{\Delta V_B} = (V_B^{(1)} - V_B^{(0)})/E_0$ registra esta energía
+potencial que la bola «se lleva» sin haber convertido aún en KE interna.
+
+Este mecanismo tiene dos consecuencias:
 \begin{enumerate}
-    \item Rebote $n$ excita modos vibracionales: $\Eint{n} \to \Eint{n} +
-    \Delta E_{\mathrm{int},n}$.
-    \item El cúmulo más caliente tiene mayor densidad de estados vibracionales
-    accesibles $g(\omega)$ a la energía del impacto.
-    \item En el rebote $n+1$, la sección eficaz de captura de energía interna es
-    mayor: $\ain{n+1} > \ain{n}$.
-    \item Por la ec.~\eqref{eq:balance}: $\coR{n+1} < \coR{n}$.
+    \item La descomposición de Gutiérrez —que toma $T_B^{(1)}$ al primer apogeo
+    como medida de toda la energía interna— subestima el calor depositado en la
+    bola. A velocidades altas, $\alpha_{\Delta V_B} > \alpha_{T_B}$: la PE supera
+    a la KE interna en el apogeo.
+    \item $\alpha_{\mathrm{bola}} = \alpha_{T_B} + \alpha_{\Delta V_B}$ es la
+    cantidad conservada que entra al balance de canales; $\alpha_{T_B}$ solo es
+    la fracción que ya se ha termalizado en el momento de la medición. En
+    rebotes posteriores, $\alpha_{\Delta V_B}$ se redistribuirá entre los modos
+    internos de la bola y eventualmente fluirá parcialmente de vuelta a la
+    superficie.
 \end{enumerate}
-
-El mecanismo es análogo al de un oscilador anarmónico cuya frecuencia de
-resonancia se desplaza al calentarse: a alta $\Tint$, el espectro del cúmulo
-se ensancha y los picos fonónicos de la superficie (que antes no resonaban)
-ahora pueden transferir momento.
-
-Para $n > n^*$, la retroalimentación se satura porque $\Tint \approx \Tstar$:
-el cúmulo está en equilibrio térmico con la superficie y $\ain{n}$ se
-estabiliza en su valor de equilibrio $\ain{\infty}(N, \Tstar)$. A partir de
-ese punto la secuencia vuelve a ser aproximadamente geométrica, con un COR
-asintótico $\coR{\infty} < \coR{1}$.
 
 \subsection{Conexión con la ley de Haff}
 \label{sec:haff}
@@ -962,96 +789,106 @@ irreversibilidad no viene de la entropía del gas granular sino de la diferencia
 de temperatura $\Tint - \Tstar$ que impulsa el flujo de calor de vuelta a la
 superficie en cada impacto.
 
-\subsection{Números mágicos}
+\subsection{Números mágicos e \texorpdfstring{$\alpha_{\mathrm{surf}}$}{α\_surf}
+no monótona}
 \label{sec:magicos}
 
 Los cúmulos $N=13$ y $N=55$ son icosaedros de Mackay con temperatura de fusión
-local superior a sus tamaños vecinos. Podría esperarse que su mayor estabilidad
-estructural reduzca $\ain{n}$ (modos más rígidos, más difíciles de excitar). Los
-datos muestran que la secuencia $\coR{n}$ para $N=13$ y $N=55$ sigue la
-tendencia suave con $N$ sin desviaciones estadísticamente significativas. La
-estabilidad termodinámica extra de los icosaedros no se traduce en una disipación
-dinámica anómala en el régimen de energías estudiado ($\We \in [0.3, 3]$).
+local superior a la de sus tamaños vecinos. En las fracciones
+$\alpha_{T_B}(N)$ y $\alpha_{\mathrm{bola}}(N)$ (paneles (c) y (d) de la
+Fig.~\ref{fig:B_consolid}), ambos tamaños siguen la tendencia suave predicha
+por la ec.~\eqref{eq:gutierrez} con $N_c=84$ sin desviaciones estadísticamente
+significativas. La mayor estabilidad estructural de los icosaedros no reduce la
+captura de energía interna en el primer impacto a las velocidades estudiadas.
 
-\subsection{Papel de la temperatura $\Tstar$ en la tasa de la cascada}
-\label{sec:rolTstar}
+La excepción es $\alpha_{\mathrm{surf}}$, que sí muestra una anomalía en $N=13$:
+el máximo del panel (b) de la Fig.~\ref{fig:B_consolid} ($\approx 32\%$) supera
+en un factor $\sim 3$ el valor para $N=83$ ($11\%$). La interpretación es
+geométrica: el icosaedro de $N=13$ tiene un radio de contacto
+$r_{13} \approx 1.5\,\sigma$ comparable al rango de los modos fonónicos de
+superficie más acoplados ($\lambda \sim 2$--$3\,\sigma$), maximizando la
+transferencia directa. Para $N \gg 13$, la zona de contacto crece pero los
+modos internos del cúmulo absorben el exceso antes de que llegue a la red.
 
-Aunque la cascada existe para cualquier $\Tstar$ (porque su fuente es la
-gravedad, no un gradiente de temperatura), el valor de $\Tstar$ controla la
-\emph{tasa} a la que se desarrolla. El mecanismo es el siguiente: un cúmulo
-termalizado a $\Tstar$ alto tiene sus modos vibracionales más excitados y el
-espectro de frecuencias efectivamente desplazado hacia bajas frecuencias por
-anarmonicidad. Cuando el impacto produce un impulso de fuerza, la sección eficaz
-de acoplamiento a los modos internos es mayor porque los modos de baja frecuencia
-—ya excitados térmicamente— resuenan con el pulso de impacto a velocidades
-menores. En términos prácticos, $\ain{1}(\Tstar = 0.5) > \ain{1}(\Tstar = 0.1)$
-para el mismo $N$ y el mismo $v_{0,1}$.
+\subsection{Interpretación de \texorpdfstring{$N_c \approx N_{\mathrm{bola}}$}{Nc ≈ Nbola}}
+\label{sec:Nc_interpretacion}
 
-Las consecuencias son:
-\begin{itemize}
-    \item El sobrecalentamiento de pico $\Delta\Tint^{\mathrm{pico}}$ es mayor
-    a $\Tstar$ alto, aunque el punto de partida sea el mismo ($\Delta\Tint(0)=0$).
-    \item El rebote de pico $n_{\mathrm{pico}}$ ocurre antes a $\Tstar$ alto:
-    la cascada se acelera desde el primer impacto.
-    \item El número de rebotes hasta la adhesión $n_{\mathrm{adh}}$ es menor
-    a $\Tstar$ alto, tanto por el efecto sobre $\ain{n}$ como por la
-    reducción directa de $\We_c$ que produce la temperatura superficial más alta.
-\end{itemize}
-Esta dependencia con $\Tstar$ significa que la historia térmica de la superficie
-determina el número de rebotes que experimenta el cúmulo: un sustrato caliente
-atrapa al proyectil más rápidamente no solo porque reduce la barrera de adhesión,
-sino porque calienta al cúmulo desde el primer contacto.
+El resultado $N_c = 84 \approx N_{\mathrm{bola}}$ tiene una lectura directa en
+términos de la fórmula de equipartición ec.~\eqref{eq:gutierrez}: la energía
+de impacto se distribuye entre $3N_{\mathrm{bola}}-3$ osciladores internos y
+$3N_c \approx 3N_{\mathrm{bola}}$ osciladores externos (en la superficie),
+es decir, la huella activa del impacto contiene aproximadamente el mismo número
+de osciladores que la propia bola. Esta escala es consistente con la observación
+de que la zona de contacto bola-superficie involucra del orden de $N^{2/3}$
+átomos superficiales, pero que la profundidad de penetración activa varios planos
+de la red, resultando en un número efectivo $\sim N$.
+
+Para $N_c = N$, el límite asintótico $\alpha_{\mathrm{bola}} \to \tfrac{1}{2}$
+es el resultado de equipartición entre dos sistemas de igual tamaño: es la
+misma física que en la colisión elástica de dos masas iguales
+($e=1 \Rightarrow$ toda la energía al impactado), con la diferencia de que aquí
+la transferencia es irreversible porque los modos se excitan en formas normales
+distintas a las del CM.
 
 % =============================================================================
 \section{Conclusiones}
 \label{sec:conclusiones}
 % =============================================================================
 
-Hemos estudiado mediante simulación de dinámica molecular la secuencia de
-coeficientes de restitución $\{\coR{n}\}$ de nanocúmulos LJ que rebotan
-repetidamente sobre una superficie cristalina bajo campo gravitatorio. Las
-conclusiones principales son:
+Hemos reproducido los resultados de Gutiérrez et al.~\cite{Gutierrez2012}
+con \lammps{} ($c_{ps}=0$, $T=0$, $N\approx83$, $\gstar=0.026$) y extendido
+su análisis energético en dos direcciones. Las conclusiones principales son:
 
 \begin{enumerate}
 
-    \item \textbf{La pelota nanométrica no se comporta como la pelota clásica.}
-    Para $N \geq 2$, la secuencia $\coR{n}$ decrece con $n$ con una tasa que
-    se acelera en el tiempo, en contraste con el $\cor$ constante del modelo
-    macroscópico.
+    \item \textbf{El impacto involucra cuatro canales energéticos distintos.}
+    La identidad $\alpha_{\mathrm{cm}} + \alpha_{T_B} + \alpha_{\Delta V_B}
+    + \alpha_{\mathrm{surf}} = 1$ es exacta rebote a rebote y está respaldada
+    por medición directa de la energía de la superficie. La descomposición en
+    dos canales de Gutiérrez mezcla $\alpha_{\Delta V_B}$ con
+    $\alpha_{\mathrm{surf}}$, sobreestimando la excitación superficial en un
+    factor 3--5.
 
-    \item \textbf{El calentamiento interno es el mecanismo.} Cada rebote
-    deposita energía en los modos vibracionales del cúmulo. La temperatura
-    interna $\Tint(n)$ crece monótonamente hasta termalizar con la superficie a
-    $n = n^*(N)$.
+    \item \textbf{La expansión anarmónica domina sobre la excitación superficial
+    directa.} Para $v_{\mathrm{imp}} \geq 0.9\,\sigma/\tau$,
+    $\alpha_{\Delta V_B} \approx 21$--$36\%$ supera a
+    $\alpha_{\mathrm{surf}} \approx 6$--$15\%$. Este canal refleja que el
+    cúmulo LJ abandona el contacto en un estado de PE intra-bola mayor que
+    el de equilibrio, y esa energía permanece almacenada al primer apogeo.
+    $\alpha_{T_B} \approx 0.22$ es prácticamente constante en ese rango,
+    consistente con Gutiérrez.
 
-    \item \textbf{El tiempo de termalización decrece con $N$.}
-    $n^*(N) \sim N^{-\nu}$ con $\nu \approx \TODO{0.3}$: los cúmulos más
-    grandes se calientan más rápido porque tienen más modos disponibles por unidad
-    de energía de impacto.
+    \item \textbf{El número efectivo de osciladores superficiales es
+    $N_c \approx N_{\mathrm{bola}}$.} Al calibrar la fórmula de Gutiérrez con
+    la fracción interna total $\alpha_{\mathrm{bola}} = \alpha_{T_B} +
+    \alpha_{\Delta V_B}$, se obtiene $N_c = 84 \approx N_{\mathrm{bola}}$,
+    frente a $N_c = 304$ al usar $\alpha_{T_B}$ solo. El resultado implica
+    que cada átomo de la bola se acopla efectivamente con un oscilador de la
+    superficie, y que para $N \to \infty$ se alcanza el límite de equipartición
+    $\alpha_{\mathrm{bola}} \to \tfrac{1}{2}$.
 
-    \item \textbf{El $N=1$ es el único caso clásico.} Sin modos internos,
-    $\coR{n} = \mathrm{const}$ y la dinámica es la de la pelota de goma
-    clásica. Sirve como referencia exacta para cuantificar el efecto de los modos
-    internos en los tamaños mayores.
+    \item \textbf{$\alpha_{\mathrm{surf}}(N)$ tiene un máximo no monótono en
+    $N=13$.} La fracción de excitación fonónica directa alcanza $\approx 32\%$
+    para el icosaedro de Mackay ($N=13$) y cae a $\approx 11\%$ para $N=83$.
+    Este máximo coincide con la escala geométrica de acoplamiento óptimo entre
+    el radio de contacto de la bola y los modos fonónicos de superficie.
 
-    \item \textbf{Adhesión acelerada para $N$ grande.} El número de rebotes
-    hasta la adhesión es menor que la predicción geométrica, y decrece con $N$.
-    Los cúmulos grandes ``desperdician'' sus rebotes calentándose internamente y
-    se adhieren antes de lo esperado.
+    \item \textbf{El proyectil monoatómico ($N=1$) es la única referencia
+    clásica.} Con $\alpha_{\mathrm{bola}} = 0$ por construcción,
+    $e_1 = 0.934$ es estrictamente independiente de $h_0$ en el rango
+    repulsivo ($c_{ps}=0$) y sirve como línea base para cuantificar el efecto
+    de los modos internos en tamaños mayores.
 
 \end{enumerate}
 
-Estos resultados tienen implicaciones directas para el diseño de experimentos de
-deposición de nanocúmulos: un cúmulo de $N=55$ átomos precalentado a $\Tstar$
-se adherirá en aproximadamente el mismo número de rebotes que uno frío pero el
-primer rebote determinará si hay adhesión o no, mientras que un cúmulo frío de
-$N=55$ puede rebotar varias veces antes de adherirse, con cada rebote
-aproximando su estado al equilibrio térmico con el sustrato.
-
-Como trabajo futuro, la comparación de la secuencia $\{\coR{n}\}$ con modelos
-analíticos de acoplamiento oscilador-baño permitiría extraer la densidad
-espectral efectiva $J(\omega)$ del cúmulo y conectar los resultados de MD con
-la teoría de sistemas cuánticos abiertos a temperatura finita.
+Como trabajo futuro inmediato, la extensión a interacción LJ completa
+($c_{ps}=1$) y temperatura inicial $\Tstar > 0$ permitirá estudiar la
+\emph{cascada de rebotes sucesivos} hasta la adhesión: el número de rebotes
+$n_{\mathrm{adh}}(N)$, el sobrecalentamiento de pico $\Delta\Tint^{\mathrm{pico}}$
+y la influencia de $\Tstar$ en la tasa de la cascada. Los resultados del
+presente trabajo —en particular la calibración $N_c \approx N_{\mathrm{bola}}$—
+proporcionan la referencia energética en $T=0$ sobre la que se medirán esos
+efectos térmicos.
 
 % =============================================================================
 \section*{Agradecimientos}
