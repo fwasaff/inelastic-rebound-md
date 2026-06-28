@@ -52,7 +52,7 @@ variable    print_freq  equal 20     # frecuencia de salida energías [pasos]
 # Tiempo de simulación: suficiente para ≥5 rebotes incluso desde h0 grande.
 # Para h0=11.03, g=0.026: t_rebote ≈ 2*sqrt(2*h0/g) ≈ 58 tau
 # Corremos 400 tau = suficiente para ~6 rebotes desde cualquier h0
-variable    t_total equal 400.0
+variable    t_total index 400.0
 variable    steps_total equal round(v_t_total/v_dt)
 
 # --- Caja y superficie --------------------------------------------------------
@@ -198,6 +198,11 @@ fix print_energy all print ${print_freq} &
     file bounce.dat &
     title "# time Zcm Vcmz KB TB VB Uc UF KB3d KS PE_surf TS" &
     screen no
+
+# --- Restart periódico (checkpoint cada 100000 pasos = 500 tau) --------------
+# Alterna entre dos archivos; el más reciente siempre es válido.
+# Para continuar desde un checkpoint: lmp -in in.read_restart -var restart_file largo.restart.a
+restart  100000  largo.restart.a  largo.restart.b
 
 # --- Correr -------------------------------------------------------------------
 run     ${steps_total}

@@ -144,8 +144,7 @@ def fig_cascada(datos: list[dict], outdir: Path):
 
     ax.set_xlabel("Número de rebote $n$")
     ax.set_ylabel("Altura normalizada $h_n / h_0$")
-    ax.set_title("Cascada de alturas — reproducción Gutiérrez et al. 2012")
-    ax.set_xlim(-0.3, 13); ax.set_ylim(5e-3, 2)
+    ax.set_xlim(-0.3, 25); ax.set_ylim(5e-3, 2)
     ax.legend(loc="upper right", ncol=2)
     out = outdir / "fig_A1_cascada.pdf"
     fig.savefig(out, bbox_inches="tight"); plt.close(fig)
@@ -181,6 +180,22 @@ def fig_particion(datos: list[dict], outdir: Path):
     ax.bar(x, a_surfs, w, bottom=a_CMs+a_TBs+a_VBs,
            label="$\\alpha_\\mathrm{surf}$  Fonones superficie (directo)", color="#9E9E9E")
 
+    # Etiquetas de porcentaje dentro de cada segmento
+    # Segmentos: (array de valores, array de bases, color de texto)
+    MIN_LABEL = 0.04   # no etiquetar segmentos más delgados que 4%
+    layers = [
+        (a_CMs,              np.zeros(len(datos)), "white"),
+        (a_TBs,              a_CMs,                "white"),
+        (a_VBs,              a_CMs + a_TBs,        "black"),
+        (a_surfs,            a_CMs + a_TBs + a_VBs, "black"),
+    ]
+    for vals, bottoms, tcol in layers:
+        for j, (v, b) in enumerate(zip(vals, bottoms)):
+            if v >= MIN_LABEL:
+                ax.text(j, b + v / 2, f"{v:.0%}",
+                        ha="center", va="center", fontsize=7.5,
+                        color=tcol, fontweight="bold")
+
     for j, d in enumerate(datos):
         ax.text(j, 1.02, f"$e_1={d['e1']:.2f}$",
                 ha="center", va="bottom", fontsize=8.5)
@@ -189,10 +204,10 @@ def fig_particion(datos: list[dict], outdir: Path):
     ax.set_xticklabels([f"$h_0={d['h0_eff']:.1f}$\n$v={d['v_imp']:.2f}\\,\\sigma/\\tau$"
                         for d in datos], fontsize=8)
     ax.set_ylabel("Fracción de $E_0 = Mgh_0$")
-    ax.set_title("Partición de energía en el primer rebote — 3 canales + detalle interno")
     ax.set_ylim(0, 1.14)
     ax.axhline(1.0, color="k", lw=0.7, ls="--", alpha=0.4)
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=2)
+    ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1.0), borderaxespad=0,
+              ncol=1, fontsize=8.5, framealpha=0.95, edgecolor="0.7")
     fig.tight_layout()
     out = outdir / "fig_A2_particion.pdf"
     fig.savefig(out, bbox_inches="tight"); plt.close(fig)
@@ -210,16 +225,18 @@ def fig_e1_vs_v(datos: list[dict], outdir: Path):
     e1    = np.array([d["e1"]    for d in datos])
 
     ax.scatter(v_imp, e1, s=80, zorder=5, c=COLORES[:len(datos)], marker="o",
-               edgecolors="k", linewidths=0.5, label="$e_1$ (primer rebote)")
+               edgecolors="k", linewidths=0.5)
 
     for i, dat in enumerate(datos):
         aps = dat["apogeos"]
         if len(aps) >= 2:
             e2 = float(np.sqrt(abs(aps[1]["h_n"] / aps[0]["h_n"])))
-            ax.scatter(v_imp[i], e2, s=40, marker="s", color=COLORES[i], alpha=0.5)
+            ax.scatter(v_imp[i], e2, s=55, marker="s", color=COLORES[i], alpha=0.85,
+                       edgecolors="k", linewidths=0.4)
         if len(aps) >= 3:
             e3 = float(np.sqrt(abs(aps[2]["h_n"] / aps[1]["h_n"])))
-            ax.scatter(v_imp[i], e3, s=20, marker="^", color=COLORES[i], alpha=0.35)
+            ax.scatter(v_imp[i], e3, s=35, marker="^", color=COLORES[i], alpha=0.85,
+                       edgecolors="k", linewidths=0.4)
 
     mask = (v_imp > 0.8) & (v_imp < 2.1)
     if mask.sum() >= 3:
@@ -229,15 +246,18 @@ def fig_e1_vs_v(datos: list[dict], outdir: Path):
         ax.plot(v_fit, e_fit, "k--", lw=1.2, alpha=0.6,
                 label=f"$e_1 \\propto v^{{{coeffs[0]:.2f}}}$")
 
-    ax.scatter([], [], s=80, marker="o", color="gray", label="$e_1$ ($n=1$)")
-    ax.scatter([], [], s=40, marker="s", color="gray", alpha=0.5, label="$e_2$ ($n=2$)")
-    ax.scatter([], [], s=20, marker="^", color="gray", alpha=0.35, label="$e_3$ ($n=3$)")
+    # Leyenda de forma: círculo=e1, cuadrado=e2, triángulo=e3
+    ax.scatter([], [], s=80, marker="o", color="gray", edgecolors="k", lw=0.4,
+               label="$e_1$ ($n=1$, primer rebote)")
+    ax.scatter([], [], s=55, marker="s", color="gray", edgecolors="k", lw=0.4,
+               label="$e_2$ ($n=2$)")
+    ax.scatter([], [], s=35, marker="^", color="gray", edgecolors="k", lw=0.4,
+               label="$e_3$ ($n=3$)")
     ax.axhline(1.0, color="k", lw=0.8, ls=":", alpha=0.5)
     ax.set_xlabel("Velocidad de impacto $v_0 = \\sqrt{2gh_0}$ ($\\sigma/\\tau$)")
     ax.set_ylabel("Coeficiente de restitución $e_n$")
-    ax.set_title("COR vs velocidad de impacto")
-    ax.set_xlim(0.5, 2.3); ax.set_ylim(0.0, 1.10)
-    ax.legend(loc="lower left")
+    ax.set_xlim(0.5, 2.3); ax.set_ylim(0.0, 1.15)
+    ax.legend(loc="lower left", fontsize=8.5)
     out = outdir / "fig_A3_e1_vs_v.pdf"
     fig.savefig(out, bbox_inches="tight"); plt.close(fig)
     print(f"  Guardado: {out}")
@@ -262,24 +282,35 @@ def fig_TB_acumulacion(datos: list[dict], outdir: Path):
     ax1.set_xlim(0.5, 13); ax1.set_ylim(0, 0.55)
     ax1.legend(fontsize=8)
 
-    # Panel derecho: trayectoria (h_n/h0, TB/E0) — espacio de fase simplificado
-    for i, dat in enumerate(datos):
-        h0e  = dat["h0_eff"]
-        hn   = [a["h_n"] / h0e   for a in dat["apogeos"]]
-        tbno = [a["TB"] / dat["E0"] for a in dat["apogeos"]]
-        ax2.plot(tbno, hn, color=COLORES[i], marker=MARKERS[i],
-                 label=f"$h_0={h0e:.1f}$", alpha=0.8)
-        if hn:
-            ax2.annotate("", xy=(tbno[0], hn[0]), xytext=(0, 1.0),
-                         arrowprops=dict(arrowstyle="->", color=COLORES[i],
-                                         lw=0.8, alpha=0.5))
+    # Panel derecho: convergencia al plateau h* — solo h0=28.15 (run largo)
+    dat_largo = next((d for d in datos if abs(d["h0"] - 28.15) < 0.1), None)
+    if dat_largo and len(dat_largo["apogeos"]) > 5:
+        ns_l  = [a["n"]   for a in dat_largo["apogeos"]]
+        hn_l  = [a["h_n"] for a in dat_largo["apogeos"]]
+        # Plateau: media de los últimos 6 apogeos
+        h_star = float(np.mean(hn_l[-6:]))
+        TB_plateau = float(np.mean([a["TB"] for a in dat_largo["apogeos"][-6:]]))
+        # T_B del script es energía cinética interna total. La fórmula Gutiérrez usa
+        # temperatura efectiva k_B*T_ball = T_B / (3N-3)/2, con N = N_ball real (79)
+        N_ball_real = int(round(dat_largo["E0"] / (G * dat_largo["h0_eff"])))  # ≈ 83
+        n_int_modes = 3 * N_ball_real - 3          # grados internos
+        kT_ball     = TB_plateau / (n_int_modes / 2)  # temperatura efectiva [ε]
+        h_pred      = kT_ball / G                  # h* = k_B T / (m*g), m=1 por átomo
 
-    ax2.scatter([0], [1.0], s=60, c="black", zorder=5, label="$n=0$ (todos)")
-    ax2.set_xlabel("$T_B / E_0$ (KE interna)")
-    ax2.set_ylabel("Altura normalizada $h_n / h_0$")
-    ax2.set_title("Espacio de fase $(T_B, h_n)$")
-    ax2.set_xlim(-0.01, 0.55); ax2.set_ylim(-0.02, 1.05)
-    ax2.legend(fontsize=8)
+        ax2.plot(ns_l, hn_l, color=COLORES[2], marker=MARKERS[2], ms=4, lw=1.0,
+                 label=f"$h_0={dat_largo['h0_eff']:.1f}\\,\\sigma$")
+        ax2.axhline(h_star, color="k",       lw=1.2, ls="--",
+                    label=f"$h^* = {h_star:.2f}\\,\\sigma$ (simulación)")
+        ax2.axhline(h_pred,  color="#E53935", lw=1.2, ls=":",
+                    label=f"$k_BT_\\mathrm{{ball}}/mg = {h_pred:.2f}\\,\\sigma$ (Gutiérrez)")
+        ax2.set_xlabel("Número de rebote $n$")
+        ax2.set_ylabel("Altura de apogeo $h_n$ ($\\sigma$)")
+        ax2.set_title("Convergencia al plateau $h^*$ — run 5000$\\,\\tau$")
+        ax2.set_ylim(bottom=0)
+        ax2.legend(fontsize=8, loc="upper right")
+    else:
+        ax2.text(0.5, 0.5, "Sin datos de run largo\n(h0=28.15, 5000τ)",
+                 ha="center", va="center", transform=ax2.transAxes, fontsize=10)
     fig.tight_layout()
     out = outdir / "fig_A4_TB_acumulacion.pdf"
     fig.savefig(out, bbox_inches="tight"); plt.close(fig)
@@ -336,18 +367,23 @@ def fig_balance_energia(datos: list[dict], outdir: Path):
                   f"$v_0={dat['v_imp']:.2f}\\,\\sigma/\\tau$")
     ax1.legend(fontsize=8.5, ncol=2, loc="upper right")
 
-    # Panel inferior: flujo bola → superficie
-    ax2.plot(time, dE_surf, color="#4CAF50", lw=1.5, label="$\\Delta E_\\mathrm{surf}$")
-    ax2.plot(time, -dE_ball + dE_surf, color="k", lw=0.8, ls="--", alpha=0.5,
-             label="$E_\\mathrm{total}$ − $E_0$ (drift)")
+    # Panel inferior: flujo energético y verificación NVE
+    ax2.plot(time, dE_surf, color="#4CAF50", lw=1.5,
+             label="$\\Delta E_\\mathrm{surf}$ (fonones superficie)")
+    # Verificación NVE: dE_ball + dE_surf ≈ 0 si la energía se conserva
+    nve_check = dE_ball + dE_surf
+    ax2.plot(time, nve_check, color="k", lw=0.9, ls="--", alpha=0.7,
+             label="$\\delta E_\\mathrm{total} = \\Delta E_\\mathrm{ball} + \\Delta E_\\mathrm{surf}$"
+                   " (verif. NVE, $\\approx 0$)")
     for m in maxs[:4]:
         ax2.axvline(time[m], color="gray", lw=0.6, ls=":")
 
-    ax2.axhline(0, color="k", lw=0.5, alpha=0.4)
+    ax2.axhline(0, color="k", lw=0.6, alpha=0.5)
     ax2.set_xlabel("Tiempo ($\\tau$)")
     ax2.set_ylabel("Cambio de energía ($\\varepsilon$)")
-    ax2.set_title(f"Flujo bola → superficie: $\\alpha_\\mathrm{{surf}} = {dat['a_surf']:.3f}$ "
-                  f"al primer apogeo")
+    ax2.set_title(f"Flujo bola → superficie "
+                  f"($\\alpha_\\mathrm{{surf}} = {dat['a_surf']:.3f}$ al primer apogeo)"
+                  f" — verificación NVE")
     ax2.legend(fontsize=8.5)
 
     fig.tight_layout()

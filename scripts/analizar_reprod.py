@@ -140,35 +140,61 @@ def fig_alturas(resultados: dict, outdir: Path):
 # ---------------------------------------------------------------------------
 
 def fig_energia(h0: float, d: dict, rebotes: list, z0: float, outdir: Path):
-    """Evolución temporal de K_B, T_B, V_B, U_c, U_F para un h0."""
+    """
+    Evolución temporal de K_B, T_B, ΔV_B, U_c y ΔU_F para un h0.
+    Dos paneles con escalas independientes:
+      - Superior: canales dinámicos (KB, TB, ΔVB, Uc) — escala pequeña
+      - Inferior: ΔUF gravitatorio — escala grande
+    """
     time = d["time"]
-    KB   = d["KB3d"]   # KE traslacional 3D del CM
-    TB   = d["TB"]     # KE interna
-    VB   = d["VB"]     # PE intra-bola
-    Uc   = d["Uc"]     # PE colisional
-    UF   = d["UF"]     # PE gravitatoria
+    KB   = d["KB3d"]
+    TB   = d["TB"]
+    VB   = d["VB"]
+    Uc   = d["Uc"]
+    UF   = d["UF"]
 
-    fig, ax = plt.subplots(figsize=(10, 5))
+    dVB = VB - VB[0]    # cambio PE intra-bola (anarmónico)
+    dUF = UF - UF[0]    # cambio PE gravitatoria
 
-    # Escalar UF para que quepa en el mismo gráfico (como en Fig. 9 del 2012)
-    ax.plot(time, KB,      label="$K_B$ (traslacional CM)", color="black",   lw=1.5)
-    ax.plot(time, TB,      label="$T_B$ (KE interna)",      color="green",   lw=1.0)
-    ax.plot(time, VB,      label="$V_B$ (PE intra-bola)",   color="red",     lw=1.0)
-    ax.plot(time, Uc,      label="$U_c$ (colisional)",      color="blue",    lw=1.0)
-    ax.plot(time, UF - UF[0], label="$\\Delta U_F$ (gravitatorio)", color="purple", lw=1.0, ls="--")
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 7), sharex=True,
+                                    gridspec_kw={"height_ratios": [2, 1]})
 
-    # Marcar instantes de rebote
+    # --- Panel superior: canales cinéticos e internos ---
+    ax1.plot(time, KB,  label="$K_B$ (traslacional CM)", color="black",  lw=1.5)
+    ax1.plot(time, TB,  label="$T_B$ (KE interna bola)", color="green",  lw=1.0)
+    ax1.plot(time, dVB, label="$\\Delta V_B$ (PE intra-bola)", color="red",   lw=1.0)
+    ax1.plot(time, Uc,  label="$U_c$ (colisional)",      color="blue",   lw=0.8, alpha=0.8)
+
+    # Marcadores de rebote — evitar solapamiento para runs largos
+    n_rebotes  = len(rebotes)
+    label_step = max(1, n_rebotes // 8)
     for n, rb in enumerate(rebotes, start=1):
-        ax.axvline(rb["time"], color="gray", lw=0.8, ls=":")
-        ax.text(rb["time"], ax.get_ylim()[1] * 0.9,
-                f"{n}°", ha="center", fontsize=8, color="gray")
+        ax1.axvline(rb["time"], color="gray", lw=0.5, ls=":")
+        ax2.axvline(rb["time"], color="gray", lw=0.5, ls=":")
 
-    ax.set_xlabel("Tiempo ($\\tau$)", fontsize=12)
-    ax.set_ylabel("Energía ($\\varepsilon$)", fontsize=12)
-    ax.set_title(f"Reproducción Fig. 9 — $h_0 = {h0}\\,\\sigma$", fontsize=12)
-    ax.legend(fontsize=8, loc="upper right", ncol=2)
-    ax.grid(True, alpha=0.3)
+    # Etiquetas numéricas de rebote: solo las que no se superponen
+    ymax1 = max(KB.max(), TB.max(), max(dVB.max(), 0), Uc.max()) * 1.08
+    ymin1 = min(KB.min(), TB.min(), dVB.min(), Uc.min(), 0) * 1.05
+    ax1.set_ylim(ymin1, ymax1 * 1.12)
+    for n, rb in enumerate(rebotes, start=1):
+        if n == 1 or n % label_step == 0 or n == n_rebotes:
+            ax1.text(rb["time"], ymax1 * 1.05,
+                     f"{n}", ha="center", fontsize=7, color="gray")
 
+    ax1.set_ylabel("Energía ($\\varepsilon$)", fontsize=11)
+    ax1.set_title(f"Reproducción Fig. 9 — $h_0 = {h0}\\,\\sigma$", fontsize=12)
+    ax1.legend(fontsize=8, loc="upper right", ncol=2)
+    ax1.grid(True, alpha=0.3)
+
+    # --- Panel inferior: energía gravitatoria ---
+    ax2.plot(time, dUF, label="$\\Delta U_F$ (gravitatorio)", color="purple", lw=1.0, ls="--")
+    ax2.axhline(0, color="k", lw=0.5, alpha=0.4)
+    ax2.set_xlabel("Tiempo ($\\tau$)", fontsize=11)
+    ax2.set_ylabel("$\\Delta U_F$ ($\\varepsilon$)", fontsize=11)
+    ax2.legend(fontsize=8, loc="lower right")
+    ax2.grid(True, alpha=0.3)
+
+    fig.tight_layout()
     out = outdir / f"fig_R2_energia_h0_{h0}.pdf"
     fig.savefig(out, bbox_inches="tight", dpi=150)
     plt.close(fig)
@@ -199,12 +225,6 @@ def fig_cor_secuencia(resultados: dict, outdir: Path):
                 marker=markers[i % len(markers)],
                 markersize=7, linewidth=1.5,
                 label=f"$h_0 = {h0}\\,\\sigma$")
-
-        # Predicción geométrica (e constante = e_1)
-        if en:
-            e_geom = [en[0]] * len(ns)
-            ax.plot(ns, e_geom, ls="--",
-                    color=colores[i % len(colores)], alpha=0.4, lw=1.0)
 
     ax.set_xlabel("Número de rebote $n$", fontsize=12)
     ax.set_ylabel("Coeficiente de restitución $e_n = \\sqrt{h_{n}/h_{n-1}}$", fontsize=12)
