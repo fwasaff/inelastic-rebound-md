@@ -57,13 +57,16 @@ change_box  all z final -0.5 ${z_box_top} units box
 # en x,y y a la altura h0 sobre la superficie en z.
 variable    Lx  equal xhi-xlo
 variable    Ly  equal yhi-ylo
-read_data   ${cluster_file} add append shift $(v_Lx/2) $(v_Ly/2) ${z_ball_cm}
 
-# --- Potenciales --------------------------------------------------------------
+# Los potenciales deben definirse ANTES de read_data para que LAMMPS
+# no intente procesar la sección Pair Coeffs del archivo del cluster.
+# El flag nocoeff hace que read_data ignore coeficientes y box del archivo.
 pair_style  hybrid lj/cut 2.5 table linear 5000
 pair_coeff  1 1  lj/cut 1.0 1.0 2.5
 pair_coeff  2 2  lj/cut 1.0 1.0 2.5
 pair_coeff  1 2  table table_repulsiva.txt REPULSIVE_LJ
+
+read_data   ${cluster_file} add append nocoeff shift $(v_Lx/2) $(v_Ly/2) ${z_ball_cm}
 
 # --- Grupos -------------------------------------------------------------------
 group       surface type 1
