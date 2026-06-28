@@ -1,0 +1,644 @@
+% ==============================================================================
+% einstein_approach.tex
+% "Sobre la distribución de energía en impactos de nanocúmulos:
+%  un análisis en el espíritu de Einstein"
+%
+% Objetivo pedagógico: mostrar cómo razonar desde primeros principios
+% antes de recurrir a la simulación numérica.
+% ==============================================================================
+
+\documentclass[11pt, a4paper]{article}
+
+% --- Tipografía y formato ------------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[margin=2.8cm, top=3.0cm, bottom=3.2cm]{geometry}
+\usepackage{setspace}
+\setstretch{1.15}
+
+% --- Matemáticas ---------------------------------------------------------------
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+
+% --- Gráficos y tablas ---------------------------------------------------------
+\usepackage{graphicx}
+\usepackage[gray]{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+
+% --- Encabezado y secciones ---------------------------------------------------
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{{\thesection.}}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{{\thesubsection.}}{0.6em}{}
+
+% --- Cajas para ideas clave ---------------------------------------------------
+\usepackage{mdframed}
+\mdfdefinestyle{pregunta}{
+  linewidth=0.6pt,
+  linecolor=black,
+  backgroundcolor=white,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+  innerleftmargin=12pt,
+  innerrightmargin=12pt,
+  skipabove=10pt,
+  skipbelow=6pt,
+}
+\mdfdefinestyle{resultado}{
+  linewidth=1.2pt,
+  linecolor=black,
+  backgroundcolor=black!6,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+  innerleftmargin=12pt,
+  innerrightmargin=12pt,
+  skipabove=10pt,
+  skipbelow=6pt,
+}
+
+% --- Hipervínculos (sin color) ------------------------------------------------
+\usepackage[hidelinks]{hyperref}
+
+% --- Datos del documento ------------------------------------------------------
+\title{\large\bfseries Sobre la distribución de energía en impactos de nanocúmulos\\[4pt]
+       \normalsize\mdseries Un análisis desde primeros principios}
+\author{Notas de investigación\thanks{Elaboradas en el contexto del proyecto
+        \emph{Distribución de energía en impactos de nanocúmulos LJ},
+        inspiradas en el método de razonamiento de A. Einstein.}}
+\date{}
+
+% ==============================================================================
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+\noindent
+Un nanocúmulo de $N$ átomos Lennard-Jones cae sobre una superficie cristalina
+bajo gravedad constante. La pregunta experimental es: ¿en qué proporción se
+distribuye la energía gravitatoria inicial $E_0 = Mgh_0$ entre el movimiento
+del centro de masa, los modos internos del cúmulo y los fonones de la
+superficie? Este documento desarrolla el razonamiento analítico completo,
+comenzando por el caso elemental $N=1$ y construyendo hacia el caso general.
+El objetivo no es reemplazar la simulación sino entenderla.
+\end{abstract}
+
+\tableofcontents
+\vspace{1em}
+\hrule
+\vspace{1.5em}
+
+% ==============================================================================
+\section{La pregunta en su forma más simple}
+
+Antes de escribir una sola línea de código, Einstein habría formulado el
+problema de la manera más desnuda posible. Tomemos esa actitud.
+
+Un objeto cae desde altura $h_0$ y rebota sobre una superficie. Si la
+colisión fuera perfectamente elástica, el objeto volvería a $h_0$. No lo hace:
+llega sólo a $h_1 < h_0$. La pregunta es \emph{adónde fue la diferencia}
+$E_0 - Mgh_1$.
+
+Hay exactamente tres lugares donde puede estar:
+\begin{enumerate}
+  \item En los \textbf{modos internos del cúmulo} (vibración relativa de los
+        átomos de la bola respecto a su centro de masa).
+  \item En los \textbf{fonones de la superficie} (oscilaciones de la red
+        cristalina excitadas por el impacto).
+  \item Ya no está: el cúmulo se \textbf{adhirió} a la superficie
+        (sólo si hay atracción bola--superficie, que en este caso no hay).
+\end{enumerate}
+
+Definimos las fracciones de energía:
+\begin{equation}
+  \alpha_\text{CM} = \frac{Mgh_1}{E_0}, \qquad
+  \alpha_\text{int} = \frac{\Delta E_\text{bola}}{E_0}, \qquad
+  \alpha_\text{surf} = \frac{\Delta E_\text{sup}}{E_0},
+\end{equation}
+con la restricción de conservación
+\begin{equation}
+  \alpha_\text{CM} + \alpha_\text{int} + \alpha_\text{surf} = 1.
+  \label{eq:conservacion}
+\end{equation}
+
+El coeficiente de restitución de alturas $e_1 = \sqrt{h_1/h_0}$ satisface
+$\alpha_\text{CM} = e_1^2$, de modo que la energía disipada es $(1-e_1^2)E_0$.
+
+\begin{mdframed}[style=pregunta]
+\textbf{La pregunta de Einstein:} ``¿Cuál es el caso más simple que aún
+contiene la física esencial?'' Respuesta: $N=1$, un único átomo.
+En ese caso $\alpha_\text{int} = 0$ \emph{exactamente} (no hay modos
+internos), y toda la disipación debe ir a la superficie.
+\end{mdframed}
+
+% ==============================================================================
+\section{Experimento mental I: \texorpdfstring{$N=1$}{N=1}}
+
+\subsection{Modelo de colisión elástica con masa efectiva}
+
+Un átomo de masa $m$ con velocidad $v_0 = \sqrt{2gh_0}$ impacta una
+superficie. El potencial bola--superficie es \emph{puramente repulsivo}, de
+modo que la colisión conserva la energía total. No hay transferencia de
+energía química: toda ``pérdida'' de energía cinética del átomo va
+\emph{necesariamente} a los fonones de la superficie.
+
+El modelo más simple concebible: la superficie se representa como una
+\textbf{masa efectiva} $M^*$ unida a un oscilador (el resto del cristal).
+La colisión 1D elástica entre el átomo ($m$, velocidad $v_0$) y la masa
+efectiva ($M^*$, en reposo) da:
+\begin{align}
+  v_\text{átomo}' &= \frac{m - M^*}{m + M^*}\,v_0, \\[4pt]
+  V_\text{sup}'   &= \frac{2m}{m + M^*}\,v_0.
+\end{align}
+
+La fracción de energía transferida a la superficie es:
+\begin{equation}
+  \alpha_\text{surf}^{(N=1)} = \frac{M^* (V_\text{sup}')^2}{mv_0^2}
+  = \frac{4mM^*}{(m+M^*)^2}.
+  \label{eq:alfa_surf_N1}
+\end{equation}
+
+El coeficiente de restitución de velocidades es $e_1 = |v_\text{átomo}'|/v_0$,
+y puesto que $M^* > m$ (la superficie es más masiva), el átomo rebota y
+\begin{equation}
+  \boxed{e_1 = \frac{M^* - m}{M^* + m}, \qquad
+  \alpha_\text{surf}^{(N=1)} = 1 - e_1^2.}
+  \label{eq:e1_N1}
+\end{equation}
+
+\noindent Esta es la relación exacta para $N=1$ con potencial puramente
+repulsivo. No requiere hipótesis adicionales.
+
+\subsection{La masa efectiva como función de la velocidad}
+
+Despejando $M^*$ de~\eqref{eq:e1_N1}:
+\begin{equation}
+  M^*(v_0) = m\,\frac{1 + e_1(v_0)}{1 - e_1(v_0)}.
+  \label{eq:M_eff}
+\end{equation}
+
+\noindent Esta expresión tiene una interpretación directa: $M^*$ es la masa de
+la sección de superficie que ``participa'' en la colisión. A baja velocidad,
+el tiempo de contacto $\tau_c$ es largo comparado con el período fonónico
+$\tau_D = 2\pi/\omega_D$, y muchos átomos de la superficie se mueven
+colectivamente~--- $M^*$ es grande. A alta velocidad, $\tau_c$ es corto y
+sólo los átomos inmediatamente bajo el impacto responden~--- $M^*$ es pequeño.
+
+De los datos de simulación para $N=1$:
+\begin{center}
+\begin{tabular}{cccc}
+  \toprule
+  $v_0$ ($\sigma/\tau$) & $e_1$ & $M^*/m$ & $\alpha_\text{surf}$ \\
+  \midrule
+  0.74 & 0.979 & $\sim 94$ & 0.041 \\
+  0.97 & 0.969 & $\sim 63$ & 0.060 \\
+  1.20 & 0.971 & $\sim 66$ & 0.057 \\
+  1.46 & 0.946 & $\sim 35$ & 0.105 \\
+  1.74 & 0.899 & $\sim 19$ & 0.192 \\
+  2.03 & 0.885 & $\sim 16$ & 0.216 \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\noindent El resultado central: $M^*(v_0)$ decrece con la velocidad de impacto
+porque a mayor $v_0$, el tiempo de contacto $\tau_c \sim \sigma/v_0$ es menor
+y menos modos fonónicos de la superficie quedan acoplados al impactador.
+
+\begin{mdframed}[style=resultado]
+\textbf{Conclusión para $N=1$:} $\alpha_\text{surf} = 1 - e_1^2$ es exacto.
+La dependencia $\alpha_\text{surf}(v_0)$ refleja la \emph{impedancia acústica}
+de la superficie: a alta velocidad, la onda de choque excita más fonones de
+alta frecuencia y $M^*$ disminuye.
+\end{mdframed}
+
+% ==============================================================================
+\section{Experimento mental II: \texorpdfstring{$N > 1$}{N mayor que 1} y el conteo de modos}
+
+\subsection{Separación de escalas de tiempo}
+
+Para $N > 1$, la bola tiene modos de oscilación internos con frecuencia
+característica $\omega_\text{bola}$. Estimemos esta frecuencia a partir del
+potencial LJ.
+
+El mínimo del LJ está en $r_0 = 2^{1/6}\sigma \approx 1.122\,\sigma$.
+La constante de fuerza en el mínimo es:
+\begin{equation}
+  k_\text{LJ} = V''(r_0) = \frac{72\,\varepsilon}{r_0^2}
+               \approx \frac{72}{1.260}\,\frac{\varepsilon}{\sigma^2}
+               \approx 57.1\,\frac{\varepsilon}{\sigma^2}.
+\end{equation}
+
+La frecuencia angular de una vibración entre dos átomos de masa $m=1$:
+\begin{equation}
+  \omega_\text{bola} = \sqrt{\frac{k_\text{LJ}}{\mu}}
+  = \sqrt{\frac{k_\text{LJ}}{m/2}} = \sqrt{2k_\text{LJ}}
+  \approx 10.7\,\tau^{-1},
+\end{equation}
+donde $\mu = m/2$ es la masa reducida. El período de oscilación interno es:
+\begin{equation}
+  \tau_\text{bola} = \frac{2\pi}{\omega_\text{bola}} \approx 0.59\,\tau.
+\end{equation}
+
+El tiempo de contacto con la superficie puede estimarse como:
+\begin{equation}
+  \tau_c \sim \frac{\sigma}{v_0} \approx \frac{1}{v_0}\,\tau,
+\end{equation}
+que para $v_0 \in [0.7, 2.0]\,\sigma/\tau$ da $\tau_c \in [0.5, 1.5]\,\tau$.
+
+Comparando las dos escalas:
+\begin{equation}
+  \frac{\tau_c}{\tau_\text{bola}} \sim \frac{0.5\text{--}1.5}{0.59} \sim 1\text{--}3.
+\end{equation}
+
+\begin{mdframed}[style=pregunta]
+$\tau_c \gtrsim \tau_\text{bola}$: \textbf{la bola tiene tiempo de redistribuir
+energía entre sus modos internos \emph{durante} la colisión}. Esto justifica
+tratar la distribución de energía con un argumento de equipartición.
+\end{mdframed}
+
+\subsection{Argumento de equipartición de modos}
+
+Durante la colisión, el sistema acoplado \{modos internos de la bola\} $\cup$
+\{modos de la superficie en la zona de contacto\} alcanza una distribución de
+energía de equilibrio interno. Si cada modo accesible recibe la misma energía
+media, la fracción que queda en los modos internos de la bola es simplemente:
+
+\begin{equation}
+  \alpha_\text{int} = \frac{f_\text{bola}}{f_\text{bola} + f_\text{sup}},
+\end{equation}
+
+donde:
+\begin{itemize}
+  \item $f_\text{bola} = 3N - 3$ modos internos de la bola
+        (descartando las 3 traslaciones del CM),
+  \item $f_\text{sup} = 3N_c$ modos de la superficie dentro del área de contacto
+        ($N_c$ átomos de superficie efectivos).
+\end{itemize}
+
+Sustituyendo:
+\begin{equation}
+  \boxed{\alpha_\text{int}(N) = \frac{3N - 3}{3N - 3 + 3N_c}
+  = \frac{N - 1}{N - 1 + N_c}.}
+  \label{eq:gutierrez}
+\end{equation}
+
+Esta es la fórmula de Gutiérrez~(2012). Contiene un único parámetro libre,
+$N_c$, que cuantifica el acoplamiento bola--superficie.
+
+\subsection{Determinación de \texorpdfstring{$N_c$}{Nc} y verificación}
+
+De la simulación para $N=83$, $\langle\alpha_\text{int}\rangle \approx 0.213$
+para $v_0 > 0.9\,\sigma/\tau$. Despejando $N_c$:
+\begin{equation}
+  N_c = (N-1)\,\frac{1 - \alpha_\text{int}}{\alpha_\text{int}}
+      = 82 \times \frac{0.787}{0.213} \approx 303.
+\end{equation}
+
+Con $N_c \approx 303$, las predicciones de~\eqref{eq:gutierrez} para
+los demás valores de $N$ son:
+
+\begin{center}
+\begin{tabular}{ccccc}
+  \toprule
+  $N$ & Modos $3N-3$ & $\alpha_\text{int}^\text{pred}$
+      & $\alpha_\text{int}^\text{sim}$ & discrepancia \\
+  \midrule
+   1  &    0   &  0.000  &  0.000  & --- \\
+   2  &    3   &  0.003  &  0.002  & $-33\%$ \\
+   7  &   18   &  0.019  &  0.023  & $+21\%$ \\
+  13  &   36   &  0.038  &  0.053  & $+39\%$ \\
+  55  &  162   &  0.151  &  0.190  & $+26\%$ \\
+  83  &  246   &  0.213  &  0.213  & (ajuste) \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+La fórmula captura la tendencia: $\alpha_\text{int}$ crece con $N$ porque hay
+más modos internos que capturar energía. Las discrepancias del $20$--$40\%$
+para $N$ intermedio indican que $N_c$ no es estrictamente constante: el área
+de contacto efectiva depende del tamaño del cúmulo.
+
+% ==============================================================================
+\section{La anomalía: por qué \texorpdfstring{$\Delta V_B > T_B$}{ΔVB > TB}}
+
+\subsection{El resultado inesperado}
+
+La simulación muestra que la energía potencial interna de la bola aumenta
+\emph{más} que su energía cinética interna:
+\begin{equation}
+  \Delta V_B > T_B \quad \text{para } v_0 > 0.9\,\sigma/\tau.
+\end{equation}
+
+Para un oscilador \emph{armónico} en equilibrio térmico, el teorema de
+equipartición implica $\langle T \rangle = \langle V - V_0 \rangle$. ¿Por qué
+la simulación viola esta igualdad?
+
+\subsection{Expansión anarmónica del potencial LJ}
+
+Expandamos el potencial LJ en torno al equilibrio $r_0 = 2^{1/6}\sigma$:
+\begin{equation}
+  V(r) = V(r_0) + \tfrac{1}{2}k_\text{LJ}(r-r_0)^2
+         + \tfrac{1}{6}\gamma(r-r_0)^3 + \cdots
+  \label{eq:lj_expansion}
+\end{equation}
+
+El coeficiente anarmónico de tercer orden:
+\begin{equation}
+  \gamma = V'''(r_0) = -\frac{7 \times 72\,\varepsilon}{r_0^3}
+         = -\frac{504\,\varepsilon}{r_0^3} < 0.
+\end{equation}
+
+El signo negativo de $\gamma$ es fundamental: describe el \textbf{ablandamiento}
+del potencial para separaciones $r > r_0$, es decir, los átomos se repelen
+menos de lo que un armónico predice cuando se separan.
+
+\subsection{Desplazamiento medio y expansión térmica}
+
+Para un oscilador con perturbación anarmónica, el valor medio de la
+elongación puede calcularse por teoría de perturbaciones de primer orden:
+\begin{equation}
+  \langle r - r_0 \rangle = -\frac{\gamma}{2k_\text{LJ}^2}\,k_B T > 0,
+  \label{eq:expansion_termica}
+\end{equation}
+donde hemos usado $\langle(r-r_0)^2\rangle = k_BT/k_\text{LJ}$
+(equipartición del modo armónico) y el teorema de Hellmann-Feynman para
+la corrección de primer orden. El resultado positivo confirma la
+\textbf{expansión térmica}: los átomos del cúmulo se separan en promedio
+cuando vibran.
+
+Sustituyendo los valores numéricos del LJ:
+\begin{equation}
+  \langle r - r_0 \rangle
+  = \frac{504\,\varepsilon/r_0^3}{2\,(57.1\,\varepsilon/\sigma^2)^2}\,k_BT
+  = \frac{504}{2 \times 57.1^2}\,\frac{\sigma^2}{r_0^3}\,k_BT
+  \approx 0.077\,\frac{k_BT}{\varepsilon}\,\sigma.
+\end{equation}
+
+A temperatura interna $k_BT_B \sim \alpha_\text{int} E_0 / (3N-3)$, la
+separación media aumenta en $\Delta r \sim 0.077\,k_BT_B/\varepsilon$,
+desplazando la PE media hacia valores menos negativos.
+
+\subsection{El exceso de energía potencial}
+
+La energía potencial interna total de la bola es suma sobre todos los pares:
+\begin{equation}
+  \Delta V_B = \sum_{\langle i,j\rangle}
+               \left[\tfrac{1}{2}k_\text{LJ}\langle\delta_{ij}^2\rangle
+               + \tfrac{1}{6}\gamma\langle\delta_{ij}^3\rangle\right] - V_0,
+\end{equation}
+donde $\delta_{ij} = r_{ij} - r_0$. El primer término es $T_B$ (equipartición).
+El segundo término es la corrección anarmónica:
+\begin{equation}
+  \Delta V_B - T_B
+  = \frac{\gamma}{6}\sum_{\langle i,j\rangle}\langle\delta_{ij}^3\rangle
+  = \frac{\gamma}{6} \cdot N_\text{pares}
+    \cdot \left(-\frac{3\gamma}{k_\text{LJ}^3}\right)(k_BT_B)^2.
+\end{equation}
+
+Puesto que $\gamma < 0$, este término es positivo: la PE interna supera a
+la KE interna en una cantidad proporcional a $T_B^2$. A alta energía de
+impacto, el canal potencial $\alpha_{V_B}$ puede dominar sobre $\alpha_{T_B}$.
+
+\begin{mdframed}[style=resultado]
+\textbf{Conclusión:} $\Delta V_B > T_B$ no es un error numérico. Es una
+consecuencia directa de la anarmónicidad del LJ: el cúmulo, al
+calentarse, \emph{se expande} y sus pares quedan en una región donde la
+PE media supera a la KE media. Este efecto crece como $T_B^2$ y domina
+el canal interno a alta velocidad de impacto.
+\end{mdframed}
+
+% ==============================================================================
+\section{Los tiempos de relajación}
+
+Einstein no se habría contentado con conocer las fracciones de energía al
+primer rebote. Habría preguntado: \textbf{¿en cuánto tiempo se equilibra el
+sistema completo?}
+
+\subsection{Tres escalas de tiempo}
+
+Identificamos tres tiempos característicos:
+
+\paragraph{$\tau_c$: tiempo de contacto.}
+Escala de la interacción bola--superficie:
+\begin{equation}
+  \tau_c \sim \frac{\sigma}{v_0} \approx 0.5\text{--}1.5\,\tau.
+\end{equation}
+Es el tiempo durante el cual ocurre la transferencia de energía.
+
+\paragraph{$\tau_\text{int}$: tiempo de equilibración interna de la bola.}
+Tiempo para que los modos internos se termalicen entre sí. En un cristal
+finito de $N$ átomos y parámetro de red $a_0$, con velocidad del sonido
+$c_s \sim a_0\,\omega_\text{bola} \approx 1.5\,\sigma/\tau$:
+\begin{equation}
+  \tau_\text{int} \sim \frac{N^{1/3} a_0}{c_s} \approx N^{1/3} \times 1\,\tau.
+\end{equation}
+Para $N=13$: $\tau_\text{int} \approx 2.3\,\tau$. Para $N=83$:
+$\tau_\text{int} \approx 4.4\,\tau$. Ambos son comparables a $\tau_c$, lo
+que justifica el argumento de equipartición de modos.
+
+\paragraph{$\tau_\text{eq}$: tiempo de equilibración bola--superficie.}
+Este es el tiempo para que la bola transfiera toda su energía interna a la
+superficie a través de rebotes sucesivos. Cada rebote transfiere una fracción
+$\alpha_\text{surf} \approx 0.10$ de la energía interna. El número de rebotes
+necesarios es $n^* \sim 1/\alpha_\text{surf} \approx 10$, y el período de
+cada rebote es:
+\begin{equation}
+  \tau_\text{rebote} = 2\sqrt{\frac{2h^*}{g}} \approx 60\,\tau,
+\end{equation}
+donde $h^* \sim T_B/(Mg)$ es la altura de saturación predicha por
+Gutiérrez~(2012). En total:
+\begin{equation}
+  \tau_\text{eq} \sim \frac{\tau_\text{rebote}}{\alpha_\text{surf}}
+  \approx \frac{60}{0.10}\,\tau = 600\,\tau.
+\end{equation}
+
+Nuestra simulación corre $400\,\tau$: \textbf{el sistema no ha alcanzado el
+equilibrio}. Para observar la equipartición completa bola--superficie
+necesitamos correr al menos $5\,\tau_\text{eq} \approx 3000\,\tau$.
+
+\subsection{Separación de escalas}
+
+El cuadro completo de escalas de tiempo es:
+\begin{equation}
+  \underbrace{\tau_c \sim 1\,\tau}_{\text{contacto}}
+  \;\ll\;
+  \underbrace{\tau_\text{rebote} \sim 60\,\tau}_{\text{periodo oscilación}}
+  \;\ll\;
+  \underbrace{\tau_\text{eq} \sim 600\,\tau}_{\text{equilibrio térmico}}.
+  \label{eq:escalas}
+\end{equation}
+
+Esta separación de escalas \emph{explica} por qué podemos medir una
+partición de energía bien definida al primer apogeo: la bola se ha
+``termalizado'' internamente ($\tau_c > \tau_\text{int}$) pero no con la
+superficie ($\tau_\text{eq} \gg \tau_\text{rebote}$).
+
+\begin{mdframed}[style=resultado]
+\textbf{El cuadro físico completo:} (i) Durante el contacto ($\tau_c$),
+la bola distribuye energía entre sus modos internos y los modos de
+superficie accesibles. (ii) Entre rebotes, la bola es un reservorio de
+energía interna casi aislado. (iii) Rebote a rebote, la bola pierde
+energía a la superficie lentamente ($\alpha_\text{surf}$ por rebote).
+(iv) En tiempo $\tau_\text{eq}$, el sistema completo se equilibra.
+\end{mdframed}
+
+% ==============================================================================
+\section{Conducta límite de la energía interna}
+
+\subsection{El estado estacionario predicho}
+
+Gutiérrez~(2012) predice que, después de muchos rebotes, la energía interna
+de la bola converge a un valor límite $T_B^*$ tal que la bola ya no puede
+llegar más alto que:
+\begin{equation}
+  h^* = \frac{T_B^*}{Mg}.
+  \label{eq:h_star}
+\end{equation}
+
+Podemos estimar $T_B^*$ de nuestro argumento: en cada rebote, la bola
+absorbe $\alpha_\text{int}(1-\alpha_\text{CM})E_n$ de energía interna y
+pierde $\alpha_\text{surf}T_B^{(n)}$ a la superficie. En estado
+estacionario estas dos cantidades se igualan:
+\begin{equation}
+  \alpha_\text{int}(1-\alpha_\text{CM}^*)E^* = \alpha_\text{surf}\,T_B^*,
+\end{equation}
+donde $E^* = Mgh^*$. Resolviendo:
+\begin{equation}
+  T_B^* = \frac{\alpha_\text{int}(1-\alpha_\text{CM}^*)}
+               {\alpha_\text{surf}}\,Mgh^*.
+\end{equation}
+
+Dado que $T_B^* = Mgh^*$ por~\eqref{eq:h_star}, se obtiene la
+consistencia:
+\begin{equation}
+  1 = \frac{\alpha_\text{int}(1-\alpha_\text{CM}^*)}{\alpha_\text{surf}},
+\end{equation}
+que fija la relación entre los tres canales en el estado estacionario.
+Con los valores medidos ($\alpha_\text{int} \approx 0.21$,
+$\alpha_\text{surf} \approx 0.10$), esto predice
+$\alpha_\text{CM}^* \approx 0.52$, es decir, la bola en estado
+estacionario rebota a aproximadamente la mitad de su altura.
+
+\subsection{Estimación de \texorpdfstring{$h^*$}{h*}}
+
+Usando la conservación de energía en el estado estacionario:
+\begin{align}
+  Mgh_0 &= E_\text{total inicial}, \\
+  T_B^* + Mgh^* &= \text{energía disponible tras equilibración parcial}.
+\end{align}
+
+Un balance más cuidadoso (que requiere la simulación larga del Paso~4)
+predice $h^* \approx \alpha_\text{int} h_0 / (1 - \alpha_\text{CM}^*)$.
+Para $h_0 = 28\,\sigma$: $h^* \approx 12$--$14\,\sigma$.
+
+% ==============================================================================
+\section{Predicciones verificables sin simulación adicional}
+
+Reunimos las predicciones cuantitativas del análisis, ordenadas por
+jerarquía de certeza:
+
+\begin{enumerate}
+  \item \textbf{Exacto (sin parámetros libres):}
+        Para $N=1$, $\alpha_\text{surf} = 1 - e_1^2$ en todo rango de $v_0$.
+
+  \item \textbf{Un parámetro ($N_c$):}
+        $\alpha_\text{int}(N) = (N-1)/(N-1+N_c)$, con $N_c \approx 303$.
+        La predicción puede fallar si $N_c$ depende de $N$ (contacto
+        no escala).
+
+  \item \textbf{Cualitativo:}
+        $\Delta V_B > T_B$ para $v_0 > 0.9\,\sigma/\tau$, y el exceso
+        crece como $T_B^2$ (verificable ajustando $\Delta V_B$ vs $T_B$).
+
+  \item \textbf{Predicción de $\tau_\text{eq}$:}
+        El sistema no equilibra bola--superficie antes de $\sim 600\,\tau$.
+        Para verificarlo, correr $5000\,\tau$ (Paso~4 del plan).
+
+  \item \textbf{Adhesión ($c_{ps}=1$):}
+        Cuando la atracción bola--superficie es no nula, existe un
+        umbral $h_0^*(N)$ por debajo del cual la bola no rebota.
+        La escala de energía relevante es la energía de adhesión
+        $U_\text{ad} \approx N_c \varepsilon$, que predice
+        $h_0^* \sim N_c\varepsilon / (Mg)$.
+\end{enumerate}
+
+% ==============================================================================
+\section{La lección metodológica}
+
+Einstein habría llegado a estos resultados \emph{antes} de encender
+la computadora. El método tiene una estructura invariante:
+
+\begin{enumerate}
+  \item \textbf{Caso más simple primero.} $N=1$ es analíticamente exacto.
+        El resto del problema se construye sobre ese caso límite.
+
+  \item \textbf{Separación de escalas.} Antes de cualquier cálculo,
+        comparar $\tau_c$, $\tau_\text{int}$, $\tau_\text{eq}$.
+        Las aproximaciones válidas dependen de esas comparaciones.
+
+  \item \textbf{Argumentos de conteo.} La fórmula~\eqref{eq:gutierrez}
+        no requiere resolver la dinámica: sólo contar modos y aplicar
+        equipartición. Esto es lo que hace Einstein siempre: busca el
+        argumento más general posible.
+
+  \item \textbf{Identificar el parámetro libre.} $N_c$ no se puede
+        predecir sin información de la geometría del contacto. La
+        simulación sirve para medir ese único parámetro.
+
+  \item \textbf{La anomalía como punto de partida.} $\Delta V_B > T_B$
+        no es un resultado a ignorar: es la señal de que la física es
+        más rica que el modelo armónico. Einstein siempre persiguió las
+        discrepancias, no los acuerdos.
+\end{enumerate}
+
+\begin{mdframed}[style=resultado]
+\textbf{El rol de la simulación en este esquema:} no es explorar, sino
+\emph{medir parámetros de un modelo ya comprendido} ($N_c$, $\tau_\text{eq}$,
+el prefactor anarmónico) y \emph{verificar predicciones analíticas} en los
+casos donde el análisis es exacto ($N=1$). La simulación que no tiene
+un modelo analítico al lado que interpretar produce números, no comprensión.
+\end{mdframed}
+
+% ==============================================================================
+\appendix
+\section{Derivación del coeficiente anarmónico \texorpdfstring{$\gamma$}{γ}}
+
+El potencial LJ es $V(r) = 4\varepsilon[(\sigma/r)^{12} - (\sigma/r)^6]$.
+Calculamos las derivadas en el mínimo $r_0 = 2^{1/6}\sigma$:
+\begin{align}
+  V'(r)   &= 4\varepsilon\left[-12\,\frac{\sigma^{12}}{r^{13}}
+              + 6\,\frac{\sigma^6}{r^7}\right], \\
+  V''(r)  &= 4\varepsilon\left[156\,\frac{\sigma^{12}}{r^{14}}
+              - 42\,\frac{\sigma^6}{r^8}\right], \\
+  V'''(r) &= 4\varepsilon\left[-2184\,\frac{\sigma^{12}}{r^{15}}
+              + 336\,\frac{\sigma^6}{r^9}\right].
+\end{align}
+
+Evaluando en $r_0 = 2^{1/6}\sigma$ (donde $\sigma^6/r_0^6 = 1/2$):
+\begin{align}
+  k_\text{LJ} = V''(r_0) &= 4\varepsilon\left[\frac{156}{r_0^2}\cdot\frac{1}{4}
+    - \frac{42}{r_0^2}\cdot\frac{1}{2}\right]
+    = 4\varepsilon\,\frac{156/4 - 42/2}{r_0^2}
+    = 4\varepsilon\,\frac{39 - 21}{r_0^2}
+    = \frac{72\varepsilon}{r_0^2}, \\[6pt]
+  \gamma = V'''(r_0) &= 4\varepsilon\left[-\frac{2184}{r_0^3}\cdot\frac{1}{8}
+    + \frac{336}{r_0^3}\cdot\frac{1}{4}\right]
+    = 4\varepsilon\,\frac{-273 + 84}{r_0^3}
+    = -\frac{756\varepsilon}{r_0^3}.
+\end{align}
+
+El cociente de anarmónicidad:
+\begin{equation}
+  \frac{\gamma^2}{k_\text{LJ}^3}
+  = \frac{(756)^2\varepsilon^2/r_0^6}{(72)^3\varepsilon^3/r_0^6}
+  = \frac{571536}{373248\,\varepsilon}
+  \approx \frac{1.53}{\varepsilon}.
+\end{equation}
+
+La corrección anarmónica a la energía potencial media por par (a temperatura
+$T$ del modo) es de orden $(k_BT)^2/\varepsilon$, confirmando que el exceso
+$\Delta V_B - T_B$ es no despreciable cuando $k_BT_B \sim 0.1\text{--}0.3\,\varepsilon$.
+
+\end{document}
