@@ -453,15 +453,12 @@ intensa descrita en el trabajo original.
 
 \begin{figure}[ht]
     \centering
-    \fbox{\parbox{0.8\textwidth}{\centering\vspace{2cm}
-    FIGURA R1: Alturas $h_n$ por rebote para seis $h_0$,
-    comparación directa con Fig.~7 de Gutiérrez et al.\ 2012.\\
-    Marcadores: simulación presente (LAMMPS). Líneas: datos originales (LPMD).
-    \vspace{2cm}}}
+    \includegraphics[width=0.85\textwidth]{../data/outputs/reprod_2012/fig_R1_alturas.pdf}
     \caption{Reproducción de la Fig.~7 de \cite{Gutierrez2012}.
-    Alturas $h_n$ del CM de la bola ($N\approx79$, $c_{ps}=0$, $T=0$) bajo
-    gravedad $\gstar=0.026$. El acuerdo cuantitativo entre los dos códigos
-    independientes (LPMD y \lammps{}) valida la cadena de análisis.}
+    Alturas sucesivas $h_n$ del CM de la bola ($N\approx83$, $c_{ps}=0$, $T=0$) bajo
+    gravedad $\gstar=0.026$, para seis alturas iniciales
+    $h_0 \in \{8.5,\;16.2,\;25.7,\;38.9,\;56.4,\;77.2\}\,\sigma$.
+    El acuerdo cuantitativo con el código independiente LPMD valida la cadena de análisis.}
     \label{fig:reprod_alturas}
 \end{figure}
 
@@ -485,15 +482,13 @@ y $U_F$ (energía gravitatoria). Se observan los mismos rasgos cualitativos:
 
 \begin{figure}[ht]
     \centering
-    \fbox{\parbox{0.8\textwidth}{\centering\vspace{2cm}
-    FIGURA R2: Evolución temporal de $K_B$, $T_B$, $V_B$, $U_c$, $U_F$
-    para $h_0 = 11.03\,\sigma$, $N\approx79$, $c_{ps}=0$, $T=0$.\\
-    Reproducción directa de Fig.~9 de Gutiérrez et al.\ 2012.
-    \vspace{2cm}}}
-    \caption{Reproducción de la Fig.~9 de \cite{Gutierrez2012}. Evolución de
-    las energías del sistema para $h_0=11.03\,\sigma$. La energía total
-    $K_B + T_B + V_B + U_c + U_F$ se conserva a mejor que $10^{-5}\,\eps$
-    en toda la simulación.}
+    \includegraphics[width=0.9\textwidth]{../data/outputs/reprod_2012/fig_R2_energia_h0_28.15.pdf}
+    \caption{Reproducción de la Fig.~9 de \cite{Gutierrez2012}. Evolución temporal de
+    las energías del sistema para $h_0=28.15\,\sigma$ (caso representativo con tres
+    rebotes visibles). Panel superior: $K_B$ (CM traslacional), $T_B$ (KE vibracional
+    interna), $\Delta V_B$ (PE intra-bola) y $U_c$ (colisional). Panel inferior:
+    $\Delta U_F$ (gravitatoria). La suma total se conserva a mejor que $10^{-4}\,\eps$
+    por átomo en toda la simulación.}
     \label{fig:reprod_energia}
 \end{figure}
 
@@ -517,10 +512,199 @@ los $400\,\tau$ simulados. Nuestra reproducción captura correctamente
 el mecanismo de termalización interna y su umbral en $h_0$.
 
 \medskip
-Con la validación establecida, las secciones siguientes presentan los resultados
-del estudio extendido: interacción LJ completa con adhesión, temperatura inicial
-$\Tint^{(0)} = \Tstar > 0$, termostato en la superficie, y variación sistemática
-de $N \in \{1, 2, 7, 13, 55\}$.
+Con la validación establecida, la Sección~\ref{sec:4canales} presenta la
+descomposición del primer rebote en cuatro canales energéticos (resultado
+nuevo respecto de \cite{Gutierrez2012}), y la Sección~\ref{sec:sweep_N} reporta
+el escalado de la fracción interna con el tamaño $N$ del proyectil.
+Las Secciones~\ref{sec:trayectoria}--\ref{sec:vida}, sobre la dinámica
+completa de la cascada con adhesión ($c_{ps}=1$, $\Tstar>0$), corresponden
+a trabajo en curso.
+
+% -----------------------------------------------------------------------------
+\subsection{Partición energética del primer rebote en cuatro canales}
+\label{sec:4canales}
+% -----------------------------------------------------------------------------
+
+El análisis de Gutiérrez et al.~\cite{Gutierrez2012} descompone la energía del
+primer impacto en dos canales: fracción interna
+$\alpha_{T_B} = T_B^{(1)}/E_0$ (KE vibracional de la bola medida al
+primer apogeo) y fracción superficial $1 - e_1^2 - \alpha_{T_B}$ (residuo).
+Esta definición asigna implícitamente al canal superficial todo lo que no es
+CM ni KE interna.
+
+Disponiendo de mediciones directas de la energía de la superficie
+($K_S + V_{\mathrm{surf}}$), identificamos que el residuo mezcla dos
+contribuciones físicamente distintas:
+\begin{enumerate}
+    \item $\alpha_{\Delta V_B}$: variación neta de la energía potencial
+    intra-bola entre el estado inicial (red FCC a $T=0$) y el primer apogeo.
+    Mide la expansión anarmónica del cúmulo que quedó sobre-comprimido
+    durante el impacto y se expande al rebotar.
+    \item $\alpha_{\mathrm{surf}}$: excitación directa de la superficie,
+    medida como $\Delta(K_S + V_{\mathrm{surf}})/E_0$.
+\end{enumerate}
+Con la normalización CM ($\alpha_{\mathrm{cm}} = e_1^2$), la identidad
+energética es exacta rebote a rebote:
+\begin{equation}
+    \alpha_{\mathrm{cm}} + \alpha_{T_B} + \alpha_{\Delta V_B}
+    + \alpha_{\mathrm{surf}} = 1.
+    \label{eq:4canales}
+\end{equation}
+
+La Tabla~\ref{tab:particion4} y la Figura~\ref{fig:particion4} muestran
+esta descomposición para $N\approx83$, $c_{ps}=0$, $T=0$, en función de la
+velocidad de impacto $v_{\mathrm{imp}} = \sqrt{2gh_0^{\mathrm{ef}}}$.
+
+\begin{table}[ht]
+\centering
+\small
+\caption{Partición de la energía del primer rebote en cuatro canales para
+$N\approx83$, $c_{ps}=0$, $T=0$. Suma = 1 por construcción.}
+\label{tab:particion4}
+\begin{tabular}{cccccccc}
+\toprule
+$h_0^{\mathrm{ef}}$ & $v_{\mathrm{imp}}$ & $e_1$ &
+$\alpha_{\mathrm{cm}}$ & $\alpha_{T_B}$ & $\alpha_{\Delta V_B}$ &
+$\alpha_{\mathrm{surf}}$ \\
+($\sigma$) & ($\sigma/\tau$) & & & & & \\
+\midrule
+ 8.53 & 0.666 & 0.906 & 0.822 & 0.068 & 0.046 & 0.065 \\
+16.21 & 0.918 & 0.697 & 0.486 & 0.211 & 0.247 & 0.056 \\
+25.73 & 1.157 & 0.661 & 0.437 & 0.178 & 0.289 & 0.096 \\
+38.94 & 1.423 & 0.660 & 0.435 & 0.223 & 0.214 & 0.128 \\
+56.41 & 1.713 & 0.618 & 0.382 & 0.219 & 0.300 & 0.099 \\
+77.24 & 2.004 & 0.503 & 0.253 & 0.233 & 0.361 & 0.153 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+El resultado principal es que para $v_{\mathrm{imp}} \geq 0.9\,\sigma/\tau$,
+$\alpha_{\Delta V_B} \gg \alpha_{\mathrm{surf}}$: la expansión anarmónica de
+la bola absorbe entre el 21\% y el 36\% de $E_0$, mientras que la excitación
+directa de la superficie capta solo entre el 6\% y el 15\%.
+Esto revierte la interpretación cuantitativa de \cite{Gutierrez2012}, donde
+$\alpha_{\mathrm{surf}}$ se estimaba en 30--50\% al englobar implícitamente
+$\alpha_{\Delta V_B}$ en el canal superficial.
+
+La fracción cinética interna $\alpha_{T_B}$ es prácticamente constante para
+$v_{\mathrm{imp}} \geq 0.9\,\sigma/\tau$ ($\alpha_{T_B} \approx 0.21$--$0.23$),
+consistente con el hallazgo original de Gutiérrez. Sin embargo, la fracción
+interna total
+\begin{equation}
+    \alpha_{\mathrm{bola}} \equiv \alpha_{T_B} + \alpha_{\Delta V_B}
+\end{equation}
+crece del 46\% al 59\% en ese rango, y para la velocidad máxima estudiada
+($v_{\mathrm{imp}}=2.0\,\sigma/\tau$) supera a todos los demás canales combinados.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.85\textwidth]{../data/outputs/reprod_2012/fig_A2_particion.pdf}
+    \caption{Partición de la energía del primer rebote en cuatro canales para
+    $N\approx83$, $c_{ps}=0$, $T=0$, en función de la altura inicial $h_0$.
+    Barras azules: fracción CM ($\alpha_{\mathrm{cm}} = e_1^2$). Verdes:
+    KE interna ($\alpha_{T_B}$). Naranjas: PE anarmónica ($\alpha_{\Delta V_B}$).
+    Rojas: excitación directa de la superficie ($\alpha_{\mathrm{surf}}$). Las
+    etiquetas dentro de cada segmento muestran el valor porcentual.}
+    \label{fig:particion4}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+\subsection{Variación sistemática con \texorpdfstring{$N$}{N}: escalado de
+\texorpdfstring{$\alpha_{\mathrm{bola}}$}{α\_bola} y calibración de \texorpdfstring{$N_c$}{Nc}}
+\label{sec:sweep_N}
+% -----------------------------------------------------------------------------
+
+Gutiérrez et al.~\cite{Gutierrez2012} propusieron que la fracción interna del
+primer rebote sigue la ley de equipartición parcial entre los $3N-3$ modos de la
+bola y los $3N_c$ modos efectivos de la superficie de contacto:
+\begin{equation}
+    \alpha_{\mathrm{int}}(N) = \frac{3N-3}{3N-3 + 3N_c}.
+    \label{eq:gutierrez}
+\end{equation}
+El parámetro $N_c$ (número efectivo de osciladores de superficie en la huella)
+debe calibrarse con datos de simulación.
+
+Corremos las mismas seis alturas con proyectiles de $N \in \{1, 2, 7, 13, 55, 83\}$
+en el régimen $c_{ps}=0$, $T=0$, y promediamos sobre las alturas con
+$v_{\mathrm{imp}} > 0.9\,\sigma/\tau$ para evitar el régimen de baja energía
+donde la partición es distinta. Los resultados se recogen en la
+Tabla~\ref{tab:sweep_N}.
+
+\begin{table}[ht]
+\centering
+\caption{Fracciones de energía del primer rebote promediadas sobre
+$v_{\mathrm{imp}}>0.9\,\sigma/\tau$, en función de $N$. Las dos últimas columnas
+muestran la predicción de la ec.~\eqref{eq:gutierrez} para los dos valores de
+$N_c$ calibrados.}
+\label{tab:sweep_N}
+\begin{tabular}{ccccccc}
+\toprule
+$N$ & $e_1$ & $\alpha_{T_B}$ & $\alpha_{\mathrm{bola}}$ & $\alpha_{\mathrm{surf}}$ &
+$\hat\alpha(N_c{=}304)$ & $\hat\alpha(N_c{=}84)$ \\
+\midrule
+ 1 & 0.934 & 0.000 & 0.000 & 0.126 & 0.000 & 0.000 \\
+ 2 & 0.916 & 0.002 & 0.002 & 0.156 & 0.003 & 0.012 \\
+ 7 & 0.879 & 0.023 & 0.052 & 0.267 & 0.019 & 0.067 \\
+13 & 0.763 & 0.053 & 0.086 & 0.318 & 0.038 & 0.125 \\
+55 & 0.585 & 0.190 & 0.410 & 0.231 & 0.151 & 0.392 \\
+83 & 0.628 & 0.213 & 0.495 & 0.106 & 0.213 & 0.495 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Calibración de $N_c$.}
+Usando $N=83$ como referencia e identificando
+$\alpha_{\mathrm{int}}$ con $\alpha_{T_B} = 0.213$, la ec.~\eqref{eq:gutierrez}
+da $N_c = 304$, un valor sin interpretación geométrica obvia. En cambio,
+identificando $\alpha_{\mathrm{int}}$ con la fracción interna total
+$\alpha_{\mathrm{bola}} = 0.495$, se obtiene
+\begin{equation}
+    N_c = (3N-3)\left(\frac{1}{\alpha_{\mathrm{bola}}} - 1\right)/3
+    \approx 84 \approx N_{\mathrm{bola}}.
+    \label{eq:Nc_calibrado}
+\end{equation}
+Este resultado sugiere que, en promedio, \emph{cada átomo de la bola se acopla
+efectivamente con un oscilador de la superficie}. Para $N_c = N$ la
+ec.~\eqref{eq:gutierrez} predice el límite asintótico
+\begin{equation}
+    \alpha_{\mathrm{bola}}(N) = \frac{N-1}{2N-1}
+    \xrightarrow{N\to\infty} \frac{1}{2},
+    \label{eq:limite_N}
+\end{equation}
+lo que equivale a equipartición entre un sistema de $N$ osciladores
+(la bola) y uno de $N$ osciladores efectivos (la huella en la superficie).
+
+\paragraph{Comportamiento no monótono de $\alpha_{\mathrm{surf}}(N)$.}
+Un resultado sorprendente en la Tabla~\ref{tab:sweep_N} es que
+$\alpha_{\mathrm{surf}}$ no es monótona: crece de $N=1$ a $N=13$ (máximo
+$\approx 32\%$) y luego decrece para $N=55$ ($23\%$) y $N=83$ ($11\%$).
+Para $N$ pequeño, la bola es demasiado ligera para excitar fonones
+superficiales eficientemente. Para $N$ grande, los modos internos absorben la
+energía antes de que el impulso se transfiera a la red. El cúmulo de $N=13$
+(icosaedro de Mackay con $r \approx 1.5\,\sigma$) representa el tamaño de
+acoplamiento óptimo bola-superficie bajo las condiciones del estudio.
+
+La Figura~\ref{fig:B_consolid} resume los cuatro observables en escala
+logarítmica. Los paneles (c) y (d) comparan la predicción de la
+ec.~\eqref{eq:gutierrez} con $N_c=304$ y $N_c=84$: la calibración con
+$\alpha_{\mathrm{bola}}$ describe cuantitativamente los datos en todo el
+rango $N\in\{2,\ldots,83\}$.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{../data/outputs/cluster_sweep/fig_B_consolidada.pdf}
+    \caption{Barrido $N \in \{1,2,7,13,55,83\}$ con $c_{ps}=0$, $T=0$,
+    promediado sobre $v_{\mathrm{imp}}>0.9\,\sigma/\tau$.
+    (a)~$e_1(N)$: decrece con $N$.
+    (b)~$\alpha_{\mathrm{surf}}(N)$: no monótona, máximo en $N=13$.
+    (c)~$\alpha_{T_B}(N)$ con ajuste de la ec.~\eqref{eq:gutierrez} para
+    $N_c=304$ (línea punteada).
+    (d)~$\alpha_{\mathrm{bola}}(N)$ con ajuste para $N_c=84\approx N_{\mathrm{bola}}$
+    (línea sólida). El punto $N=7$ en (d) se indica con una flecha porque
+    $E_0(N{=}7)\lesssim1\,\eps$, límite de relación señal-ruido de la
+    medición de la energía de la superficie.}
+    \label{fig:B_consolid}
+\end{figure}
 
 % -----------------------------------------------------------------------------
 \subsection{Trayectoria representativa: la pelota que se para}
