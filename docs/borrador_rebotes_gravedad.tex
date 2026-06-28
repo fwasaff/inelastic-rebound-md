@@ -57,34 +57,48 @@
 \begin{abstract}
 % =============================================================================
 
-Estudiamos mediante simulación de dinámica molecular la disipación de energía en
-rebotes sucesivos de nanocúmulos de Lennard-Jones (LJ) sobre una superficie
-cristalina FCC termostatizada a temperatura $\Tstar$ baja. El cúmulo parte en
-equilibrio térmico con la superficie ($\Tint^{(0)} = \Tstar$) y cae bajo campo
-gravitatorio reducido $\gstar$. A diferencia de los estudios de impacto único,
-el sistema genera una \emph{secuencia} de rebotes con coeficientes
-$\coR{1} \geq \coR{2} \geq \cdots$ que revela la acumulación progresiva de
-energía gravitatoria en los modos internos del cúmulo. La fuente de la cascada
-no es una diferencia de temperatura inicial, sino la conversión irreversible de
-energía mecánica (gravitatoria) en calor interno durante cada contacto.
-Para un proyectil monoatómico ($N=1$), la ausencia de modos internos produce
-$\coR{n} \approx \mathrm{const}$, recuperando la pelota rebotante clásica.
-Para cúmulos con $N \geq 2$, cada impacto incrementa la temperatura interna
-en $\Delta\Tint(n) = \Tint(n) - \Tstar > 0$, y este sobrecalentamiento
-retroalimenta la siguiente colisión: a mayor $\Delta\Tint$, mayor fracción
-interna $\ain{n}$ y menor $\coR{n}$. El resultado es un decaimiento de $\coR{n}$
-más rápido que el geométrico, cuya desviación del caso clásico crece con $N$.
-Definimos $n_{\mathrm{pico}}(N)$ como el rebote de máximo sobrecalentamiento
-$\Delta\Tint$, y $n_{\mathrm{adh}}(N)$ como el rebote de adhesión final
-($\We_n < \We_c \approx 1.5$). Los resultados para $N \in \{1, 2, 7, 13, 55\}$
-muestran que ambos tiempos decrecen con $N$ y que la temperatura $\Tstar$ controla
-la tasa inicial de la cascada: a mayor $\Tstar$, el cúmulo más blando absorbe
-más energía en el primer rebote y la cascada se acelera desde el inicio.
+Estudiamos mediante dinámica molecular (LAMMPS, unidades LJ) la partición de
+energía en el primer rebote de un nanocúmulo de Lennard-Jones sobre una
+superficie FCC cristalina bajo campo gravitatorio, reproduciendo y extendiendo
+el trabajo de Gutiérrez et al.\ (2012). Para un cúmulo de $N\approx83$ átomos
+con interacción bola-superficie puramente repulsiva ($c_{ps}=0$, $T=0$),
+identificamos cuatro canales energéticos distintos cuya suma es exactamente
+igual a la energía de impacto $E_0$:
+\[
+    \alpha_{\mathrm{cm}} + \alpha_{T_B} + \alpha_{\Delta V_B}
+    + \alpha_{\mathrm{surf}} = 1,
+\]
+donde $\alpha_{\mathrm{cm}} = e_1^2$ es la fracción recuperada como energía
+traslacional del CM, $\alpha_{T_B}$ la KE vibracional interna de la bola,
+$\alpha_{\Delta V_B}$ la variación neta de la PE intra-bola (expansión
+anarmónica post-impacto), y $\alpha_{\mathrm{surf}}$ la excitación directa de
+fonones de la superficie. El resultado central es que, para velocidades de
+impacto $v_{\mathrm{imp}} \geq 0.9\,\sigma/\tau$, la expansión anarmónica
+supera ampliamente a la excitación superficial directa:
+$\alpha_{\Delta V_B} \approx 21\text{--}36\%$ frente a
+$\alpha_{\mathrm{surf}} \approx 6\text{--}15\%$, revirtiendo la interpretación
+cuantitativa de Gutiérrez et al., donde ambos contribuciones quedaban mezcladas
+en un único canal ``superficial'' de 30--50\%.
+La fracción cinética interna $\alpha_{T_B} \approx 0.22$ permanece constante
+en ese rango de velocidades, consistente con el resultado original.
+
+Extendemos el estudio a proyectiles de $N \in \{1, 2, 7, 13, 55, 83\}$ átomos.
+Identificando la fracción interna total $\alpha_{\mathrm{bola}} = \alpha_{T_B}
++ \alpha_{\Delta V_B}$ con la ley de equipartición parcial de Gutiérrez,
+$\alpha_{\mathrm{int}}(N) = (3N-3)/(3N-3+3N_c)$, se obtiene un número efectivo
+de osciladores superficiales $N_c \approx 84 \approx N_{\mathrm{bola}}$, en
+lugar de $N_c = 304$ que resulta de usar $\alpha_{T_B}$ solo. La interpretación
+es que cada átomo de la bola se acopla efectivamente con un oscilador de la
+superficie, lo que predice el límite asintótico
+$\alpha_{\mathrm{bola}} \to \frac{1}{2}$ para $N \to \infty$.
+Adicionalmente, la fracción superficial directa $\alpha_{\mathrm{surf}}(N)$
+presenta un máximo no monótono en $N=13$ ($\approx 32\%$), correspondiente
+al icosaedro de Mackay como tamaño de acoplamiento óptimo.
 
 \medskip
-\noindent\textbf{Palabras clave:} dinámica molecular, rebote inelástico, cúmulos
-de Lennard-Jones, coeficiente de restitución, disipación energética, gravedad
-reducida.
+\noindent\textbf{Palabras clave:} dinámica molecular, nanocúmulos LJ,
+coeficiente de restitución, partición energética, expansión anarmónica,
+fonones de superficie.
 \end{abstract}
 
 % =============================================================================
