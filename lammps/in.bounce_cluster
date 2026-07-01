@@ -27,6 +27,7 @@ newton          on
 variable    cluster_file  index lammps/clusters/cluster_N1_min.dat
 variable    h0            index 11.03
 variable    g             index 0.026
+variable    c_ps          index 0
 variable    a0            equal 1.5496
 variable    Nx            equal 8
 variable    Ny            equal 8
@@ -58,13 +59,18 @@ change_box  all z final -0.5 ${z_box_top} units box
 variable    Lx  equal xhi-xlo
 variable    Ly  equal yhi-ylo
 
-# Los potenciales deben definirse ANTES de read_data para que LAMMPS
-# no intente procesar la sección Pair Coeffs del archivo del cluster.
-# El flag nocoeff hace que read_data ignore coeficientes y box del archivo.
-pair_style  hybrid lj/cut 2.5 table linear 5000
-pair_coeff  1 1  lj/cut 1.0 1.0 2.5
-pair_coeff  2 2  lj/cut 1.0 1.0 2.5
-pair_coeff  1 2  table table_repulsiva.txt REPULSIVE_LJ
+# Potenciales: definir ANTES de read_data (nocoeff ignora Pair Coeffs del archivo).
+# c_ps=0: bola-superficie repulsivo puro (tabla); c_ps=1: LJ completo (adhesión).
+if "${c_ps} == 0" then &
+    "pair_style hybrid lj/cut 2.5 table linear 5000" &
+    "pair_coeff 1 1 lj/cut 1.0 1.0 2.5" &
+    "pair_coeff 2 2 lj/cut 1.0 1.0 2.5" &
+    "pair_coeff 1 2 table table_repulsiva.txt REPULSIVE_LJ" &
+else &
+    "pair_style lj/cut 2.5" &
+    "pair_coeff 1 1 1.0 1.0 2.5" &
+    "pair_coeff 2 2 1.0 1.0 2.5" &
+    "pair_coeff 1 2 1.0 1.0 2.5"
 
 read_data   ${cluster_file} add append nocoeff shift $(v_Lx/2) $(v_Ly/2) ${z_ball_cm}
 
