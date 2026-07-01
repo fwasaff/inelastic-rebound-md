@@ -1,5 +1,5 @@
 % =============================================================================
-% BORRADOR – Cascada de disipación en rebotes sucesivos de nanocúmulos LJ
+% BORRADOR – Partición de energía en impactos de nanocúmulos LJ
 %
 % Objetivo: física básica, sin motivación pedagógica.
 % Audiencia: Physical Review E / Journal of Chemical Physics
@@ -20,14 +20,14 @@
 \usepackage{physics}   % \dv, \pdv, \vb, \abs
 
 % --- Macros físicas ----------------------------------------------------------
-\newcommand{\cor}{e}              % coeficiente de restitución
-\newcommand{\coR}[1]{e_{#1}}     % COR del rebote n
-\newcommand{\ain}[1]{\alpha_{\mathrm{int},#1}}   % fracción interna, rebote n
-\newcommand{\asu}[1]{\alpha_{\mathrm{sup},#1}}   % fracción superficie, rebote n
-\newcommand{\Ecm}[1]{E_{\mathrm{cm},#1}}         % energía cm, rebote n
-\newcommand{\Eint}[1]{E_{\mathrm{int},#1}}       % energía interna tras rebote n
-\newcommand{\Tint}{T_{\mathrm{int}}}             % temperatura interna
-\newcommand{\Tstar}{T^*}                          % temperatura reducida
+\newcommand{\cor}{e}
+\newcommand{\coR}[1]{e_{#1}}
+\newcommand{\ain}[1]{\alpha_{\mathrm{int},#1}}
+\newcommand{\asu}[1]{\alpha_{\mathrm{sup},#1}}
+\newcommand{\Ecm}[1]{E_{\mathrm{cm},#1}}
+\newcommand{\Eint}[1]{E_{\mathrm{int},#1}}
+\newcommand{\Tint}{T_{\mathrm{int}}}
+\newcommand{\Tstar}{T^*}
 \newcommand{\We}{\mathrm{We}}
 \newcommand{\eps}{\varepsilon}
 \newcommand{\epsps}{\varepsilon_{ps}}
@@ -37,8 +37,8 @@
 
 \title{%
     \textbf{Partición de energía en el impacto de nanocúmulos\\
-    Lennard-Jones sobre superficies FCC: cuatro canales\\
-    y escalado con el tamaño del proyectil}
+    Lennard-Jones sobre superficies FCC: cuatro canales,\\
+    escalado con el tamaño del proyectil y adhesión}
 }
 
 \author{%
@@ -58,48 +58,51 @@
 \begin{abstract}
 % =============================================================================
 
-Estudiamos mediante dinámica molecular (LAMMPS, unidades LJ) la partición de
+Estudiamos mediante dinámica molecular (\lammps, unidades LJ) la partición de
 energía en el primer rebote de un nanocúmulo de Lennard-Jones sobre una
-superficie FCC cristalina bajo campo gravitatorio, reproduciendo y extendiendo
-el trabajo de Gutiérrez et al.\ (2012). Para un cúmulo de $N\approx83$ átomos
-con interacción bola-superficie puramente repulsiva ($c_{ps}=0$, $T=0$),
-identificamos cuatro canales energéticos distintos cuya suma es exactamente
+superficie FCC cristalina bajo campo gravitatorio constante, reproduciendo y
+extendiendo el trabajo de Gutiérrez et al.\ (2012). El sistema canónico es un
+cúmulo FCC de $N=79$ átomos (5.ª capa completa, $r < 2.45\,\sigma$),
+pre-minimizado, sobre una superficie de $8\times8\times6$ celdas unitarias
+($a_0=1.55\,\sigma$) con interacción bola-superficie repulsiva ($c_{ps}=0$,
+$T=0$). Identificamos cuatro canales energéticos cuya suma es exactamente
 igual a la energía de impacto $E_0$:
 \[
     \alpha_{\mathrm{cm}} + \alpha_{T_B} + \alpha_{\Delta V_B}
     + \alpha_{\mathrm{surf}} = 1,
 \]
-donde $\alpha_{\mathrm{cm}} = e_1^2$ es la fracción recuperada como energía
-traslacional del CM, $\alpha_{T_B}$ la KE vibracional interna de la bola,
-$\alpha_{\Delta V_B}$ la variación neta de la PE intra-bola (expansión
-anarmónica post-impacto), y $\alpha_{\mathrm{surf}}$ la excitación directa de
-fonones de la superficie. El resultado central es que, para velocidades de
-impacto $v_{\mathrm{imp}} \geq 0.9\,\sigma/\tau$, la expansión anarmónica
-supera ampliamente a la excitación superficial directa:
-$\alpha_{\Delta V_B} \approx 21\text{--}36\%$ frente a
-$\alpha_{\mathrm{surf}} \approx 6\text{--}15\%$, revirtiendo la interpretación
-cuantitativa de Gutiérrez et al., donde ambos contribuciones quedaban mezcladas
-en un único canal ``superficial'' de 30--50\%.
-La fracción cinética interna $\alpha_{T_B} \approx 0.22$ permanece constante
-en ese rango de velocidades, consistente con el resultado original.
+donde $\alpha_{T_B}\approx0.22$ es la fracción cinética interna de la bola
+(constante para $v>0.9\,\sigma/\tau$), $\alpha_{\Delta V_B}\approx0.21$--$0.31$
+es la variación neta de la PE intra-bola (expansión anarmónica post-impacto),
+y $\alpha_{\mathrm{surf}}\approx0.07$--$0.16$ es la excitación directa de
+fonones superficiales. Este desglose revierte la interpretación de
+Gutiérrez et al., donde $\alpha_{\Delta V_B}$ quedaba absorbida en el canal
+``superficial'' sobreestimándolo por un factor $\sim3$--$5$.
 
-Extendemos el estudio a proyectiles de $N \in \{1, 2, 7, 13, 55, 83\}$ átomos.
-Identificando la fracción interna total $\alpha_{\mathrm{bola}} = \alpha_{T_B}
-+ \alpha_{\Delta V_B}$ con la ley de equipartición parcial de Gutiérrez,
-$\alpha_{\mathrm{int}}(N) = (3N-3)/(3N-3+3N_c)$, se obtiene un número efectivo
-de osciladores superficiales $N_c \approx 84 \approx N_{\mathrm{bola}}$, en
-lugar de $N_c = 304$ que resulta de usar $\alpha_{T_B}$ solo. La interpretación
-es que cada átomo de la bola se acopla efectivamente con un oscilador de la
-superficie, lo que predice el límite asintótico
-$\alpha_{\mathrm{bola}} \to \frac{1}{2}$ para $N \to \infty$.
-Adicionalmente, la fracción superficial directa $\alpha_{\mathrm{surf}}(N)$
-presenta un máximo no monótono en $N=13$ ($\approx 32\%$), correspondiente
-al icosaedro de Mackay como tamaño de acoplamiento óptimo.
+Extendemos el estudio a $N\in\{1,2,7,13,55,79,87\}$ con interacción repulsiva.
+La fracción interna total $\alpha_{\mathrm{bola}}=\alpha_{T_B}+\alpha_{\Delta V_B}$
+sigue la ley de equipartición $\alpha_{\mathrm{bola}}=(3N-3)/(3N-3+3N_c)$ con
+$N_c\approx N$ para $N\geq55$, prediciendo el límite asintótico
+$\alpha_{\mathrm{bola}}\to\tfrac{1}{2}$ para $N\to\infty$.
+Para $N=13$ (capa FCC completa más pequeña), la bola es demasiado rígida para
+alcanzar el plateau de equipartición en el rango $v\leq2.0\,\sigma/\tau$ estudiado.
+
+En simulaciones largas ($5000\,\tau$, $N=79$, $h_0=28\,\sigma$), la primera
+altura de rebote aproxima bien la predicción $h_1\approx T_B/(Mg)=8.3\,\sigma$
+(ratio $=0.95$), pero el sistema no converge a ese attractor: la altura CM
+decae más rápido que $T_B$, y tras 23 rebotes la bola queda atrapada sobre
+la superficie ($t_{\rm col}\approx740\,\tau$).
+
+Con interacción LJ completa ($c_{ps}=1$, adhesión), la bola pega en los
+$4N\times6h_0=24$ casos estudiados ($v$ hasta $2.0\,\sigma/\tau$). La energía
+de adhesión $E_{\rm adh}\propto N^{0.73}$ (área de contacto) supera
+en todos los casos a la energía CM disponible tras el rebote, y el umbral
+estimado es $h_0^*(N)\approx260$--$440\,\sigma$ con $h_0^*\propto N^{-0.27}$.
 
 \medskip
 \noindent\textbf{Palabras clave:} dinámica molecular, nanocúmulos LJ,
 coeficiente de restitución, partición energética, expansión anarmónica,
-fonones de superficie.
+fonones de superficie, adhesión.
 \end{abstract}
 
 % =============================================================================
@@ -108,337 +111,147 @@ fonones de superficie.
 % =============================================================================
 
 La pelota que rebota es uno de los arquetipos más estudiados de la física
-disipativa. En el límite macroscópico y elástico, el coeficiente de restitución
-$\cor = |v_f|/|v_i|$ es una propiedad del material que no cambia de un rebote
-al siguiente: la altura disminuye como $h_n = h_0 \cor^{2n}$ y el cúmulo de
-rebotes forma una serie geométrica convergente. Esta imagen simple descansa sobre
-un supuesto crucial: que la energía disipada va \emph{íntegramente} a la
-superficie (o al medio), sin que la pelota acumule calor interno entre rebote y
-rebote.
+disipativa. A escala macroscópica, el coeficiente de restitución
+$\cor = |v_f|/|v_i|$ es una propiedad del material y la energía disipada
+va íntegramente a la superficie (o al medio). A escala nanométrica este
+supuesto falla: un cúmulo de $N$ átomos tiene $3N-6$ grados de libertad
+vibracionales internos que pueden absorber energía durante cada impacto.
 
-A escala nanométrica este supuesto falla. Un cúmulo de $N$ átomos tiene $3N-6$
-grados de libertad vibracionales internos que pueden absorber energía durante
-cada impacto. Aunque el cúmulo comience en equilibrio térmico con la superficie
-($\Tint = \Tstar$), cada rebote convierte parte de la energía mecánica
-gravitatoria —que no forma parte del equilibrio térmico— en calor interno:
-$\Tint(n) > \Tstar$ para todo $n \geq 1$ cuando $N \geq 2$. A medida que el
-sobrecalentamiento $\Delta\Tint(n) = \Tint(n) - \Tstar$ crece, la densidad de
-modos accesibles aumenta y la fracción de energía capturada internamente
-$\ain{n}$ se incrementa en rebotes sucesivos. El resultado es una
-\emph{cascada de disipación}: $\coR{1} > \coR{2} > \cdots$ con una tasa de
-decaimiento que se acelera durante la secuencia. La fuente de energía de la
-cascada es la gravedad, no la temperatura: el cúmulo extrae energía mecánica del
-campo gravitatorio y la convierte en calor interno, bombeando el sistema fuera
-del equilibrio en cada rebote.
+El trabajo de Gutiérrez et al.~\cite{Gutierrez2012} fue el primero en estudiar
+esta \emph{cascada de disipación} mediante dinámica molecular: un cúmulo FCC
+de argón de $N\approx79$ átomos bajo gravedad reducida $\gstar=0.026\,\sigma/\tau^2$,
+con interacción bola-superficie puramente repulsiva. Sus resultados principales
+fueron: (i)~la secuencia de alturas $h_n$ decrece más rápido que la serie
+geométrica; (ii)~la KE interna de la bola $T_B\approx 22\%\,E_0$ es
+prácticamente constante para impactos suficientemente energéticos;
+(iii)~para alturas de caída grandes la bola se funde durante el impacto.
+Sin embargo, su descomposición energética no separó la variación de la PE
+intra-bola de la excitación directa de la superficie, y no estudió la
+dependencia con $N$.
 
-Este fenómeno es cualitativamente distinto de la granular cooling de Haff
-\cite{Haff1983}, donde un gas granular se enfría colectivamente por colisiones
-inelásticas entre macropartículas sin estructura interna. Aquí la disipación tiene
-dos canales: (i) transferencia a la red superficial (el mecanismo de Haff/Dahneke
-\cite{Dahneke1975}) y (ii) almacenamiento en los modos internos del cúmulo, que
-es reversible a escala de tiempo de la simulación pero irreversible en el sentido
-estadístico una vez que $\Tint$ supera la escala de los fonones del cúmulo.
-
-El trabajo más cercano al presente es el de Gutiérrez et al.~\cite{Gutierrez2012},
-quienes simularon mediante dinámica molecular (código LPMD) el rebote repetido de
-una bola FCC de argón de $N \approx 79$ átomos sobre una superficie del mismo
-material, bajo un campo de fuerza constante equivalente a una gravedad reducida
-$\gstar = 0.026\,\sigma/\tau^2$. Sus principales resultados fueron: (i) la
-secuencia de alturas $h_n$ decrece más rápido que la serie geométrica predicha
-por un COR constante; (ii) la energía interna de la bola —descompuesta en
-energía cinética relativa al CM ($T_B$) y energía potencial intra-bola ($V_B$)—
-aumenta en promedio con cada rebote; (iii) para alturas de caída suficientemente
-grandes ($h_0 > 41\,\sigma$), la bola se funde durante el impacto. Sin embargo,
-ese trabajo utilizó una interacción bola-superficie \emph{puramente repulsiva}
-($c = 0$), por lo que la adhesión era imposible por construcción, y no estudió la
-dependencia con el tamaño del cúmulo $N$ ni la influencia de la temperatura de
-la superficie. Adicionalmente, su descomposición energética agrupa en un único
-canal «superficial» la variación de la PE intra-bola y la excitación fonónica
-directa de la red, lo que sobreestima esta última en un factor $\sim 3$--$5$.
-
-Estudios de impacto único de cúmulos LJ sobre superficies FCC
-\cite{Awasthi2007, Awasthi2010} han establecido la dependencia de $\cor(v_0, N,
-\theta, \epsps)$ y la transición adhesión-rebote controlada por el número de Weber
-$\We$. Sin embargo, la dinámica \emph{secuencial} bajo campo gravitatorio —la
-pregunta de cuántos rebotes tarda un nanocúmulo en convertir su energía
-mecánica en calor interno y eventualmente adherirse— no ha sido estudiada
-sistemáticamente con interacción completa y temperatura finita.
-
-Motivaciones concretas para este estudio incluyen:
-\begin{itemize}
-    \item \textbf{Deposición suave (\emph{soft landing})} de cúmulos sobre
-    sustratos funcionales, donde el número de rebotes antes de la adhesión
-    determina la morfología final del depósito \cite{Haberland1994}.
-    \item \textbf{Fragmentación}: si $\Tint$ supera la temperatura de fusión
-    del cúmulo antes de la adhesión, el cúmulo puede fragmentarse durante un
-    rebote.
-    \item \textbf{Fundamentos estadísticos}: la secuencia $\{\coR{n}\}$ es un
-    experimento análogo a la relajación de un sistema de baja dimensionalidad
-    ($3N-6$ modos) acoplado a un baño de calor macroscópico (la superficie).
-\end{itemize}
-
-En este trabajo reproducimos los experimentos de Gutiérrez et al.\ con
-\lammps{} ($c_{ps}=0$, $T=0$, mismos parámetros) y extendemos su análisis en
-dos direcciones. \textbf{(i)}~Descomponemos la energía del primer rebote en
-\emph{cuatro} canales medidos de forma independiente, separando la variación
-neta de la PE intra-bola ($\alpha_{\Delta V_B}$, expansión anarmónica
-post-impacto) de la excitación directa de la superficie ($\alpha_{\mathrm{surf}}$),
-con la identidad $\alpha_{\mathrm{cm}} + \alpha_{T_B} + \alpha_{\Delta V_B}
-+ \alpha_{\mathrm{surf}} = 1$ exacta rebote a rebote.
-\textbf{(ii)}~Extendemos el barrido a $N \in \{1, 2, 7, 13, 55, 83\}$ y
-mostramos que la fórmula de equipartición de Gutiérrez describe los datos con
-$N_c \approx N_{\mathrm{bola}}$ solo al usar la fracción interna total
-$\alpha_{\mathrm{bola}} = \alpha_{T_B} + \alpha_{\Delta V_B}$, lo que
-implica que cada átomo de la bola se acopla efectivamente con un oscilador
-de la superficie y que $\alpha_{\mathrm{bola}} \to \tfrac{1}{2}$ para
-$N \to \infty$.
+En este trabajo reproducimos ese experimento con \lammps{} usando un cúmulo de
+$N=79$ átomos exactamente (capa FCC completa pre-minimizada, no creada con
+\texttt{create\_atoms}) y extendemos el análisis en tres direcciones:
+\textbf{(i)}~descomposición en \emph{cuatro} canales medidos de forma independiente;
+\textbf{(ii)}~barrido $N\in\{1,2,7,13,55,79,87\}$ para calibrar la fórmula de
+equipartición y determinar su escalado;
+\textbf{(iii)}~simulación larga ($5000\,\tau$) para verificar la predicción
+$h_1\approx T_B/(Mg)$ y el comportamiento a múltiples rebotes;
+\textbf{(iv)}~barrido con adhesión ($c_{ps}=1$) para determinar el umbral
+$h_0^*(N)$.
 
 % =============================================================================
 \section{Modelo y definiciones}
 \label{sec:modelo}
 % =============================================================================
 
-\subsection{Hamiltoniano del sistema y descomposición energética}
+\subsection{Hamiltoniano y descomposición energética}
 \label{sec:hamiltoniano}
 
-El sistema consta de un cúmulo de $N$ átomos de tipo LJ (``proyectil'') y una
-superficie cristalina FCC de $N_s$ átomos del mismo tipo (``superficie''). El
-potencial de interacción entre cualquier par de átomos a distancia $r$ es
+El sistema consta de un cúmulo de $N$ átomos (``proyectil'') y una superficie
+FCC de $N_s$ átomos. El potencial LJ entre cualquier par a distancia $r$ es
 \begin{equation}
     U_{\mathrm{LJ}}(r) = 4\eps \left[ \left(\frac{\sigma}{r}\right)^{12}
     - c_{ij}\left(\frac{\sigma}{r}\right)^{6} \right],
     \quad r < r_c = 2.5\,\sigma,
     \label{eq:lj}
 \end{equation}
-donde $c_{ij} = 1$ para pares cúmulo-cúmulo y superficie-superficie, y
-$c_{ij} = \sqrt{\epsps/\eps}$ para pares cúmulo-superficie, de modo que la
-profundidad del pozo de adhesión es $\epsps$.
+con $c_{ij}=1$ para pares bola-bola y superficie-superficie, y $c_{ij}=0$
+(repulsivo puro, $c_{ps}=0$) o $c_{ij}=1$ (adhesión, $c_{ps}=1$) para
+pares bola-superficie.
 
-En unidades LJ ($\eps = \sigma = m = 1$), la energía total del cúmulo se
-descompone exactamente como
+La energía interna de la bola se descompone en
 \begin{equation}
-    H_{\mathrm{cum}} = \underbrace{\frac{1}{2}M V_{\mathrm{cm}}^2 + MgZ_{\mathrm{cm}}}_{E_{\mathrm{mec}}}
-    + \underbrace{\sum_{i=1}^{N}\frac{1}{2}m|\mathbf{v}_i - \mathbf{V}_{\mathrm{cm}}|^2
-    + \sum_{i<j}U_{\mathrm{LJ}}(r_{ij})}_{E_{\mathrm{int}}},
-    \label{eq:ham}
-\end{equation}
-donde $M = Nm$ es la masa total, $\mathbf{V}_{\mathrm{cm}}$ la velocidad del CM
-y $g$ la aceleración gravitacional reducida. La energía mecánica del CM,
-$E_{\mathrm{mec}}$, engloba la cinética traslacional y la energía potencial
-gravitatoria. La energía interna $E_{\mathrm{int}}$ contiene las velocidades
-\emph{relativas} al CM y las interacciones intra-cúmulo: es invariante bajo la
-traslación y el estado de agitación interna del cúmulo.
-
-Para $N=1$, $E_{\mathrm{int}} \equiv 0$ por definición: toda la energía del
-cúmulo es mecánica. Este caso sirve como \textbf{referencia sin modos internos}.
-
-\subsection{Protocolo de rebotes bajo gravedad}
-\label{sec:protocolo}
-
-\paragraph{Preparación.}
-El cúmulo se construye a partir de la estructura de mínima energía global para
-cada $N$ (icosaedros de Mackay para $N=13$ y $N=55$
-\cite{Northby1987,Wales1997}) y se termaliza a $\Tint^{(0)} = \Tstar$ mediante
-NVT de Nosé-Hoover durante $10^4\,\tau$ antes de iniciar la caída, en ausencia
-de campo gravitatorio. Esta condición inicial coloca al cúmulo en equilibrio
-térmico con la superficie: no hay diferencia de temperatura que pueda actuar
-como fuente de la cascada; la única fuente de energía no-equilibrio es la
-gravedad. La superficie FCC se equilibra de forma idéntica e independiente a
-$\Tstar$ (ver Sección~\ref{sec:lammps}).
-
-\paragraph{Condición inicial.}
-El cúmulo se coloca a altura $Z_0$ sobre la superficie con velocidad CM nula
-($\mathbf{V}_{\mathrm{cm}} = \mathbf{0}$) y temperatura interna $\Tint^{(0)} =
-\Tstar$. El campo gravitatorio $\gstar$ lo acelera hacia la superficie; la
-velocidad de impacto del primer rebote es
-\begin{equation}
-    v_{0,1} = \sqrt{2\gstar Z_0}.
-\end{equation}
-La energía mecánica inicial es $E_{\mathrm{mec}}^{(0)} = Mg\gstar Z_0$ y la
-energía interna inicial es $\Eint{0} = \frac{3N-6}{2}k_B\Tstar$ (energía
-térmica de equilibrio a $\Tstar$). El observable de interés no es $\Eint{}$
-absoluta, sino el \emph{exceso}
-\begin{equation}
-    \Delta\Eint{n} \equiv \Eint{n} - \Eint{0}
-    \label{eq:deltaE}
-\end{equation}
-generado por la cascada de rebotes.
-
-\paragraph{Rebote $n$.}
-Denominamos rebote $n$ al evento en que el CM del cúmulo pasa por un mínimo de
-$Z_{\mathrm{cm}}(t)$. Justo antes del rebote $n$, la velocidad del CM es
-$V_n = \sqrt{2\gstar h_{n-1}}$, donde $h_{n-1}$ es la altura máxima alcanzada
-tras el rebote anterior ($h_0 = Z_0$). El coeficiente de restitución del rebote
-$n$ se define como
-\begin{equation}
-    \coR{n} = \frac{|V_{\mathrm{cm},z}^{+}|}{|V_{\mathrm{cm},z}^{-}|},
-    \label{eq:cor_n}
-\end{equation}
-donde los superíndices $\pm$ denotan el instante inmediatamente posterior y
-anterior al rebote, detectado como el cruce $V_{\mathrm{cm},z} = 0$. La
-altura máxima del rebote $n$ es
-\begin{equation}
-    h_n = \frac{(V_{\mathrm{cm},z}^{+})^2}{2\gstar} = h_{n-1}\,\coR{n}^2.
-    \label{eq:altura}
-\end{equation}
-
-\subsection{Balance energético por rebote}
-\label{sec:balance}
-
-Durante el contacto del rebote $n$, la variación de energía mecánica del CM se
-reparte entre dos canales: transferencia a la red superficial ($\Delta
-E_{\mathrm{sup},n}$) y transferencia a los modos internos del cúmulo ($\Delta
-E_{\mathrm{int},n}$). Definiendo las fracciones adimensionales
-\begin{align}
-    \ain{n} &= \frac{\Delta E_{\mathrm{int},n}}{E_{\mathrm{cm},n}^{-}},
-    \label{eq:alpha_int} \\
-    \asu{n} &= \frac{\Delta E_{\mathrm{sup},n}}{E_{\mathrm{cm},n}^{-}},
-    \label{eq:alpha_sup}
-\end{align}
-donde $E_{\mathrm{cm},n}^{-} = \frac{1}{2}MV_n^2$ es la energía cinética del CM
-antes del impacto (la energía gravitatoria se recupera durante el vuelo), la
-conservación de energía total exige
-\begin{equation}
-    \coR{n}^2 + \ain{n} + \asu{n} = 1.
-    \label{eq:balance}
-\end{equation}
-La identidad~\eqref{eq:balance} se verifica numéricamente para cada rebote con
-residuo $< 10^{-6}$ (errores de redondeo en doble precisión), lo que valida la
-descomposición energética.
-
-El \textbf{exceso de energía interna} acumulado por la cascada tras $n$ rebotes
-es la suma de las contribuciones gravitatorias transferidas a los modos internos:
-\begin{equation}
-    \Delta\Eint{n} = \sum_{k=1}^{n} \ain{k}\,E_{\mathrm{cm},k}^{-}
-                   = \sum_{k=1}^{n} \ain{k}\,Mg\gstar h_{k-1}.
-    \label{eq:Eint_acum}
-\end{equation}
-Siguiendo la notación de Gutiérrez et al.~\cite{Gutierrez2012}, la energía
-interna se descompone en dos partes que oscilan entre sí durante el vuelo libre:
-\begin{equation}
-    E_{\mathrm{int}} = \underbrace{\sum_{i=1}^{N}\tfrac{1}{2}m|\mathbf{v}_i -
-    \mathbf{V}_{\mathrm{cm}}|^2}_{T_B \;(\text{cinética interna})}
-    + \underbrace{\sum_{i<j}U_{\mathrm{LJ}}(r_{ij})}_{V_B \;(\text{potencial interna})}.
+    E_{\mathrm{int}} =
+    \underbrace{\sum_{i=1}^{N}\tfrac{1}{2}m|\mathbf{v}_i-\mathbf{V}_{\rm cm}|^2}_{T_B}
+    +
+    \underbrace{\sum_{i<j}U_{\mathrm{LJ}}(r_{ij})}_{V_B}.
     \label{eq:TB_VB}
 \end{equation}
-Durante el vuelo libre, $T_B$ y $V_B$ intercambian energía (oscilaciones internas
-del cúmulo) mientras $E_{\mathrm{int}} = T_B + V_B$ permanece constante. Por
-esto, el observable relevante para seguir la cascada es $E_{\mathrm{int}}$ total,
-no $T_B$ solo: ésta última oscila artificialmente entre rebotes. Cuando se promedia
-sobre un periodo de vibración interna completo, $\langle T_B \rangle =
-\langle V_B \rangle = E_{\mathrm{int}}/2$ (equipartición), lo que justifica
-la estimación de temperatura:
+Durante el vuelo libre $T_B$ y $V_B$ intercambian (oscilaciones internas)
+mientras $E_{\rm int}=T_B+V_B$ permanece constante.
+
+\subsection{Balance energético del primer rebote}
+\label{sec:balance}
+
+Denominamos $E_0 = Mg h_0^{\rm ef}$ a la energía mecánica inicial, donde
+$h_0^{\rm ef}=Z_{\rm cm}(0)-z_0$ es la altura efectiva y $z_0$ es la posición
+media de los mínimos de $Z_{\rm cm}$ (nivel de contacto). Midiendo cada
+cantidad al primer apogeo (superíndice $(1)$) e inmediatamente antes del
+impacto (referencia, superíndice $(0)$), definimos los cuatro canales:
+\begin{align}
+    \alpha_{\rm cm}         &= h_1/h_0^{\rm ef} = e_1^2, \label{eq:acm}\\
+    \alpha_{T_B}            &= T_B^{(1)}/E_0,   \label{eq:atb}\\
+    \alpha_{\rm surf}       &= \Delta(K_S + V_{\rm surf})/E_0, \label{eq:asurf}\\
+    \alpha_{\Delta V_B}     &= 1-\alpha_{\rm cm}-\alpha_{T_B}-\alpha_{\rm surf}.
+    \label{eq:avb}
+\end{align}
+La cuarta fracción $\alpha_{\Delta V_B}=(V_B^{(1)}-V_B^{(0)})/E_0$ se obtiene
+por sustracción, garantizando $\sum\alpha_i=1$ exactamente rebote a rebote.
+La predicción h* de Gutiérrez et al.\ para la altura de primer rebote es
 \begin{equation}
-    \Delta\Tint(n) \equiv \Tint(n) - \Tstar
-                   = \frac{2\,\Delta\Eint{n}}{(3N-6)\,k_B}
-    \qquad (N \geq 3),
-    \label{eq:Tint}
+    h^* = T_B^{(1)}/(Mg),
+    \label{eq:hstar}
 \end{equation}
-donde el factor 2 aparece porque $\Delta\Eint{} = \langle T_B\rangle + \langle
-V_B\rangle = 2\langle T_B\rangle$ y la temperatura se define a partir de la
-energía cinética interna media. En la práctica medimos $E_{\mathrm{int}}(t)$
-en la mitad de cada vuelo libre (cuando la conversión $T_B \leftrightarrow V_B$
-es mínima y $T_B \approx V_B$).
+con $\alpha_{T_B}\approx0.22$ constante, lo que predice $h_1\approx\alpha_{T_B}\,h_0^{\rm ef}$.
 
-Por construcción, $\Delta\Tint(0) = 0$ (equilibrio inicial) y $\Delta\Tint(n)
-> 0$ para todo $n \geq 1$ con $N \geq 2$. Para $N=1$, $\Delta\Tint \equiv 0$
-en todo momento: el átomo no tiene modos internos y la cascada está ausente.
+\subsection{Fórmula de equipartición}
+\label{sec:equiparticion}
 
-\subsection{Número de Weber y criterio de adhesión}
-\label{sec:weber}
-
-La transición de rebote a adhesión ocurre cuando la energía cinética del CM es
-insuficiente para superar el pozo de adhesión proyectil-superficie. El número
-de Weber por rebote se define como
+Gutiérrez et al.\ propusieron que la fracción interna del primer rebote sigue
 \begin{equation}
-    \We_n = \frac{E_{\mathrm{cm},n}^{-}}{N\epsps}
-           = \frac{Mg\gstar h_{n-1}}{N\epsps}.
-    \label{eq:weber}
+    \alpha_{\rm int}(N) = \frac{3N-3}{3N-3+3N_c},
+    \label{eq:gutierrez}
 \end{equation}
-Estudios de impacto único \cite{Awasthi2007} establecen un umbral
-$\We_c \approx 1.5 \pm 0.3$. El cúmulo se adhiere al primer rebote $n$ tal que
-$\We_n < \We_c$. El número de rebotes $n^*$ hasta la adhesión es el
-\textbf{tiempo de vida} del evento de rebote y constituye el observable
-principal de este estudio.
-
-\subsection{Parámetros del barrido}
-\label{sec:barrido}
-
-\begin{table}[ht]
-\centering
-\caption{Espacio paramétrico. \textbf{Bloque A}: reproducción de
-\cite{Gutierrez2012} con parámetros originales. \textbf{Bloque B}: estudio
-extendido. Cada condición del bloque B se repite con 3~réplicas de semillas
-de velocidades distintas.}
-\label{tab:barrido}
-\begin{tabular}{llll}
-\toprule
-Parámetro & Símbolo & Bloque A (reproducción) & Bloque B (extensión) \\
-\midrule
-Tamaño del cúmulo    & $N$       & $\approx 79$ (FCC esférico)   & $1,\,2,\,7,\,13,\,55$ \\
-Interacción bola-sup.& $c_{ps}$  & $0$ (repulsiva pura)          & $\sqrt{\epsps/\eps}$ \\
-Gravedad reducida    & $\gstar$  & $0{,}026$                     & $0{,}005;\;0{,}01;\;0{,}02$ \\
-Temperatura sup.     & $\Tstar$  & $0$ (NVE global)              & $0{,}1;\;0{,}3;\;0{,}5$ \\
-Energía de adhesión  & $\epsps$  & --- (no aplica)               & $0{,}30;\;1{,}00$ \\
-Altura inicial       & $Z_0$     & $\{11;\;18{,}6;\;28;\;41;\;58{,}6;\;79{,}5\}\,\sigma$
-                                                                  & $20\,\sigma$ (fija) \\
-$\Tint^{(0)}$        &           & $0$                           & $\Tstar$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-La altura inicial $Z_0 = 20\,\sigma$ con $\gstar = 0.01$ da una velocidad de
-primer impacto $v_{0,1} = \sqrt{2 \times 0.01 \times 20} \approx 0.63\,\sigma/\tau$,
-dentro del rango de impactos moderados. El valor de $\gstar$ no corresponde a
-la gravedad real de argón ($g_{\mathrm{LJ}} \sim 10^{-8}\,\eps/\sigma m$), sino
-que es un parámetro de control que establece la escala de energía gravitatoria
-respecto a $\eps$. Estudiar distintos $\gstar$ equivale a variar la energía
-de impacto inicial manteniendo fija la geometría del sistema.
+donde $N_c$ es el número efectivo de osciladores de la huella de contacto.
+Si se identifica $\alpha_{\rm int}$ con $\alpha_{T_B}$ solo, se obtiene
+$N_c\approx290$ (sin interpretación geométrica obvia). Si se identifica con
+la fracción interna total $\alpha_{\rm bola}=\alpha_{T_B}+\alpha_{\Delta V_B}$
+y se calibra con los datos de $N\geq55$, se obtiene $N_c\approx N$, lo que
+predice el límite asintótico
+\begin{equation}
+    \alpha_{\rm bola}(N)\xrightarrow{N\to\infty}\frac{1}{2}.
+    \label{eq:limite}
+\end{equation}
 
 % =============================================================================
 \section{Detalles computacionales}
 \label{sec:lammps}
 % =============================================================================
 
-Las simulaciones se realizan con \lammps~7~Feb~2024 \cite{Thompson2022} usando
-el potencial LJ truncado con corrección de cola para las interacciones
-superficie-superficie, y sin corrección para el par cúmulo-superficie (la
-corrección asume homogeneidad del bulk que no se cumple en la interfaz).
+Las simulaciones se realizan con \lammps~7~Feb~2024~\cite{Thompson2022}.
 
 \paragraph{Superficie.}
-Red FCC de argón, $8 \times 8 \times 6$ celdas unitarias
-($a_0 = 1.5496\,\sigma$), con condiciones de contorno periódicas en $xy$ y no
-periódicas en $z$. Las 2 capas inferiores están fijas
-(\texttt{setforce 0 0 0}). Las capas 3--5 se termostatizadas con NVT de
-Nosé-Hoover a $\Tstar$ (amortiguamiento $\tau_{\mathrm{NVT}} = 0.5\,\tau$). La
-capa superior (capa 6) evoluciona en NVE libre.
+Red FCC de $8\times8\times6$ celdas unitarias ($a_0=1.5496\,\sigma$),
+condiciones de contorno periódicas en $xy$, no periódicas en $z$.
+Las 2 capas inferiores están fijas (\texttt{setforce 0 0 0}).
+Sin termostato (NVE global, $T=0$ inicial).
 
 \paragraph{Cúmulo.}
-El cúmulo se construye desde la estructura de mínima energía, se minimiza con
-quench y se integra en NVE durante todo el vuelo e impacto (sin termostato):
-la temperatura interna $\Tint$ es un \emph{resultado}, no una condición impuesta.
+El cúmulo de $N$ átomos se construye seleccionando las $N$ posiciones más
+cercanas al origen de la red FCC del mismo parámetro de red, de modo que
+los $N$ corresponden a capas esféricas completas:
+$N\in\{1,13,19,43,55,79,87,\ldots\}$.
+Se minimiza en vacío (algoritmo CG + FIRE) hasta fuerza máxima
+$<10^{-6}\,\eps/\sigma$, obteniéndose energías de cohesión por átomo de
+$-5.24\,\eps$ ($N=79$) y $-5.19\,\eps$ ($N=87$). Este protocolo garantiza
+exactamente $N$ átomos para todas las alturas iniciales, a diferencia del
+método \texttt{create\_atoms region sphere} de Gutiérrez et al.\ (2012),
+que produce $N$ variable (79--84) dependiente de la posición del centro.
+La bola se posiciona con velocidad CM nula a $h_0$ sobre el nivel de caja.
 
-\paragraph{Campo gravitatorio.}
-Se aplica el fix \texttt{gravity} de \lammps{} únicamente sobre los átomos del
-cúmulo:
-\begin{verbatim}
-fix f_grav cluster gravity ${g} zdir -1.0
-\end{verbatim}
-La superficie no experimenta gravedad (sus capas inferiores están fijas o
-termostatizadas).
+\paragraph{Gravedad y detector de rebotes.}
+La gravedad $\gstar=0.026\,\sigma/\tau^2$ se aplica solo a los átomos de la
+bola (\texttt{fix gravity}). $Z_{\rm cm}(t)$ se registra cada 20 pasos
+($\Delta t_{\rm print}=0.1\,\tau$). Los mínimos y máximos de $Z_{\rm cm}$
+se identifican en post-análisis con \texttt{scipy.signal.find\_peaks}.
 
-\paragraph{Detección de rebotes.}
-La posición $Z_{\mathrm{cm}}(t)$ se registra cada 10 pasos ($\Delta t = 10
-\times 0.005\,\tau = 0.05\,\tau$). Los mínimos de $Z_{\mathrm{cm}}$ se
-identifican en post-análisis mediante la condición $\dot{Z}_{\mathrm{cm}} = 0$
-con cambio de signo. Para cada rebote se extrae $V_{\mathrm{cm},z}^{\pm}$ como
-promedio sobre una ventana de $\pm 5$ pasos alrededor del mínimo, y $\Eint{n}$
-como promedio de $E_{\mathrm{int}}(t)$ en la fase de vuelo libre posterior.
-
-\paragraph{Criterio de adhesión.}
-Un rebote se clasifica como adhesión si $Z_{\mathrm{cm}}(t) < z_{\mathrm{sup}} +
-2\sigma$ durante más de $100\,\tau$ consecutivos sin rebotar (el cúmulo queda
-atrapado en el pozo de adhesión).
+\paragraph{Interacción bola-superficie.}
+Para $c_{ps}=0$: tabla LJ repulsiva pre-generada ($r^{-12}$ puro),
+implementada como \texttt{pair\_style table}.
+Para $c_{ps}=1$: LJ completo con \texttt{pair\_coeff 1 2 lj/cut 1.0 1.0 2.5}.
+El cambio se controla con la variable \lammps{} \texttt{c\_ps} en
+\texttt{in.bounce\_cluster}.
 
 % =============================================================================
 \section{Resultados}
@@ -446,300 +259,251 @@ atrapado en el pozo de adhesión).
 % =============================================================================
 
 % -----------------------------------------------------------------------------
-\subsection{Reproducción de Gutiérrez et al.\ (2012): validación cruzada}
+\subsection{Validación cruzada: reproducción de Gutiérrez et al.\ (2012)}
 \label{sec:reproduccion}
 % -----------------------------------------------------------------------------
 
-Como primer paso, reproducimos los resultados del trabajo fundacional de
-Gutiérrez et al.~\cite{Gutierrez2012} utilizando nuestro entorno
-\lammps{}+Python en lugar del código LPMD original. Esto tiene dos objetivos:
-(i) validar que nuestra cadena de análisis produce resultados físicamente
-consistentes con los publicados, y (ii) establecer una línea base sobre la
-cual medir el efecto de las extensiones que introducimos.
+Reproducimos los parámetros originales ($c_{ps}=0$, $T=0$, $\gstar=0.026$,
+6 alturas desde $h_0=11.03$ hasta $79.53\,\sigma$) con nuestro cúmulo
+pre-minimizado de $N=79$ átomos. El nivel de contacto efectivo es
+$z_0\approx11.5\,\sigma$ (altura del CM en los mínimos).
 
-\paragraph{Parámetros de reproducción.}
-Los parámetros se fijan para coincidir con los del capítulo~12 de
-\cite{Gutierrez2012}: bola FCC de argón con $N \approx 79$ átomos ($r \approx
-2.64\,\sigma$), construida como corte esférico de la red FCC; superficie FCC
-de $\approx 1500$ átomos; interacción bola-superficie \textbf{puramente
-repulsiva} ($c_{ps} = 0$ en la ec.~\eqref{eq:lj}); bola y superficie
-equilibradas a $T = 0$ antes de la caída; gravedad $\gstar = 0.026\,\sigma/\tau^2$;
-alturas iniciales $h_0 \in \{11.03,\;18.64,\;28.15,\;41.47,\;58.6,\;79.53\}\,\sigma$.
-No se impone termostato en ninguna capa durante los rebotes (NVE global).
-
-\paragraph{Resultados de validación.}
-La Figura~\ref{fig:reprod_alturas} muestra las alturas máximas $h_n$ alcanzadas
-por el CM de la bola tras cada rebote para las seis alturas iniciales.
-Las curvas convergen al mismo valor asintótico $h_\infty \approx
-1.0\text{--}1.5\,\sigma$ sobre el nivel de contacto efectivo $z_0 \approx
-11.6\,\sigma$, equivalente a $Z_{\mathrm{cm}} \approx 12.7\,\sigma$ en
-coordenadas absolutas de caja, en acuerdo razonable con el valor reportado
-$\approx 11\,\sigma$ en \cite{Gutierrez2012} (diferencia atribuible a la
-geometría de la superficie).  Para $h_0 \geq 41\,\sigma$ la altura cae más
-del 90\% en los primeros dos rebotes, consistente con la termalización interna
-intensa descrita en el trabajo original.
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.85\textwidth]{../data/outputs/reprod_2012/fig_R1_alturas.pdf}
-    \caption{Reproducción de la Fig.~7 de \cite{Gutierrez2012}.
-    Alturas sucesivas $h_n$ del CM de la bola ($N\approx83$, $c_{ps}=0$, $T=0$) bajo
-    gravedad $\gstar=0.026$, para seis alturas iniciales
-    $h_0 \in \{8.5,\;16.2,\;25.7,\;38.9,\;56.4,\;77.2\}\,\sigma$.
-    El acuerdo cuantitativo con el código independiente LPMD valida la cadena de análisis.}
-    \label{fig:reprod_alturas}
-\end{figure}
-
-La Figura~\ref{fig:reprod_energia} reproduce la Fig.~9 de \cite{Gutierrez2012}:
-la evolución temporal de $K_B$ (cinética traslacional del CM), $T_B$ (cinética
-interna), $V_B$ (potencial interna), $U_c$ (energía colisional bola-superficie)
-y $U_F$ (energía gravitatoria). Se observan los mismos rasgos cualitativos:
-
-\begin{enumerate}
-    \item \textbf{$U_c$ domina durante el contacto}: la energía colisional
-    almacena la mayor parte de la energía «disipada» durante el rebote; las
-    demás contribuciones son menores.
-    \item \textbf{$T_B$ oscila entre rebotes}: durante el vuelo libre, $T_B$
-    y $V_B$ intercambian continuamente. Esto confirma que el observable
-    físicamente significativo es $E_{\mathrm{int}} = T_B + V_B$, no $T_B$
-    solo (ver Sección~\ref{sec:balance}).
-    \item \textbf{$K_B$ decrece monotónamente rebote a rebote}: el pico de
-    $K_B$ en cada rebote es menor que en el anterior, confiriendo a la
-    secuencia de alturas su carácter no geométrico.
-\end{enumerate}
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.9\textwidth]{../data/outputs/reprod_2012/fig_R2_energia_h0_28.15.pdf}
-    \caption{Reproducción de la Fig.~9 de \cite{Gutierrez2012}. Evolución temporal de
-    las energías del sistema para $h_0=28.15\,\sigma$ (caso representativo con tres
-    rebotes visibles). Panel superior: $K_B$ (CM traslacional), $T_B$ (KE vibracional
-    interna), $\Delta V_B$ (PE intra-bola) y $U_c$ (colisional). Panel inferior:
-    $\Delta U_F$ (gravitatoria). La suma total se conserva a mejor que $10^{-4}\,\eps$
-    por átomo en toda la simulación.}
-    \label{fig:reprod_energia}
-\end{figure}
-
-Adicionalmente, extraemos la secuencia $\{\coR{n}\}$ —
-un observable que el trabajo original no reportó explícitamente—:
-$\coR{1} = 0.66$, $\coR{2} = 0.56$, $\coR{3} = 0.80$
-para $h_0 = 28.15\,\sigma$ (definido como $\coR{n} = \sqrt{h_n/h_{n-1}}$).
-Este decaimiento supone la transición de una pelota
-«casi elástica» ($\coR{1} \approx 0.91$ para $h_0 = 11\,\sigma$) a una que
-pierde el $86\%$ de su energía en el segundo rebote
-($\coR{2} \approx 0.37$ para $h_0 = 58.6\,\sigma$), en un rango de apenas
-cuatro alturas de caída.
-El decrecimiento $\coR{1} > \coR{2} > \cdots$ (visible en la Fig.~\ref{fig:reprod_alturas})
-es la firma de la cascada de disipación predicha por Gutiérrez: en cada rebote
-la bola llega con mayor energía interna acumulada $E_{\mathrm{int},n}$, lo
-que incrementa $\alpha_{\mathrm{int},n}$ en rebotes sucesivos.
-Sin embargo, cuantificar la partición energética rebote a rebote —es decir,
-determinar $\alpha_{T_B}(n)$, $\alpha_{\Delta V_B}(n)$ y $\alpha_{\mathrm{surf}}(n)$
-para $n \geq 2$ descontando la energía interna preexistente— requiere integrar
-el formalism de la Sección~\ref{sec:balance} sobre la trayectoria completa
-con $E_{\mathrm{int},0} > 0$.  El presente trabajo se concentra en $n=1$
-(bola fría, $E_{\mathrm{int},0} = 0$), que es el caso más limpio y sirve de
-referencia energética para el estudio de la cascada completa.
-
-\paragraph{Régimen de alta energía y termalización interna.}
-Para $h_0 \geq 41.47\,\sigma$, la bola almacena una energía interna
-$T_B \geq 28\,\eps$ tras el primer rebote, suficiente para fundir la
-estructura FCC (consistente con la Fig.~8 de \cite{Gutierrez2012}).
-La altura predita por equipartición es $h^* = T_B/(M_b g) \approx 13\,\sigma$,
-pero convergir a este plateau requiere cientos de rebotes más allá de
-los $400\,\tau$ simulados. Nuestra reproducción captura correctamente
-el mecanismo de termalización interna y su umbral en $h_0$.
-
-\medskip
-Con la validación establecida, la Sección~\ref{sec:4canales} presenta la
-descomposición del primer rebote en cuatro canales energéticos (resultado
-nuevo respecto de \cite{Gutierrez2012}), y la Sección~\ref{sec:sweep_N} reporta
-el escalado de la fracción interna con el tamaño $N$ del proyectil.
+El COR del primer rebote va de $e_1=0.92$ ($h_0=8.8\,\sigma$) a
+$e_1=0.59$ ($h_0=79.0\,\sigma$), en acuerdo cuantitativo con los valores
+reportados en~\cite{Gutierrez2012}. La caída más rápida que la predicción
+geométrica $e_1=\mathrm{cte}$ confirma la cascada de disipación.
 
 % -----------------------------------------------------------------------------
-\subsection{Partición energética del primer rebote en cuatro canales}
+\subsection{Partición en cuatro canales para \texorpdfstring{$N=79$}{N=79}}
 \label{sec:4canales}
 % -----------------------------------------------------------------------------
 
-El análisis de Gutiérrez et al.~\cite{Gutierrez2012} descompone la energía del
-primer impacto en dos canales: fracción interna
-$\alpha_{T_B} = T_B^{(1)}/E_0$ (KE vibracional de la bola medida al
-primer apogeo) y fracción superficial $1 - e_1^2 - \alpha_{T_B}$ (residuo).
-Esta definición asigna implícitamente al canal superficial todo lo que no es
-CM ni KE interna.
-
-Disponiendo de mediciones directas de la energía de la superficie
-($K_S + V_{\mathrm{surf}}$), identificamos que el residuo mezcla dos
-contribuciones físicamente distintas:
-\begin{enumerate}
-    \item $\alpha_{\Delta V_B}$: variación neta de la energía potencial
-    intra-bola entre el estado inicial (red FCC a $T=0$) y el primer apogeo.
-    Mide la expansión anarmónica del cúmulo que quedó sobre-comprimido
-    durante el impacto y se expande al rebotar.
-    \item $\alpha_{\mathrm{surf}}$: excitación directa de la superficie,
-    medida como $\Delta(K_S + V_{\mathrm{surf}})/E_0$.
-\end{enumerate}
-Con la normalización CM ($\alpha_{\mathrm{cm}} = e_1^2$), la identidad
-energética es exacta rebote a rebote:
-\begin{equation}
-    \alpha_{\mathrm{cm}} + \alpha_{T_B} + \alpha_{\Delta V_B}
-    + \alpha_{\mathrm{surf}} = 1.
-    \label{eq:4canales}
-\end{equation}
-
-La Tabla~\ref{tab:particion4} y la Figura~\ref{fig:particion4} muestran
-esta descomposición para $N\approx83$, $c_{ps}=0$, $T=0$, en función de la
-velocidad de impacto $v_{\mathrm{imp}} = \sqrt{2gh_0^{\mathrm{ef}}}$.
+La Tabla~\ref{tab:particion4} muestra la descomposición del primer rebote para
+$N=79$, $c_{ps}=0$, $T=0$. El resultado central es que para
+$v_{\rm imp}\geq0.9\,\sigma/\tau$, la expansión anarmónica supera ampliamente
+a la excitación superficial directa: $\alpha_{\Delta V_B}\approx21$--$33\%$
+frente a $\alpha_{\rm surf}\approx7$--$16\%$.
 
 \begin{table}[ht]
 \centering
 \small
 \caption{Partición de la energía del primer rebote en cuatro canales para
-$N\approx83$, $c_{ps}=0$, $T=0$. Suma = 1 por construcción.}
+$N=79$ (cúmulo FCC pre-minimizado), $c_{ps}=0$, $T=0$.
+$\sum\alpha_i=1$ por construcción.}
 \label{tab:particion4}
-\begin{tabular}{cccccccc}
+\begin{tabular}{ccccccc}
 \toprule
-$h_0^{\mathrm{ef}}$ & $v_{\mathrm{imp}}$ & $e_1$ &
-$\alpha_{\mathrm{cm}}$ & $\alpha_{T_B}$ & $\alpha_{\Delta V_B}$ &
-$\alpha_{\mathrm{surf}}$ \\
+$h_0^{\rm ef}$ & $v_{\rm imp}$ & $e_1$ &
+$\alpha_{\rm cm}$ & $\alpha_{T_B}$ & $\alpha_{\Delta V_B}$ &
+$\alpha_{\rm surf}$ \\
 ($\sigma$) & ($\sigma/\tau$) & & & & & \\
 \midrule
- 8.53 & 0.666 & 0.906 & 0.822 & 0.068 & 0.046 & 0.065 \\
-16.21 & 0.918 & 0.697 & 0.486 & 0.211 & 0.247 & 0.056 \\
-25.73 & 1.157 & 0.661 & 0.437 & 0.178 & 0.289 & 0.096 \\
-38.94 & 1.423 & 0.660 & 0.435 & 0.223 & 0.214 & 0.128 \\
-56.41 & 1.713 & 0.618 & 0.382 & 0.219 & 0.300 & 0.099 \\
-77.24 & 2.004 & 0.503 & 0.253 & 0.233 & 0.361 & 0.153 \\
+ 8.81 & 0.677 & 0.924 & 0.853 & 0.021 & 0.056 & 0.070 \\
+17.21 & 0.946 & 0.708 & 0.502 & 0.213 & 0.208 & 0.077 \\
+25.91 & 1.161 & 0.552 & 0.304 & 0.319 & 0.310 & 0.066 \\
+41.80 & 1.474 & 0.633 & 0.401 & 0.257 & 0.264 & 0.078 \\
+56.93 & 1.721 & 0.614 & 0.378 & 0.197 & 0.328 & 0.098 \\
+79.03 & 2.027 & 0.587 & 0.345 & 0.204 & 0.294 & 0.156 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-El resultado principal es que para $v_{\mathrm{imp}} \geq 0.9\,\sigma/\tau$,
-$\alpha_{\Delta V_B} \gg \alpha_{\mathrm{surf}}$: la expansión anarmónica de
-la bola absorbe entre el 21\% y el 36\% de $E_0$, mientras que la excitación
-directa de la superficie capta solo entre el 6\% y el 15\%.
-Esto revierte la interpretación cuantitativa de \cite{Gutierrez2012}, donde
-$\alpha_{\mathrm{surf}}$ se estimaba en 30--50\% al englobar implícitamente
-$\alpha_{\Delta V_B}$ en el canal superficial.
-
 La fracción cinética interna $\alpha_{T_B}$ es prácticamente constante para
-$v_{\mathrm{imp}} \geq 0.9\,\sigma/\tau$ ($\alpha_{T_B} \approx 0.21$--$0.23$),
-consistente con el hallazgo original de Gutiérrez. Sin embargo, la fracción
-interna total
-\begin{equation}
-    \alpha_{\mathrm{bola}} \equiv \alpha_{T_B} + \alpha_{\Delta V_B}
-\end{equation}
-crece del 46\% al 59\% en ese rango, y para la velocidad máxima estudiada
-($v_{\mathrm{imp}}=2.0\,\sigma/\tau$) supera a todos los demás canales combinados.
+$v_{\rm imp}\geq0.9\,\sigma/\tau$ ($\alpha_{T_B}\approx0.21$--$0.24$),
+consistente con el hallazgo de~\cite{Gutierrez2012}.
+La fracción interna total $\alpha_{\rm bola}=\alpha_{T_B}+\alpha_{\Delta V_B}$
+varía entre 0.42 y 0.63, superando en todos los casos a $\alpha_{\rm cm}$
+para $v>1.0\,\sigma/\tau$.
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.85\textwidth]{../data/outputs/reprod_2012/fig_A2_particion.pdf}
-    \caption{Partición de la energía del primer rebote en cuatro canales para
-    $N\approx83$, $c_{ps}=0$, $T=0$, en función de la altura inicial $h_0$.
-    Barras azules: fracción CM ($\alpha_{\mathrm{cm}} = e_1^2$). Rojas:
-    KE interna ($\alpha_{T_B}$). Naranjas: PE anarmónica ($\alpha_{\Delta V_B}$).
-    Grises: excitación directa de la superficie ($\alpha_{\mathrm{surf}}$). Las
-    etiquetas dentro de cada segmento muestran el valor porcentual.}
-    \label{fig:particion4}
-\end{figure}
+La excitación superficial directa $\alpha_{\rm surf}$ es la contribución
+más pequeña del sistema, entre 7 y 16\% de $E_0$.
+Esto contrasta con la estimación original de Gutiérrez et al., que obtenía
+$\approx30$--$50\%$ para la «fracción superficial» al incluir implícitamente
+$\alpha_{\Delta V_B}$ en ese canal.
 
 % -----------------------------------------------------------------------------
-\subsection{Variación sistemática con \texorpdfstring{$N$}{N}: escalado de
-\texorpdfstring{$\alpha_{\mathrm{bola}}$}{α\_bola} y calibración de \texorpdfstring{$N_c$}{Nc}}
+\subsection{Escalado con \texorpdfstring{$N$}{N}: calibración de \texorpdfstring{$N_c$}{Nc}}
 \label{sec:sweep_N}
 % -----------------------------------------------------------------------------
 
-Gutiérrez et al.~\cite{Gutierrez2012} propusieron que la fracción interna del
-primer rebote sigue la ley de equipartición parcial entre los $3N-3$ modos de la
-bola y los $3N_c$ modos efectivos de la superficie de contacto:
-\begin{equation}
-    \alpha_{\mathrm{int}}(N) = \frac{3N-3}{3N-3 + 3N_c}.
-    \label{eq:gutierrez}
-\end{equation}
-El parámetro $N_c$ (número efectivo de osciladores de superficie en la huella)
-debe calibrarse con datos de simulación.
-
-Corremos las mismas seis alturas con proyectiles de $N \in \{1, 2, 7, 13, 55, 83\}$
-en el régimen $c_{ps}=0$, $T=0$, y promediamos sobre las alturas con
-$v_{\mathrm{imp}} > 0.9\,\sigma/\tau$ para evitar el régimen de baja energía
-donde la partición es distinta. Los resultados se recogen en la
-Tabla~\ref{tab:sweep_N}.
+Corremos las mismas seis alturas con $N\in\{1,2,7,13,55,79,87\}$, usando
+cúmulos pre-minimizados en capas FCC completas y promediando sobre los puntos
+con $v_{\rm imp}>1.1\,\sigma/\tau$. Los resultados se muestran en la
+Tabla~\ref{tab:sweep_N} y la Figura~\ref{fig:sweep_N}.
 
 \begin{table}[ht]
 \centering
-\caption{Fracciones de energía del primer rebote promediadas sobre
-$v_{\mathrm{imp}}>0.9\,\sigma/\tau$, en función de $N$. Las dos últimas columnas
-muestran la predicción de la ec.~\eqref{eq:gutierrez} para los dos valores de
-$N_c$ calibrados.}
+\caption{Fracciones del primer rebote promediadas sobre $v_{\rm imp}>1.1\,\sigma/\tau$,
+en función de $N$. Las dos últimas columnas muestran la predicción de la
+ec.~\eqref{eq:gutierrez} calibrada con $\alpha_{T_B}$ ($N_c=290$) y con
+$\alpha_{\rm bola}$ ($N_c=N$).}
 \label{tab:sweep_N}
-\begin{tabular}{ccccccc}
+\begin{tabular}{cccccccc}
 \toprule
-$N$ & $e_1$ & $\alpha_{T_B}$ & $\alpha_{\mathrm{bola}}$ & $\alpha_{\mathrm{surf}}$ &
-$\hat\alpha(N_c{=}304)$ & $\hat\alpha(N_c{=}84)$ \\
+$N$ & capas & $\langle e_1\rangle$ & $\alpha_{T_B}$ & $\alpha_{\rm bola}$ &
+$\alpha_{\rm surf}$ &
+$\hat\alpha_{T_B}(N_c{=}290)$ & $\hat\alpha_{\rm bola}(N_c{=}N)$ \\
 \midrule
- 1 & 0.934 & 0.000 & 0.000 & 0.126 & 0.000 & 0.000 \\
- 2 & 0.916 & 0.002 & 0.002 & 0.156 & 0.003 & 0.012 \\
- 7 & 0.879 & 0.023 & 0.052 & 0.267 & 0.019 & 0.067 \\
-13 & 0.763 & 0.053 & 0.086 & 0.318 & 0.038 & 0.125 \\
-55 & 0.585 & 0.190 & 0.410 & 0.231 & 0.151 & 0.392 \\
-83 & 0.628 & 0.213 & 0.495 & 0.106 & 0.213 & 0.495 \\
+ 1 & 1 (completa) & — & 0.000 & 0.000 & —     & 0.000 & 0.000 \\
+ 2 & 1+1          & 0.902 & 0.002 & 0.003 & 0.183 & 0.003 & 0.333 \\
+ 7 & 1+6/12$^a$   & 0.840 & 0.034 & 0.093 & 0.198 & 0.020 & 0.462 \\
+13 & 2 (completa) & 0.735 & 0.066 & 0.107 & 0.339 & 0.040 & 0.480 \\
+55 & 4 (completa) & 0.521 & 0.217 & 0.474 & 0.254 & 0.157 & 0.495 \\
+79 & 5 (completa) & 0.597 & 0.244 & 0.543 & 0.100 & 0.212 & 0.497 \\
+87 & 6 (completa) & 0.594 & 0.250 & 0.543 & 0.103 & 0.229 & 0.497 \\
+\bottomrule
+\end{tabular}
+\footnotesize $^a$ N=7 es una capa incompleta (7 de 13 posibles en la 2.ª capa FCC);
+sus valores presentan mayor dispersión.
+\end{table}
+
+\paragraph{Calibración de $N_c$.}
+Para $\alpha_{T_B}$ solo (ec.~\eqref{eq:gutierrez}), el ajuste da
+$N_c^{\rm ef}\in\{169,195,241,258\}$ para $N\in\{13,55,79,87\}$,
+creciendo débilmente con $N$ ($N_c\propto N^{0.22}$) sin una interpretación
+geométrica directa. En cambio, usando $\alpha_{\rm bola}$ en
+ec.~\eqref{eq:gutierrez} se obtiene $N_c\approx N$ para $N\geq55$
+(columna $\hat\alpha_{\rm bola}$), con acuerdo cuantitativo a nivel del 10\%.
+Esto implica que cada átomo de la bola se acopla efectivamente con un oscilador
+de la superficie y predice el límite $\alpha_{\rm bola}\to1/2$ para $N\to\infty$.
+
+\paragraph{Régimen de bola pequeña ($N=13$).}
+El cúmulo de $N=13$ (única capa esférica FCC completa de radio $1.10\,\sigma$)
+no alcanza el plateau de equipartición en el rango $v\leq2.0\,\sigma/\tau$:
+$\alpha_{T_B}$ sigue creciendo desde $0.003$ (baja energía) hasta $0.152$
+(máxima velocidad estudiada), mientras que la predicción de equipartición
+daría $\alpha_{T_B}\approx0.04$ ($N_c=290$) o $\alpha_{\rm bola}\approx0.48$
+($N_c=N$). La rigidez del icosaedro de una sola capa impide la termalización
+rápida que permite el plateau en cúmulos más grandes.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{../data/outputs/fig_alpha_TB_full_sweep.pdf}
+    \caption{Barrido $N\in\{1,2,7,13,55,79,87\}$, $c_{ps}=0$, $T=0$.
+    \textbf{Izquierda}: $\alpha_{T_B}$ vs $v_{\rm imp}$ para cada $N$.
+    La línea vertical punteada marca $v^*=1.1\,\sigma/\tau$ (inicio del plateau).
+    \textbf{Derecha}: $\langle\alpha_{T_B}\rangle_{\rm plateau}$ vs $N$,
+    comparado con la fórmula ec.~\eqref{eq:gutierrez} para $N_c=290$
+    (curva azul sólida) y con $N_c(N)=92\,N^{0.22}$ (curva negra discontinua).
+    El inset muestra $N_c^{\rm ef}(N)$ y su ajuste de ley de potencias.}
+    \label{fig:sweep_N}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+\subsection{Simulación larga: verificación de la predicción \texorpdfstring{$h^*=T_B/(Mg)$}{h*}}
+\label{sec:largo}
+% -----------------------------------------------------------------------------
+
+Para verificar la predicción de Gutiérrez et al.\ de que la altura de rebote
+converge a $h^*=T_B/(Mg)$, corremos una simulación de $5000\,\tau$
+($N=79$, $h_0=28.15\,\sigma$, $c_{ps}=0$, mismos parámetros).
+
+\paragraph{Primer rebote.}
+La altura medida $h_1=7.89\,\sigma$ está en excelente acuerdo con la predicción
+$h^*(T_B^{(1)})=T_B^{(1)}/(Mg)=8.27\,\sigma$ (ratio $=0.95$).
+Este resultado confirma que la relación $h_1\approx T_B/(Mg)$ es válida para
+el primer impacto.
+
+\paragraph{Rebotes sucesivos y colapso.}
+A diferencia de lo que sugiere la nomenclatura «$h^*$» como attractor
+estacionario, el ratio $h_n/h^*(T_B^{(n)})$ decrece monotónamente rebote a
+rebote (de 0.95 en $n=1$ a $\sim0.19$ en $n=20$--$23$).
+La altura CM $h_n$ decae geométricamente ($e_1^{\rm ef}\approx0.97$ por rebote),
+mientras que $T_B$ disminuye más despacio (de $17.0\,\eps$ en $n=1$ a
+$11.8\,\eps$ en $n=23$, factor $\times0.7$).
+
+Tras 23 rebotes ($t\approx660\,\tau$), la altura de apogeo se ha reducido a
+$h_n\approx1.0\,\sigma$: la bola ya no se separa efectivamente de la
+superficie. En $t\approx740\,\tau$ el CM cae por debajo de $z_0$
+(colapso): átomos de la bola se filtran entre los huecos del lattice de
+la superficie al no haber barrera repulsiva superior en la pared $+z$.
+
+\paragraph{Interpretación.}
+La predicción $h_1\approx h^*=T_B/(Mg)$ es una consecuencia del primer impacto
+($\alpha_{\rm cm}\approx\alpha_{T_B}$ en el primer rebote, ver
+Tabla~\ref{tab:particion4}), no un attractor dinámico. En rebotes sucesivos,
+la energía CM adicional disponible (caída desde $h_n\ll h_0$) es pequeña,
+por lo que $T_B$ crece poco mientras $h_n$ sigue cayendo por inelasticidad.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{../data/outputs/fig_paso_B_convergencia.pdf}
+    \caption{Simulación larga ($5000\,\tau$, $N=79$, $h_0=28.15\,\sigma$,
+    $c_{ps}=0$).
+    \textbf{Superior}: trayectoria $Z_{\rm cm}(t)-z_0$; la línea roja discontinua
+    marca el colapso en $t\approx740\,\tau$.
+    \textbf{Centro}: alturas de apogeo $h_n$ (círculos azules) y predicción
+    $h^*_n=T_B^{(n)}/(Mg)$ (cuadrados rojos) por número de rebote.
+    \textbf{Inferior}: ratio $h_n/h^*_n$; el valor del primer rebote
+    (0.95, línea azul punteada) es el único que se aproxima a la unidad.}
+    \label{fig:largo}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+\subsection{Adhesión: barrido con \texorpdfstring{$c_{ps}=1$}{c\_ps=1}}
+\label{sec:adhesion}
+% -----------------------------------------------------------------------------
+
+Con interacción bola-superficie LJ completa ($c_{ps}=1$, $\eps_{ps}=\eps$),
+corremos los mismos $N\in\{13,55,79,87\}$ a las 6 alturas
+($v_{\rm imp}=0.71$--$2.03\,\sigma/\tau$). La bola pega en los 24/24 casos
+(Tabla~\ref{tab:adhesion}): no se detecta ningún apogeo post-contacto, y
+$Z_{\rm cm}$ al final de la simulación ($400\,\tau$) se sitúa a
+$\approx10\,\sigma$, sobre el tope de la superficie.
+
+\begin{table}[ht]
+\centering
+\caption{Energía de adhesión y umbral estimado para $c_{ps}=1$,
+$\eps_{ps}=\eps$.
+$E_{\rm adh}=|\langle U_c\rangle_{\rm reposo}|$ (promedio sobre los últimos
+50 pasos de cada simulación). $h_0^*$ estimado del balance energético
+$\alpha_{\rm cm}\,E_0^*=E_{\rm adh}$ con $\alpha_{\rm cm}\approx0.35$.}
+\label{tab:adhesion}
+\begin{tabular}{ccccc}
+\toprule
+$N$ & $E_{\rm adh}$ ($\eps$) & $E_{\rm adh}/N$ ($\eps$/át.) &
+$h_0^*$ estimado ($\sigma$) & Escala \\
+\midrule
+13 & 52  & 4.00 & 439 &  \\
+55 & 135 & 2.45 & 270 &  \\
+79 & 197 & 2.49 & 274 & $h_0^*\propto N^{-0.27}$ \\
+87 & 209 & 2.40 & 264 &  \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Calibración de $N_c$.}
-Usando $N=83$ como referencia e identificando
-$\alpha_{\mathrm{int}}$ con $\alpha_{T_B} = 0.213$, la ec.~\eqref{eq:gutierrez}
-da $N_c = 304$, un valor sin interpretación geométrica obvia. En cambio,
-identificando $\alpha_{\mathrm{int}}$ con la fracción interna total
-$\alpha_{\mathrm{bola}} = 0.495$, se obtiene
-\begin{equation}
-    N_c = (3N-3)\left(\frac{1}{\alpha_{\mathrm{bola}}} - 1\right)/3
-    \approx 84 \approx N_{\mathrm{bola}}.
-    \label{eq:Nc_calibrado}
-\end{equation}
-Este resultado sugiere que, en promedio, \emph{cada átomo de la bola se acopla
-efectivamente con un oscilador de la superficie}. Para $N_c = N$ la
-ec.~\eqref{eq:gutierrez} predice el límite asintótico
-\begin{equation}
-    \alpha_{\mathrm{bola}}(N) = \frac{N-1}{2N-1}
-    \xrightarrow{N\to\infty} \frac{1}{2},
-    \label{eq:limite_N}
-\end{equation}
-lo que equivale a equipartición entre un sistema de $N$ osciladores
-(la bola) y uno de $N$ osciladores efectivos (la huella en la superficie).
+\paragraph{Energía de adhesión.}
+$E_{\rm adh}$ escala como $N^{0.73}$ (Figura~\ref{fig:adhesion}, panel
+derecho), próximo al escalado del área de contacto $\propto N^{2/3}=N^{0.67}$.
+La energía por átomo $E_{\rm adh}/N\approx2.4$--$4.0\,\eps$ decae con $N$,
+reflejando que los átomos del interior de la bola contribuyen menos al
+contacto que los átomos superficiales.
 
-\paragraph{Comportamiento no monótono de $\alpha_{\mathrm{surf}}(N)$.}
-Un resultado sorprendente en la Tabla~\ref{tab:sweep_N} es que
-$\alpha_{\mathrm{surf}}$ no es monótona: crece de $N=1$ a $N=13$ (máximo
-$\approx 32\%$) y luego decrece para $N=55$ ($23\%$) y $N=83$ ($11\%$).
-Para $N$ pequeño, la bola es demasiado ligera para excitar fonones
-superficiales eficientemente. Para $N$ grande, los modos internos absorben la
-energía antes de que el impulso se transfiera a la red. El cúmulo de $N=13$
-(icosaedro de Mackay con $r \approx 1.5\,\sigma$) representa el tamaño de
-acoplamiento óptimo bola-superficie bajo las condiciones del estudio.
-
-La Figura~\ref{fig:B_consolid} resume los cuatro observables en escala
-logarítmica. Los paneles (c) y (d) comparan la predicción de la
-ec.~\eqref{eq:gutierrez} con $N_c=304$ y $N_c=84$: la calibración con
-$\alpha_{\mathrm{bola}}$ describe cuantitativamente los datos en todo el
-rango $N\in\{2,\ldots,83\}$.
+\paragraph{Umbral de rebote.}
+El balance energético para el umbral requiere que la energía CM disponible
+tras el rebote iguale la energía de adhesión:
+\begin{equation}
+    h_0^*(N) = \frac{E_{\rm adh}(N)}{\alpha_{\rm cm}\,Mg}
+             = \frac{E_{\rm adh}(N)}{0.35\,N\gstar}.
+    \label{eq:h0star}
+\end{equation}
+Los valores estimados ($h_0^*\approx260$--$440\,\sigma$, Tabla~\ref{tab:adhesion})
+están fuera del rango de alturas estudiado ($h_{0,\rm max}=79.5\,\sigma$).
+La dependencia $h_0^*\propto N^{-0.27}$ indica que cúmulos \emph{más grandes}
+tienen umbrales \emph{más bajos}: su masa crece como $N$ pero la adhesión
+solo como $N^{0.73}$, haciendo más fácil el escape para proyectiles grandes.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth]{../data/outputs/cluster_sweep/fig_B_consolidada.pdf}
-    \caption{Barrido $N \in \{1,2,7,13,55,83\}$ con $c_{ps}=0$, $T=0$,
-    promediado sobre $v_{\mathrm{imp}}>0.9\,\sigma/\tau$.
-    (a)~$e_1(N)$: decrece con $N$.
-    (b)~$\alpha_{\mathrm{surf}}(N)$: no monótona, máximo en $N=13$.
-    (c)~$\alpha_{T_B}(N)$ con ajuste de la ec.~\eqref{eq:gutierrez} para
-    $N_c=304$ (línea punteada).
-    (d)~$\alpha_{\mathrm{bola}}(N)$ con ajuste para $N_c=84\approx N_{\mathrm{bola}}$
-    (línea sólida). El punto $N=7$ en (d) se indica con una flecha porque
-    $E_0(N{=}7)\lesssim1\,\eps$, límite de relación señal-ruido de la
-    medición de la energía de la superficie.}
-    \label{fig:B_consolid}
+    \includegraphics[width=\textwidth]{../data/outputs/fig_paso_C_adhesion.pdf}
+    \caption{\textbf{Izquierda}: trayectorias $Z_{\rm cm}(t)$ para $N=79$,
+    $c_{ps}=1$, 6 alturas (primeros $400\,\tau$). Todas terminan en
+    $Z_{\rm cm}\approx10\,\sigma$ (tope de superficie, línea gris discontinua):
+    adhesión en los 6 casos.
+    \textbf{Derecha}: umbral $h_0^*(N)$ estimado de la
+    ec.~\eqref{eq:h0star} (círculos rojos) comparado con la escala
+    teórica $\propto N^{-1/3}$ (punteada).}
+    \label{fig:adhesion}
 \end{figure}
 
 % =============================================================================
@@ -747,156 +511,108 @@ rango $N\in\{2,\ldots,83\}$.
 \label{sec:discusion}
 % =============================================================================
 
-\subsection{Origen físico de \texorpdfstring{$\alpha_{\Delta V_B}$}{α\_ΔVB}:
+\subsection{Origen de \texorpdfstring{$\alpha_{\Delta V_B}$}{α\_ΔVB}:
 expansión anarmónica post-impacto}
 \label{sec:anarmonico}
 
-El canal $\alpha_{\Delta V_B}$ no tiene análogo en modelos de impacto de esferas
-rígidas ni en la aproximación armónica. Su origen es la \emph{asimetría temporal}
-del proceso de compresión-expansión del cúmulo LJ durante el contacto.
+El canal $\alpha_{\Delta V_B}$ no tiene análogo en modelos de esferas rígidas.
+Durante la compresión, el impulso de la superficie convierte KE del CM en PE
+intra-bola. Al rebotar, el CM recupera KE, pero la relajación de la PE interna
+hacia el equilibrio tarda varias vibraciones ($\sim1$--$5\,\tau$), tiempo en que
+el cúmulo ya se aleja. En el primer apogeo, $V_B>V_B^{(0)}$, y la diferencia
+registra la energía potencial que la bola «se lleva».
 
-Durante la compresión (cúmulo decelerando hacia la superficie), el impulso de
-la pared convierte KE del CM en energía potencial de la red intra-bola. A las
-velocidades estudiadas ($v_{\mathrm{imp}} \geq 0.9\,\sigma/\tau$), la compresión
-supera el rango harmónico y la bola queda en un estado de PE mayor que su
-referencia de equilibrio. Al rebotar, la KE del CM se restaura, pero la relajación
-de la PE interna hacia el equilibrio tarda varias vibraciones internas
-($\sim 1$--$5\,\tau$), tiempo durante el cual el cúmulo ya se aleja de la
-superficie. En el primer apogeo, $V_B > V_B^{(0)}$ y la diferencia
-$\alpha_{\Delta V_B} = (V_B^{(1)} - V_B^{(0)})/E_0$ registra esta energía
-potencial que la bola «se lleva» sin haber convertido aún en KE interna.
+Esta asimetría tiene dos consecuencias: (i)~el análisis de~\cite{Gutierrez2012}
+subestima el calor depositado en la bola al usar solo $T_B^{(1)}$; (ii)~la
+cantidad conservada para el balance es $\alpha_{\rm bola}$, no $\alpha_{T_B}$.
 
-Este mecanismo tiene dos consecuencias:
-\begin{enumerate}
-    \item La descomposición de Gutiérrez —que toma $T_B^{(1)}$ al primer apogeo
-    como medida de toda la energía interna— subestima el calor depositado en la
-    bola. A velocidades altas, $\alpha_{\Delta V_B} > \alpha_{T_B}$: la PE supera
-    a la KE interna en el apogeo.
-    \item $\alpha_{\mathrm{bola}} = \alpha_{T_B} + \alpha_{\Delta V_B}$ es la
-    cantidad conservada que entra al balance de canales; $\alpha_{T_B}$ solo es
-    la fracción que ya se ha termalizado en el momento de la medición. En
-    rebotes posteriores, $\alpha_{\Delta V_B}$ se redistribuirá entre los modos
-    internos de la bola y eventualmente fluirá parcialmente de vuelta a la
-    superficie.
-\end{enumerate}
-
-\subsection{Conexión con la ley de Haff}
-\label{sec:haff}
-
-La ley de Haff~\cite{Haff1983} describe el enfriamiento de un gas granular:
-$T_{\mathrm{gran}}(t) \propto (1 + t/t_0)^{-2}$. En nuestro sistema el
-análogo sería el decaimiento de $\Ecm{n}$ con $n$: para el caso $N=1$ con $\cor$
-constante, $\Ecm{n} = \Ecm{0}\cor^{2n}$ es más bien una ley exponencial que una
-ley de potencias.
-
-La diferencia fundamental con Haff es que en un gas granular \emph{todas} las
-partículas disipan entre sí y no hay reservorio de calor; la temperatura global
-cae. En nuestro sistema, el calor no se pierde sino que se transfiere al interior
-del cúmulo ($\Tint$ sube) y a la superficie termostatizada ($\Tstar$ fijo). La
-irreversibilidad no viene de la entropía del gas granular sino de la diferencia
-de temperatura $\Tint - \Tstar$ que impulsa el flujo de calor de vuelta a la
-superficie en cada impacto.
-
-\subsection{Números mágicos e \texorpdfstring{$\alpha_{\mathrm{surf}}$}{α\_surf}
-no monótona}
-\label{sec:magicos}
-
-Los cúmulos $N=13$ y $N=55$ son icosaedros de Mackay con temperatura de fusión
-local superior a la de sus tamaños vecinos. En las fracciones
-$\alpha_{T_B}(N)$ y $\alpha_{\mathrm{bola}}(N)$ (paneles (c) y (d) de la
-Fig.~\ref{fig:B_consolid}), ambos tamaños siguen la tendencia suave predicha
-por la ec.~\eqref{eq:gutierrez} con $N_c=84$ sin desviaciones estadísticamente
-significativas. La mayor estabilidad estructural de los icosaedros no reduce la
-captura de energía interna en el primer impacto a las velocidades estudiadas.
-
-La excepción es $\alpha_{\mathrm{surf}}$, que sí muestra una anomalía en $N=13$:
-el máximo del panel (b) de la Fig.~\ref{fig:B_consolid} ($\approx 32\%$) supera
-en un factor $\sim 3$ el valor para $N=83$ ($11\%$). La interpretación es
-geométrica: el icosaedro de $N=13$ tiene un radio de contacto
-$r_{13} \approx 1.5\,\sigma$ comparable al rango de los modos fonónicos de
-superficie más acoplados ($\lambda \sim 2$--$3\,\sigma$), maximizando la
-transferencia directa. Para $N \gg 13$, la zona de contacto crece pero los
-modos internos del cúmulo absorben el exceso antes de que llegue a la red.
-
-\subsection{Interpretación de \texorpdfstring{$N_c \approx N_{\mathrm{bola}}$}{Nc ≈ Nbola}}
+\subsection{Nc efectivo y escalado con N}
 \label{sec:Nc_interpretacion}
 
-El resultado $N_c = 84 \approx N_{\mathrm{bola}}$ tiene una lectura directa en
-términos de la fórmula de equipartición ec.~\eqref{eq:gutierrez}: la energía
-de impacto se distribuye entre $3N_{\mathrm{bola}}-3$ osciladores internos y
-$3N_c \approx 3N_{\mathrm{bola}}$ osciladores externos (en la superficie),
-es decir, la huella activa del impacto contiene aproximadamente el mismo número
-de osciladores que la propia bola. Esta escala es consistente con la observación
-de que la zona de contacto bola-superficie involucra del orden de $N^{2/3}$
-átomos superficiales, pero que la profundidad de penetración activa varios planos
-de la red, resultando en un número efectivo $\sim N$.
+La calibración $N_c\approx N$ a partir de $\alpha_{\rm bola}$ para $N\geq55$
+tiene una lectura directa: la energía de impacto se distribuye entre $3N-3$
+modos internos de la bola y $3N$ modos superficiales activos, es decir, la
+huella activa del impacto involucra efectivamente $N$ átomos de la superficie.
+Esto es consistente con que el radio de la bola ($\sim N^{1/3}$) determine
+también la profundidad de penetración de la onda de presión en la superficie,
+activando $\sim N$ átomos en volumen (no solo en área de contacto $\sim N^{2/3}$).
 
-Para $N_c = N$, el límite asintótico $\alpha_{\mathrm{bola}} \to \tfrac{1}{2}$
-es el resultado de equipartición entre dos sistemas de igual tamaño: es la
-misma física que en la colisión elástica de dos masas iguales
-($e=1 \Rightarrow$ toda la energía al impactado), con la diferencia de que aquí
-la transferencia es irreversible porque los modos se excitan en formas normales
-distintas a las del CM.
+Para $N=13$, el sistema no alcanza el régimen de equipartición: la bola es
+demasiado rígida (una sola capa esférica) y $\alpha_{\rm bola}\approx0.11$
+queda muy por debajo de la predicción de $\sim0.48$. El resultado marca una
+transición entre el régimen ``molecular'' ($N\leq13$) y el régimen ``bulk-like''
+($N\geq55$).
+
+\subsection{Dinámica a largo plazo y colapso}
+\label{sec:largo_discusion}
+
+La simulación de $5000\,\tau$ revela que $h^*=T_B/(Mg)$ no es un attractor
+estacionario sino una cota aproximada válida solo para el primer rebote
+(cuando $\alpha_{\rm cm}\approx\alpha_{T_B}$). A medida que $h_n$ decrece
+geométricamente y $T_B$ crece más lentamente, la bola se aproxima a la
+superficie hasta quedar atrapada sobre ella. El colapso a través del lattice
+de la superficie (detectable por $Z_{\rm cm}<z_0$) es un artefacto del
+potencial repulsivo puro que no tiene barrera lateral: con $c_{ps}=1$
+este colapso no ocurre porque la bola queda adherida antes de esa etapa.
+
+\subsection{Umbral de adhesión y soft landing}
+\label{sec:adhesion_discusion}
+
+Los resultados de $c_{ps}=1$ muestran que la energía de adhesión LJ es
+considerablemente mayor que la energía CM disponible para todos los $N$
+y $h_0$ estudiados. El umbral $h_0^*(N)\propto N^{-0.27}$ tiene una implicación
+directa para aplicaciones de \emph{soft landing}: cúmulos más grandes requieren
+menores velocidades de impacto relativas para adherirse ($v^*\propto N^{-0.13}$),
+lo que favorece la deposición de cúmulos grandes a velocidades intermedias.
 
 % =============================================================================
 \section{Conclusiones}
 \label{sec:conclusiones}
 % =============================================================================
 
-Hemos reproducido los resultados de Gutiérrez et al.~\cite{Gutierrez2012}
-con \lammps{} ($c_{ps}=0$, $T=0$, $N\approx83$, $\gstar=0.026$) y extendido
-su análisis energético en dos direcciones. Las conclusiones principales son:
+Hemos reproducido y extendido el estudio de Gutiérrez et al.~\cite{Gutierrez2012}
+con \lammps{} usando cúmulos FCC pre-minimizados de tamaño exacto
+($N\in\{1,2,7,13,55,79,87\}$). Las conclusiones principales son:
 
 \begin{enumerate}
 
     \item \textbf{El impacto involucra cuatro canales energéticos distintos.}
-    La identidad $\alpha_{\mathrm{cm}} + \alpha_{T_B} + \alpha_{\Delta V_B}
-    + \alpha_{\mathrm{surf}} = 1$ es exacta rebote a rebote y está respaldada
-    por medición directa de la energía de la superficie. La descomposición en
-    dos canales de Gutiérrez mezcla $\alpha_{\Delta V_B}$ con
-    $\alpha_{\mathrm{surf}}$, sobreestimando la excitación superficial en un
-    factor 3--5.
+    $\alpha_{\rm cm}+\alpha_{T_B}+\alpha_{\Delta V_B}+\alpha_{\rm surf}=1$,
+    con $\alpha_{T_B}\approx0.22$ constante, $\alpha_{\Delta V_B}\approx0.21$--$0.33$
+    y $\alpha_{\rm surf}\approx0.07$--$0.16$ para $N=79$, $v>0.9\,\sigma/\tau$.
+    La expansión anarmónica domina sobre la excitación superficial directa en
+    factor $\sim3$--$4$.
 
-    \item \textbf{La expansión anarmónica domina sobre la excitación superficial
-    directa.} Para $v_{\mathrm{imp}} \geq 0.9\,\sigma/\tau$,
-    $\alpha_{\Delta V_B} \approx 21$--$36\%$ supera a
-    $\alpha_{\mathrm{surf}} \approx 6$--$15\%$. Este canal refleja que el
-    cúmulo LJ abandona el contacto en un estado de PE intra-bola mayor que
-    el de equilibrio, y esa energía permanece almacenada al primer apogeo.
-    $\alpha_{T_B} \approx 0.22$ es prácticamente constante en ese rango,
-    consistente con Gutiérrez.
+    \item \textbf{La fracción interna total $\alpha_{\rm bola}$ escala según
+    equipartición con $N_c\approx N$ para $N\geq55$.}
+    Esto predice $\alpha_{\rm bola}\to1/2$ para $N\to\infty$.
+    Usando $\alpha_{T_B}$ solo, $N_c\propto N^{0.22}$ no converge a una
+    interpretación simple.
 
-    \item \textbf{El número efectivo de osciladores superficiales es
-    $N_c \approx N_{\mathrm{bola}}$.} Al calibrar la fórmula de Gutiérrez con
-    la fracción interna total $\alpha_{\mathrm{bola}} = \alpha_{T_B} +
-    \alpha_{\Delta V_B}$, se obtiene $N_c = 84 \approx N_{\mathrm{bola}}$,
-    frente a $N_c = 304$ al usar $\alpha_{T_B}$ solo. El resultado implica
-    que cada átomo de la bola se acopla efectivamente con un oscilador de la
-    superficie, y que para $N \to \infty$ se alcanza el límite de equipartición
-    $\alpha_{\mathrm{bola}} \to \tfrac{1}{2}$.
+    \item \textbf{$N=13$ está en un régimen distinto.}
+    No alcanza el plateau de equipartición en $v\leq2.0\,\sigma/\tau$:
+    la rigidez de la capa FCC completa más pequeña impide la termalización
+    interna rápida.
 
-    \item \textbf{$\alpha_{\mathrm{surf}}(N)$ tiene un máximo no monótono en
-    $N=13$.} La fracción de excitación fonónica directa alcanza $\approx 32\%$
-    para el icosaedro de Mackay ($N=13$) y cae a $\approx 11\%$ para $N=83$.
-    Este máximo coincide con la escala geométrica de acoplamiento óptimo entre
-    el radio de contacto de la bola y los modos fonónicos de superficie.
+    \item \textbf{La predicción $h_1\approx T_B/(Mg)$ es válida para el primer
+    rebote (ratio$=0.95$) pero no como attractor.}
+    La altura CM decae geométricamente mientras $T_B$ decrece más despacio,
+    y la bola queda atrapada tras $\sim23$ rebotes ($t_{\rm col}\approx740\,\tau$
+    para $h_0=28\,\sigma$, $N=79$).
 
-    \item \textbf{El proyectil monoatómico ($N=1$) es la única referencia
-    clásica.} Con $\alpha_{\mathrm{bola}} = 0$ por construcción,
-    $e_1 = 0.934$ es estrictamente independiente de $h_0$ en el rango
-    repulsivo ($c_{ps}=0$) y sirve como línea base para cuantificar el efecto
-    de los modos internos en tamaños mayores.
+    \item \textbf{Con adhesión ($c_{ps}=1$), la bola pega en todos los casos
+    estudiados ($v$ hasta $2.0\,\sigma/\tau$).}
+    $E_{\rm adh}\propto N^{0.73}$, $h_0^*(N)\propto N^{-0.27}$.
+    El umbral $h_0^*\approx260$--$440\,\sigma$ está fuera del rango estudiado;
+    la escala favorable a cúmulos grandes tiene implicaciones para el
+    \emph{soft landing}.
 
 \end{enumerate}
 
-Como trabajo futuro inmediato, la extensión a interacción LJ completa
-($c_{ps}=1$) y temperatura inicial $\Tstar > 0$ permitirá estudiar la
-\emph{cascada de rebotes sucesivos} hasta la adhesión: el número de rebotes
-$n_{\mathrm{adh}}(N)$, el sobrecalentamiento de pico $\Delta\Tint^{\mathrm{pico}}$
-y la influencia de $\Tstar$ en la tasa de la cascada. Los resultados del
-presente trabajo —en particular la calibración $N_c \approx N_{\mathrm{bola}}$—
-proporcionan la referencia energética en $T=0$ sobre la que se medirán esos
-efectos térmicos.
+Como trabajo futuro, la extensión a temperatura inicial $\Tstar>0$ y a múltiples
+orientaciones del cúmulo permitirá cuantificar la dependencia estadística de
+$n_{\rm adh}$ (número de rebotes hasta adhesión) y el papel de la fusión interna
+en la cascada.
 
 % =============================================================================
 \section*{Agradecimientos}
@@ -904,7 +620,7 @@ efectos térmicos.
 
 Los autores agradecen al programa de Magíster en Simulación Computacional de la
 PUCV por el apoyo académico. Las simulaciones se realizaron con
-\lammps~7~Feb~2024 \cite{Thompson2022}. El código fuente está disponible en
+\lammps~7~Feb~2024~\cite{Thompson2022}. El código fuente está disponible en
 \url{https://github.com/fwasaff/inelastic-rebound-md}.
 
 % =============================================================================
