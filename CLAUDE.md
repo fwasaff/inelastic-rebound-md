@@ -81,29 +81,41 @@ inelastic-rebound-md/
 
 ---
 
-## Hoja de ruta del estudio
+## Estado actual — resultados del sweep N
 
-### Paso 1 — Cerrar el balance energético (T_S en LAMMPS)
-Agregar medición de energía de la superficie en `in.bounce_reprod`:
-- `compute pe_surf_r surface reduce sum c_pe_atom`
-- Sacar `c_surf_ke` y `c_pe_surf_r` en `bounce.dat`
-- Verificar: E_ball + E_surf + U_grav = const rebote a rebote
+### COMPLETADO: Sweep N ∈ {13, 55, 79, 87} × 6 alturas (c_ps=0)
 
-### Paso 2 — Baseline N=1 (c_ps=0)
-Correr las mismas 6 alturas con un átomo proyectil.
-Esto mide α_surf(v) directamente (sin canal interno).
+| N   | α_TB plateau (v>1.1) | Nc_eff | Predicción Nc=290 | Estado plateau      |
+|-----|----------------------|--------|-------------------|---------------------|
+| 13  | 0.066 (no plateau)   | ~169   | 0.040             | ✗ aún creciendo     |
+| 55  | 0.217                | ~195   | 0.157             | ✓ aprox. constante  |
+| 79  | 0.244                | ~241   | 0.212             | ✓ constante         |
+| 87  | 0.250                | ~258   | 0.229             | ✓ constante         |
 
-### Paso 3 — Variación sistemática N ∈ {2, 7, 13, 55} (c_ps=0)
-Usar los clusters pre-minimizados en `lammps/clusters/`.
-Comparar α_int(N) con la predicción analítica.
+**Hallazgos del sweep:**
+1. α_TB aumenta monótonamente con N ✓ (confirma la tendencia)
+2. N=13 NO alcanza el plateau en v ≤ 2.0σ/τ — el cluster es demasiado rígido
+3. Nc_eff crece con N (no constante): sugiere Nc ∝ área de contacto ∝ N^(2/3)
+4. La fórmula captura la tendencia pero subestima α_TB por ~10–25%
 
-### Paso 4 — Observar h* (simulación larga)
-Correr h₀=28σ, N=83, 5000τ para verificar convergencia al plateau
+**Figura generada:** `data/outputs/fig_alpha_TB_vs_N.pdf`
+
+---
+
+## Hoja de ruta — próximos pasos
+
+### Paso siguiente — Extender sweep a N más pequeños y confirmar Nc(N)
+- Correr N ∈ {1, 2, 7} con las mismas 6 alturas (clusters ya disponibles)
+- Medir Nc_eff(N) y ajustar relación Nc = A × N^β
+- Esto da la figura clave para el artículo nuevo
+
+### Paso B — Observar h* (simulación larga)
+Correr h₀=28σ, N=79, 5000τ para verificar convergencia al plateau
 h* = T_B/(Mg) predicho por Gutiérrez 2012.
 
-### Paso 5 — Adhesión c_ps=1
-Repetir Pasos 2-3 con LJ completo. Medir umbral h₀*(N) donde la bola
-no rebota (KE < energía de adhesión).
+### Paso C — Adhesión c_ps=1
+Repetir sweep con LJ completo (bola-superficie atractiva).
+Medir umbral h₀*(N) donde la bola no rebota (KE < energía de adhesión).
 
 ---
 
