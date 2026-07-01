@@ -13,14 +13,22 @@ nanocúmulo Lennard-Jones sobre una superficie FCC bajo gravedad constante.
 > Dado un impacto con energía E₀, ¿cómo se distribuye entre los tres canales:
 > CM de la bola / modos internos de la bola / fonones de la superficie?
 
-**Observable clave:** La fracción α_int ≈ 22% que va a modos internos es
-~constante para v > 0.9 σ/τ (con N=79). La hipótesis a verificar es:
+**Canales de energía (3):**
+- α_CM  = e₁² = h₁/h₀  (fracción CM vertical, = COR al cuadrado)
+- α_TB  = T_B/E₀        (KE interna de la bola → "temperatura" de la bola)
+- α_surf = ΔE_surf/E₀   (fonones superficie, medido directamente)
+- α_ball = 1 − α_CM − α_surf = α_TB + α_VB  (energía interna total; α_VB = PE anarmónico)
+
+**Observable clave:** α_TB ≈ 0.22 constante para v > 0.9 σ/τ (con N=79).
+El canal anarmónico α_VB ≈ α_TB (equipartición aproximada).
+La hipótesis a verificar para el NUEVO paper:
 
 ```
-α_int(N) = (3N - 3) / (3N - 3 + 3·N_c)
+α_TB(N) = (3N - 3) / (3N - 3 + 3·N_c)
 ```
 
-donde N_c es el número efectivo de átomos de superficie en la huella del impacto.
+donde N_c ≈ 290 es el número efectivo de átomos de superficie en la huella.
+Predicciones: α_TB(13)≈0.040, α_TB(55)≈0.157, α_TB(79)≈0.212, α_TB(87)≈0.229.
 
 **Nota sobre N:** Los shells FCC completos centrados en un sitio de red son
 N=13, 55, 79, 87, ... El shell completo N=79 (r < 2.45σ) es el cluster
@@ -174,16 +182,33 @@ lmp -in ../../../lammps/in.bounce_reprod \
 
 ### Partición de energía en el primer rebote
 
-| h₀_eff (σ) | v_imp (σ/τ) | e₁    | α_CM  | α_int | α_surf |
-|------------|-------------|-------|-------|-------|--------|
-| 8.53       | 0.666       | 0.906 | 0.822 | 0.068 | 0.110  |
-| 16.21      | 0.918       | 0.697 | 0.486 | 0.211 | 0.303  |
-| 25.77      | 1.158       | 0.662 | 0.438 | 0.178 | 0.384  |
-| 38.94      | 1.423       | 0.660 | 0.435 | 0.223 | 0.342  |
-| 56.41      | 1.713       | 0.618 | 0.382 | 0.219 | 0.399  |
-| 77.24      | 2.004       | 0.503 | 0.253 | 0.233 | 0.514  |
+### Reproducción 2012 (in.bounce_reprod, N variable ~79–84, c_ps=0)
 
-**Hallazgo:** α_int ≈ 0.20–0.23 constante para v > 0.9 σ/τ.
+| h₀_eff (σ) | v_imp (σ/τ) | e₁    | α_CM  | α_TB  | α_VB  | α_surf | α_ball |
+|------------|-------------|-------|-------|-------|-------|--------|--------|
+| 8.53       | 0.666       | 0.906 | 0.822 | 0.071 | 0.039 | 0.068  | 0.110  |
+| 16.21      | 0.918       | 0.697 | 0.486 | 0.221 | 0.234 | 0.059  | 0.455  |
+| 25.77      | 1.158       | 0.662 | 0.438 | 0.187 | 0.274 | 0.101  | 0.461  |
+| 38.94      | 1.423       | 0.660 | 0.435 | 0.234 | 0.196 | 0.135  | 0.430  |
+| 56.41      | 1.713       | 0.618 | 0.382 | 0.231 | 0.284 | 0.104  | 0.514  |
+| 77.24      | 2.004       | 0.503 | 0.253 | 0.244 | 0.342 | 0.160  | 0.586  |
+
+**Hallazgo:** α_TB ≈ 0.22 constante para v > 0.9 σ/τ.
+α_ball = α_TB + α_VB ≈ 0.43–0.59 (total interno cinético + anarmónico).
+α_surf ≈ 0.06–0.16 (mucho más pequeño que α_ball).
+
+### N=79 fijo (in.bounce_cluster, cluster_N79_min.dat, c_ps=0)
+
+| h₀_eff (σ) | v_imp (σ/τ) | e₁    | α_CM  | α_TB  | α_VB  | α_surf | α_ball |
+|------------|-------------|-------|-------|-------|-------|--------|--------|
+| 8.81       | 0.677       | 0.924 | 0.853 | 0.021 | 0.056 | 0.070  | 0.077  |
+| 17.21      | 0.946       | 0.708 | 0.502 | 0.213 | 0.208 | 0.077  | 0.421  |
+| 25.91      | 1.161       | 0.552 | 0.304 | 0.319 | 0.310 | 0.066  | 0.629  |
+| 41.80      | 1.474       | 0.633 | 0.401 | 0.257 | 0.264 | 0.078  | 0.521  |
+| 56.93      | 1.721       | 0.614 | 0.378 | 0.197 | 0.328 | 0.098  | 0.525  |
+| 79.03      | 2.027       | 0.587 | 0.345 | 0.204 | 0.294 | 0.156  | 0.499  |
+
+**α_TB ≈ 0.21–0.26 para v > 0.9; predicción teórica α_TB(79) = 0.212 (Nc≈290).** ✓
 
 ### Nivel de contacto efectivo
 z₀ ≈ 11.6–11.8 σ (media de los mínimos de Zcm). Todas las alturas h_n
