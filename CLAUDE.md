@@ -14,13 +14,18 @@ nanocúmulo Lennard-Jones sobre una superficie FCC bajo gravedad constante.
 > CM de la bola / modos internos de la bola / fonones de la superficie?
 
 **Observable clave:** La fracción α_int ≈ 22% que va a modos internos es
-~constante para v > 0.9 σ/τ (con N=83). La hipótesis a verificar es:
+~constante para v > 0.9 σ/τ (con N=79). La hipótesis a verificar es:
 
 ```
 α_int(N) = (3N - 3) / (3N - 3 + 3·N_c)
 ```
 
 donde N_c es el número efectivo de átomos de superficie en la huella del impacto.
+
+**Nota sobre N:** Los shells FCC completos centrados en un sitio de red son
+N=13, 55, 79, 87, ... El shell completo N=79 (r < 2.45σ) es el cluster
+canónico del paper. El valor "N=83" en datos anteriores era un artefacto del
+método `create_atoms region sphere` con el centro fuera de un sitio de red.
 
 ---
 
@@ -42,18 +47,23 @@ git fetch origin && git status
 inelastic-rebound-md/
 ├── CLAUDE.md                           ← este archivo
 ├── lammps/
-│   ├── in.bounce_reprod                ← script principal de simulación
+│   ├── in.bounce_reprod                ← reproducción 2012 (create_atoms, N variable)
+│   ├── in.bounce_cluster               ← versión mejorada: cluster fijo pre-minimizado
+│   ├── in.minimize_cluster             ← minimiza un cluster en vacío
 │   └── clusters/                       ← geometrías de bola pre-minimizadas
 │       ├── cluster_N1_min.dat          (1 átomo)
 │       ├── cluster_N2_min.dat          (2 átomos)
 │       ├── cluster_N7_min.dat          (7 átomos)
 │       ├── cluster_N13_min.dat         (13 átomos)
-│       └── cluster_N55_min.dat         (55 átomos)
+│       ├── cluster_N55_min.dat         (55 átomos)
+│       └── cluster_N79_min.dat         (79 átomos — cluster canónico, shell FCC completo)
 ├── scripts/
 │   ├── gen_tabla_repulsiva.py          ← genera tabla LJ repulsiva (c=0)
+│   ├── gen_cluster_init.py             ← genera geometría FCC inicial de un cluster
 │   ├── run_reprod.sh                   ← corre las 6 alturas del paper 2012
 │   ├── analizar_reprod.py              ← extrae rebotes, alturas, COR
-│   └── analizar_reprod_fisica.py       ← partición energética (4 figuras)
+│   ├── analizar_reprod_fisica.py       ← partición energética (4 figuras)
+│   └── analizar_gr.py                  ← función de distribución g(r) de la bola
 ├── docs/
 │   └── borrador_rebotes_gravedad.tex   ← borrador del artículo
 └── data/

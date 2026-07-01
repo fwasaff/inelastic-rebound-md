@@ -126,6 +126,7 @@ variable    time        equal  step*${dt}
 fix         f_freeze_fixed  fixed_surf  setforce 0.0 0.0 0.0
 fix         f_nve           all         nve
 fix         f_wall_bot  mobile_surf  wall/reflect zlo EDGE
+fix         f_wall_ball ball         wall/reflect zlo EDGE
 fix         f_grav      ball         gravity ${g} vector 0 0 -1
 
 # --- Salida -------------------------------------------------------------------

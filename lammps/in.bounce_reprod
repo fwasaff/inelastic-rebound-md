@@ -204,6 +204,12 @@ fix print_energy all print ${print_freq} &
 # Para continuar desde un checkpoint: lmp -in in.read_restart -var restart_file largo.restart.a
 restart  100000  largo.restart.a  largo.restart.b
 
+# --- Dump posiciones bola (para g(r) en post-proceso) ------------------------
+# Sólo átomos de la bola (type 2), cada 100 pasos = 0.5 τ.
+# El archivo resultante (~2 MB) permite calcular g(r) a tiempos clave.
+dump     ball_gr   ball  custom  100  ball_dump.lammpstrj  id  x  y  z
+dump_modify  ball_gr  sort  id
+
 # --- Correr -------------------------------------------------------------------
 run     ${steps_total}
 
