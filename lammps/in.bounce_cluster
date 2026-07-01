@@ -34,7 +34,7 @@ variable    Nz            equal 6
 variable    dt            equal 0.005
 variable    thermo_freq   equal 100
 variable    print_freq    equal 20
-variable    t_total       equal 400.0
+variable    t_total       index 400.0
 variable    steps_total   equal round(v_t_total/v_dt)
 
 # --- Caja y superficie --------------------------------------------------------
