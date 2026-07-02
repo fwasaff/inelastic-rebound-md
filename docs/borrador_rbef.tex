@@ -1,0 +1,599 @@
+% =============================================================================
+% VERSIÓN RBEF — Revista Brasileira de Ensino de Física (sección Artigos Gerais)
+% Protocolo RBEF: .tex UTF-8, sin TikZ, \bibitem, título/resumen/palabras
+% clave bilingües (español + inglés), referencias en orden de citación,
+% ecuaciones citadas como "ecuación (n)".
+% Compilar: pdflatex borrador_rbef.tex  (dos pasadas)
+% =============================================================================
+
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+
+\newcommand{\eps}{\varepsilon}
+\newcommand{\gstar}{g^*}
+\newcommand{\lammps}{\textsc{Lammps}}
+
+\title{%
+    \textbf{¿A dónde se va la energía de una pelota que rebota?\\
+    Partición energética del impacto de nanocúmulos de Lennard-Jones\\
+    mediante dinámica molecular}\\[10pt]
+    \large\textit{Where does the energy of a bouncing ball go?\\
+    Energy partition in the impact of Lennard-Jones nanoclusters\\
+    via molecular dynamics}
+}
+
+\author{%
+    Felipe González-Wasaff$^{1}$\thanks{felipe.wasaff.g@mail.pucv.cl
+    --- ORCID: completar en el sistema de submissão}
+    \quad y \quad
+    Gonzalo Gutiérrez$^{2}$\\[4pt]
+    \small $^{1}$Instituto de Matemáticas, Pontificia Universidad Católica
+    de Valparaíso, Valparaíso, Chile\\
+    \small $^{2}$Departamento de Física, Facultad de Ciencias,
+    Universidad de Chile, Santiago, Chile
+}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+% -----------------------------------------------------------------------------
+\begin{abstract}
+\noindent
+En los cursos de mecánica, el coeficiente de restitución $e<1$ resume toda
+la física del rebote inelástico en un número, y la energía ``perdida'' se
+atribuye genéricamente a fricción, calor o sonido. En este trabajo abrimos
+esa caja negra con un experimento computacional accesible: la caída y el
+rebote de un nanocúmulo de Lennard-Jones de $N$ átomos sobre una superficie
+cristalina, simulados con el programa abierto \lammps{} en un computador
+personal. Midiendo la energía en el primer apogeo identificamos cuatro
+canales cuya suma es exactamente la energía de impacto $E_0$: la energía
+recuperada por el centro de masa ($\alpha_{\rm cm}=e_1^2$), el
+calentamiento vibracional interno de la bola ($\alpha_{T_B}\approx0.22$),
+la expansión anarmónica de la bola ($\alpha_{\Delta V_B}\approx0.2$--$0.3$)
+y los fonones de la superficie ($\alpha_{\rm surf}\approx0.07$--$0.16$).
+El resultado sorprende: la mayor parte de la energía no recuperada queda
+\emph{dentro de la propia pelota}, no en el piso. Un argumento de
+equipartición entre los $3N-3$ modos internos de la bola y $\sim3N$
+osciladores activos de la superficie reproduce el escalado medido con el
+tamaño $N\in\{1,2,7,13,55,79,87\}$ y predice que la fracción interna tiende
+a $1/2$ para $N\to\infty$. El sistema conecta en un solo problema la
+mecánica newtoniana, la física estadística y los métodos computacionales;
+se incluyen los archivos de entrada, los scripts de análisis y actividades
+propuestas para el aula.
+
+\medskip
+\noindent\textbf{Palabras clave:} dinámica molecular, coeficiente de
+restitución, partición de energía, equipartición, nanocúmulos, enseñanza
+de física computacional.
+
+\bigskip
+\noindent In mechanics courses, the coefficient of restitution $e<1$
+summarizes all the physics of an inelastic bounce in a single number, and
+the ``lost'' energy is generically attributed to friction, heat or sound.
+In this work we open that black box with an accessible computational
+experiment: the fall and bounce of a Lennard-Jones nanocluster of $N$
+atoms on a crystalline surface, simulated with the open-source code
+\lammps{} on a personal computer. Measuring the energy at the first apex
+we identify four channels whose sum is exactly the impact energy $E_0$:
+the energy recovered by the center of mass ($\alpha_{\rm cm}=e_1^2$), the
+internal vibrational heating of the ball ($\alpha_{T_B}\approx0.22$), the
+anharmonic expansion of the ball ($\alpha_{\Delta V_B}\approx0.2$--$0.3$)
+and the surface phonons ($\alpha_{\rm surf}\approx0.07$--$0.16$). The
+result is surprising: most of the non-recovered energy stays \emph{inside
+the ball itself}, not in the floor. An equipartition argument between the
+$3N-3$ internal modes of the ball and $\sim3N$ active surface oscillators
+reproduces the measured scaling with size $N\in\{1,2,7,13,55,79,87\}$ and
+predicts that the internal fraction tends to $1/2$ as $N\to\infty$. The
+system connects Newtonian mechanics, statistical physics and computational
+methods in a single problem; input files, analysis scripts and proposed
+classroom activities are included.
+
+\medskip
+\noindent\textbf{Keywords:} molecular dynamics, coefficient of
+restitution, energy partition, equipartition, nanoclusters, computational
+physics teaching.
+\end{abstract}
+
+% =============================================================================
+\section{Introducción}
+\label{sec:intro}
+% =============================================================================
+
+Una pelota que se suelta desde una altura $h_0$ rebota hasta una altura
+$h_1<h_0$. En los cursos de mecánica este hecho se codifica en el
+coeficiente de restitución,
+\begin{equation}
+    e = \frac{|v_{\rm despegue}|}{|v_{\rm impacto}|}, \qquad
+    \frac{h_1}{h_0} = e^2 < 1,
+    \label{eq:cor}
+\end{equation}
+y la energía faltante, $(1-e^2)Mgh_0$, se atribuye a ``fricción'',
+``calor'' o ``sonido'' sin mayor detalle~\cite{Cross1999,Aguiar2003}.
+Esa respuesta, aunque correcta, esconde la pregunta físicamente
+interesante: ¿\emph{dónde} queda esa energía inmediatamente después del
+rebote? ¿En la pelota o en el piso? ¿Como movimiento térmico o como
+deformación? Para una pelota macroscópica el desglose es inaccesible en la
+práctica, pero para una pelota \emph{nanométrica} simulada átomo a átomo
+la contabilidad energética puede hacerse exacta: la dinámica molecular
+(MD) permite medir cada término del hamiltoniano en cada instante
+\cite{AllenTildesley,FrenkelSmit}.
+
+Este problema fue propuesto como experimento computacional por Gutiérrez
+et al.~\cite{Gutierrez2012}, quienes estudiaron con MD el rebote de un
+cúmulo de argón de $N\approx79$ átomos sobre una superficie cristalina
+bajo gravedad, con interacción bola--superficie puramente repulsiva. Sus
+resultados principales fueron que la secuencia de alturas $h_n$ decae más
+rápido que una serie geométrica, que durante la colisión la energía de
+contacto almacena transitoriamente la mayor parte de la energía
+``disipada'', y que para caídas grandes la bola se funde en el impacto.
+Aquel análisis, sin embargo, se concentró en lo que ocurre \emph{durante}
+el contacto; no cuantificó cómo queda repartida la energía una vez que la
+bola se separa y alcanza su primer apogeo.
+
+En este artículo retomamos y extendemos ese experimento con el programa
+abierto \lammps~\cite{Thompson2022}, con tres objetivos pedagógicos:
+\textbf{(i)}~mostrar que con herramientas gratuitas y un computador
+personal (cada simulación toma $\sim$1--2 minutos) un estudiante puede
+responder cuantitativamente la pregunta ``¿a dónde se va la energía?'',
+descomponiéndola en \emph{cuatro canales} que suman exactamente $E_0$;
+\textbf{(ii)}~conectar ese resultado con la física estadística: un
+argumento de equipartición predice cómo la fracción absorbida escala con
+el número de átomos $N$, y el barrido $N\in\{1,2,7,13,55,79,87\}$ lo
+verifica; \textbf{(iii)}~ilustrar buenas prácticas de la simulación
+computacional ---conservación de energía, reproducibilidad, análisis de
+convenciones de medición--- que rara vez se discuten en textos
+introductorios. Todos los archivos de entrada y scripts de análisis están
+disponibles en un repositorio público (Sección~\ref{sec:metodos}).
+
+% =============================================================================
+\section{El sistema: una pelota de \texorpdfstring{$N$}{N} átomos}
+\label{sec:modelo}
+% =============================================================================
+
+Trabajamos en unidades reducidas de Lennard-Jones (LJ): las longitudes se
+miden en $\sigma$, las energías en $\eps$ y el tiempo en
+$\tau=\sqrt{m\sigma^2/\eps}$. Para el argón, $\sigma\approx3.4$~\AA,
+$\eps\approx0.0104$~eV y $\tau\approx2.15$~ps, de modo que todo el
+experimento ocurre en decenas de nanosegundos y en una caja de pocos
+nanómetros: es la versión nanométrica de la pelota que rebota.
+
+Todos los pares de átomos interactúan mediante el potencial LJ
+\begin{equation}
+    U_{\mathrm{LJ}}(r) = 4\eps \left[ \left(\frac{\sigma}{r}\right)^{12}
+    - c_{ij}\left(\frac{\sigma}{r}\right)^{6} \right],
+    \quad r < r_c = 2.5\,\sigma,
+    \label{eq:lj}
+\end{equation}
+con $c_{ij}=1$ (atracción y repulsión) para pares bola--bola y
+superficie--superficie. Para el par bola--superficie consideramos dos
+casos: $c_{ps}=0$ (rebote puro, sin adhesión, el caso
+de~\cite{Gutierrez2012}) y $c_{ps}=1$ (con adhesión,
+Sección~\ref{sec:adhesion}).
+
+La ``pelota'' es un cúmulo FCC de $N$ átomos construido con las capas
+esféricas completas de la red ($N=1, 13, 55, 79, 87,\ldots$), minimizado
+en vacío antes de soltarlo; agregamos $N=2$ y $7$ como controles del
+régimen molecular. El ``piso'' es una losa FCC de $8\times8\times6$ celdas
+($N_s\approx1540$ átomos) con las dos capas inferiores fijas y condiciones
+periódicas laterales. La gravedad reducida $\gstar=0.026\,\sigma/\tau^2$
+actúa solo sobre la bola, que se suelta desde el reposo a una altura
+$h_0$. No hay termostato: la dinámica es puramente newtoniana (NVE) y la
+temperatura inicial es $T=0$, así que \emph{toda} la energía del problema
+proviene de la caída.
+
+La contabilidad energética se organiza en cuatro términos, medidos en el
+primer apogeo (cuando la bola, ya separada, alcanza su altura máxima
+$h_1$) y normalizados por la energía de impacto $E_0=Mg\,h_0^{\rm ef}$:
+\begin{align}
+    \alpha_{\rm cm}     &= \frac{h_1}{h_0^{\rm ef}} = e_1^2
+        &&\text{(energía recuperada por el CM),} \label{eq:acm}\\
+    \alpha_{T_B}        &= \frac{T_B^{(1)}}{E_0}
+        &&\text{(KE vibracional interna de la bola),} \label{eq:atb}\\
+    \alpha_{\rm surf}   &= \frac{\Delta(K_S + V_{\rm surf})}{E_0}
+        &&\text{(fonones de la superficie),} \label{eq:asurf}\\
+    \alpha_{\Delta V_B} &= \frac{V_B^{(1)}-V_B^{(0)}}{E_0}
+        &&\text{(expansión anarmónica de la bola),} \label{eq:avb}
+\end{align}
+donde $h_0^{\rm ef}$ es la altura de caída medida desde el nivel de
+contacto, $T_B$ es la energía cinética de los átomos de la bola
+\emph{descontado} el movimiento del centro de masa, y $V_B$ es la energía
+potencial interna de la bola. La conservación de la energía garantiza
+$\alpha_{\rm cm}+\alpha_{T_B}+\alpha_{\Delta V_B}+\alpha_{\rm surf}=1$, y
+esa suma, medida de forma independiente canal por canal, es el primer
+control de calidad de la simulación (Sección~\ref{sec:metodos}).
+
+% =============================================================================
+\section{La simulación con LAMMPS}
+\label{sec:metodos}
+% =============================================================================
+
+\lammps{}~\cite{Thompson2022} es un programa de dinámica molecular
+gratuito y de código abierto, disponible en los repositorios de las
+distribuciones de Linux habituales. Nuestro archivo de entrada
+(\texttt{in.bounce\_cluster}) tiene unas 150 líneas comentadas y expone
+como variables externas la altura $h_0$, el tamaño del cúmulo, la gravedad
+y el interruptor de adhesión $c_{ps}$, de modo que el barrido completo de
+este artículo se corre con un lazo de shell. En un computador portátil
+(un solo núcleo, $\sim1.4\times10^6$ átomos$\cdot$paso/s) cada rebote de
+$400\,\tau$ toma alrededor de 1.5 minutos. Los archivos de entrada, los
+cúmulos pre-minimizados y los scripts de análisis en Python (numpy +
+matplotlib + scipy) están disponibles en
+\url{https://github.com/fwasaff/inelastic-rebound-md}.
+
+Tres detalles técnicos merecen discutirse porque son, en sí mismos,
+lecciones de simulación:
+
+\textbf{(a) Cúmulos de tamaño exacto.} Crear la bola recortando una esfera
+de una red (\texttt{create\_atoms region sphere}) produce un número de
+átomos que depende de dónde caiga el centro de la esfera (79--84 átomos
+para radio $2.64\,\sigma$). Construir el cúmulo por capas esféricas
+completas y minimizarlo antes de soltarlo garantiza el mismo $N$ en todas
+las corridas y una bola inicialmente fría, sin energía interna residual
+que contamine la medición de $\alpha_{T_B}$.
+
+\textbf{(b) Conservación de energía y potencial desplazado.} Con el
+potencial de la ecuación~(\ref{eq:lj}) truncado en $r_c$ \emph{sin
+desplazar}, cada par de átomos que cruza $r_c$ introduce un salto de
+$\pm|U(r_c)|=0.016\,\eps$ en la energía potencial registrada; el error
+acumulado alcanza 2--6\% de $E_0$ por impacto y arruina la contabilidad de
+los canales. Truncando \emph{y desplazando} el potencial
+(\texttt{pair\_modify shift yes}) ---lo que no altera fuerzas ni
+trayectorias--- la energía total se conserva a
+$|\Delta E|<0.03\,\eps\sim4\times10^{-4}E_0$ por impacto con paso de
+tiempo $\Delta t=5\times10^{-3}\,\tau$, y la suma de los cuatro canales
+cierra en $|\sum\alpha_i-1|<10^{-4}$. Comprobar este cierre es un
+excelente ejercicio de control numérico para el estudiante.
+
+\textbf{(c) Convenciones de medición.} La altura ``$h_0$'' puede medirse
+desde el tope de la caja, desde la superficie o como altura absoluta del
+centro de masa; comparar resultados de distintos trabajos exige
+homogeneizar la convención. De hecho, al digitalizar las alturas de
+rebote del estudio original~\cite{Gutierrez2012} encontramos que su $h_0$
+es la altura absoluta del CM, mientras que la nuestra se mide desde el
+tope de la losa: a igual $h_0$ nominal las caídas efectivas difieren en
+$\sim8\,\sigma$. Comparadas a caída efectiva igual, ambas simulaciones
+coinciden en el régimen cuasi-elástico ($e_1=0.90$ frente a $0.92$) y
+dentro de $\sim0.1$ a alta energía.
+
+% =============================================================================
+\section{¿A dónde se va la energía? Los cuatro canales}
+\label{sec:canales}
+% =============================================================================
+
+La Figura~\ref{fig:secuencia} muestra cuatro instantes del primer rebote
+para $N=79$ y $h_0^{\rm ef}=25.9\,\sigma$, con los átomos coloreados por
+su energía cinética y, bajo cada panel, la partición instantánea de $E_0$.
+La secuencia cuenta la historia completa: durante la caída la energía es
+puramente mecánica del CM; en la compresión máxima la energía está
+almacenada como deformación (PE intra-bola y de contacto); y al primer
+apogeo la bola se lleva la mayor parte de la energía no recuperada como
+energía \emph{interna} ---visible en el moteado caliente de sus átomos---
+mientras la superficie queda apenas tibia.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{../data/outputs/fig_sequence.png}
+    \caption{Cuatro instantes del primer rebote ($N=79$,
+    $h_0=28.15\,\sigma$, $c_{ps}=0$): (a)~caída libre, (b)~compresión
+    máxima, (c)~expansión post-impacto y (d)~primer apogeo. Los átomos de
+    la bola se colorean por su KE interna (sin el movimiento del CM) y los
+    de la superficie por su KE en una escala $\times30$ más sensible. La
+    barra bajo cada panel es la partición instantánea de $E_0$; la energía
+    de contacto $U_c$ (gris) solo existe durante la colisión.}
+    \label{fig:secuencia}
+\end{figure}
+
+La Tabla~\ref{tab:particion4} cuantifica la partición al primer apogeo
+para seis alturas de caída. Tres observaciones para discutir con
+estudiantes:
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Partición de la energía del primer rebote para $N=79$,
+$c_{ps}=0$, $T=0$. Por conservación,
+$\alpha_{\rm cm}+\alpha_{T_B}+\alpha_{\Delta V_B}+\alpha_{\rm surf}=1$.}
+\label{tab:particion4}
+\begin{tabular}{ccccccc}
+\toprule
+$h_0^{\rm ef}$ ($\sigma$) & $v_{\rm imp}$ ($\sigma/\tau$) & $e_1$ &
+$\alpha_{\rm cm}$ & $\alpha_{T_B}$ & $\alpha_{\Delta V_B}$ &
+$\alpha_{\rm surf}$ \\
+\midrule
+ 8.81 & 0.677 & 0.924 & 0.853 & 0.021 & 0.056 & 0.070 \\
+17.21 & 0.946 & 0.708 & 0.502 & 0.213 & 0.208 & 0.077 \\
+25.91 & 1.161 & 0.552 & 0.304 & 0.319 & 0.310 & 0.066 \\
+41.80 & 1.474 & 0.633 & 0.401 & 0.257 & 0.264 & 0.078 \\
+56.93 & 1.721 & 0.614 & 0.378 & 0.197 & 0.328 & 0.098 \\
+79.03 & 2.027 & 0.587 & 0.345 & 0.204 & 0.294 & 0.156 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Primero}, el rebote lento ($v_{\rm imp}=0.68\,\sigma/\tau$) es
+casi elástico: el 85\% de la energía vuelve al CM. Apenas la velocidad de
+impacto supera $\sim0.9\,\sigma/\tau$, la fracción cinética interna salta
+a un \emph{plateau} $\alpha_{T_B}\approx0.21$--$0.24$ que se mantiene
+hasta la máxima velocidad estudiada.
+
+\textbf{Segundo}, existe un canal sin análogo macroscópico: la
+\emph{expansión anarmónica} $\alpha_{\Delta V_B}$. Al comprimirse y
+recalentarse, la bola queda vibrando alrededor de un estado expandido
+(el potencial de la ecuación~(\ref{eq:lj}) es más blando hacia afuera que
+hacia adentro), y esa energía potencial ``viaja'' con la bola. Es
+comparable al canal cinético: $\alpha_{\Delta V_B}\approx0.21$--$0.33$.
+En conjunto, la bola retiene como energía interna
+$\alpha_{\rm bola}=\alpha_{T_B}+\alpha_{\Delta V_B}\approx0.4$--$0.6$ de
+$E_0$.
+
+\textbf{Tercero}, el piso se lleva sorprendentemente poco:
+$\alpha_{\rm surf}\approx0.07$--$0.16$. La intuición macroscópica ---``la
+energía se disipa en el suelo''--- falla a esta escala: la respuesta
+correcta a ``¿a dónde se fue la energía?'' es, en su mayor parte,
+\emph{a la propia pelota}. Este desglose complementa el análisis
+de~\cite{Gutierrez2012}, que describió el balance \emph{durante} el
+contacto, donde domina la energía de contacto $U_c$; esa energía es
+transitoria y regresa mayoritariamente a la bola cuando esta se separa.
+
+% =============================================================================
+\section{Equipartición: el tamaño de la pelota importa}
+\label{sec:equiparticion}
+% =============================================================================
+
+¿Por qué la bola absorbe justamente esa fracción? Un argumento de física
+estadística da la respuesta. Durante el contacto ($\sim2\,\tau$), la
+energía de impacto se reparte entre los grados de libertad
+\emph{dinámicamente activos}: los $3N-3$ modos internos de la bola
+(vibracionales más rotacionales) y $3N_c$ modos de la huella de contacto
+en la superficie. Si el contacto alcanza a equipartir,
+\begin{equation}
+    \alpha_{\rm bola}(N) = \frac{3N-3}{3N-3+3N_c}.
+    \label{eq:equiparticion}
+\end{equation}
+La ecuación~(\ref{eq:equiparticion}) es falsable: predice cómo cambia la
+fracción absorbida con el tamaño de la pelota. Corrimos las mismas seis
+alturas para $N\in\{1,2,7,13,55,79,87\}$; la Tabla~\ref{tab:sweep_N} y la
+Figura~\ref{fig:sweep_N} resumen el resultado.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Fracciones del primer rebote promediadas sobre
+$v_{\rm imp}>1.1\,\sigma/\tau$, en función de $N$. La última columna es la
+predicción de la ecuación~(\ref{eq:equiparticion}) con $N_c=N$.}
+\label{tab:sweep_N}
+\begin{tabular}{cccccc}
+\toprule
+$N$ & $\langle e_1\rangle$ & $\alpha_{T_B}$ & $\alpha_{\rm bola}$ &
+$\alpha_{\rm surf}$ & $\hat\alpha_{\rm bola}(N_c{=}N)$ \\
+\midrule
+ 1 & —     & 0.000 & 0.000 & —     & 0.000 \\
+ 2 & 0.902 & 0.002 & 0.003 & 0.183 & 0.333 \\
+ 7 & 0.840 & 0.034 & 0.093 & 0.198 & 0.462 \\
+13$^a$ & 0.735 & 0.066 & 0.107 & 0.339 & 0.480 \\
+55 & 0.521 & 0.217 & 0.474 & 0.254 & 0.495 \\
+79 & 0.597 & 0.244 & 0.543 & 0.100 & 0.497 \\
+87 & 0.594 & 0.250 & 0.543 & 0.103 & 0.497 \\
+\bottomrule
+\end{tabular}\\
+\footnotesize $^a$ $N=13$ no alcanza el plateau en el rango estudiado
+(ver texto).
+\end{table}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{../data/outputs/fig_alpha_TB_full_sweep.pdf}
+    \caption{Barrido en $N$. (a)~$\alpha_{T_B}$ vs $v_{\rm imp}$: los
+    cúmulos grandes desarrollan un plateau sobre
+    $v^*\approx1.1\,\sigma/\tau$. (b)~Valor del plateau vs $N$, comparado
+    con la ecuación~(\ref{eq:equiparticion}) para $N_c=290$ (curva azul) y
+    para el ajuste $N_c=99\,N^{0.20}$ (curva negra discontinua). El
+    símbolo abierto de $N=13$ indica que ese tamaño no alcanza el plateau.}
+    \label{fig:sweep_N}
+\end{figure}
+
+Los datos confirman la física esencial: $\alpha_{\rm bola}$ crece
+monótonamente con $N$ y, calibrando con los tamaños grandes, se obtiene
+$N_c\approx N$ ---cada átomo de la bola se acopla efectivamente a un
+oscilador de la superficie---, lo que predice el límite notable
+\begin{equation}
+    \alpha_{\rm bola} \xrightarrow{N\to\infty} \frac{1}{2}:
+    \label{eq:limite}
+\end{equation}
+una pelota nanométrica grande, fría y sin adhesión absorbe como energía
+interna la mitad de su energía de impacto. El acuerdo no es perfecto
+(los datos de $N=79,87$ dan $0.543$, levemente sobre la cota $1/2$, lo
+que sugiere una contribución rotacional o una subestimación de
+$\alpha_{\rm surf}$), y $N=13$ queda claramente fuera: una sola capa FCC
+es demasiado rígida para termalizar en el tiempo de contacto. Esa
+excepción es en sí misma una lección: la equipartición requiere que el
+sistema \emph{alcance} a explorar sus modos, y un cúmulo pequeño y rígido
+se comporta como molécula, no como sólido.
+
+% =============================================================================
+\section{Rebotes sucesivos: una predicción y su límite}
+\label{sec:hstar}
+% =============================================================================
+
+El plateau $\alpha_{T_B}\approx0.22$ sugiere una escala de altura para el
+primer rebote: si $\alpha_{\rm cm}\approx\alpha_{T_B}$, entonces
+\begin{equation}
+    h_1 \approx h^* = \frac{T_B^{(1)}}{Mg}.
+    \label{eq:hstar}
+\end{equation}
+Una simulación larga ($5000\,\tau$, $N=79$, $h_0=28.15\,\sigma$) permite
+poner a prueba la ecuación~(\ref{eq:hstar}) rebote a rebote
+(Figura~\ref{fig:largo}). Para el primer rebote funciona muy bien
+($h_1/h^*=0.96$), pero la razón $h_n/h^*_n$ cae monótonamente en los
+rebotes siguientes: la altura decae geométricamente mientras la energía
+interna, ya depositada, decrece mucho más despacio. Tras 23 rebotes
+($t\approx660\,\tau$) la bola queda atrapada sobre la superficie,
+vibrando con $h_n\lesssim1\,\sigma$: el análogo nanométrico del final del
+rebote de cualquier pelota real. (El posterior ``colapso'' de la bola a
+través de la red, en $t\approx713\,\tau$, es un artefacto del potencial
+puramente repulsivo, que no tiene barrera lateral; detectarlo y explicarlo
+es otro buen ejercicio de análisis crítico de simulaciones.)
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{../data/outputs/fig_paso_B_convergencia.pdf}
+    \caption{Simulación larga ($5000\,\tau$, $N=79$,
+    $h_0=28.15\,\sigma$). (a)~Trayectoria del CM; la línea roja marca el
+    colapso a través de la red (artefacto del caso puramente repulsivo).
+    (b)~Alturas de apogeo $h_n$ y predicción $h^*_n=T_B^{(n)}/(Mg)$.
+    (c)~Razón $h_n/h^*_n$: solo el primer rebote se aproxima a la unidad.}
+    \label{fig:largo}
+\end{figure}
+
+% =============================================================================
+\section{¿Y si la pelota es pegajosa? Adhesión}
+\label{sec:adhesion}
+% =============================================================================
+
+Restaurando la atracción bola--superficie ($c_{ps}=1$ en la
+ecuación~(\ref{eq:lj})), el experimento cambia cualitativamente: en los 24
+casos estudiados ($N\in\{13,55,79,87\}$, seis alturas, $v_{\rm imp}$ hasta
+$2\,\sigma/\tau$) la bola \emph{no rebota}: queda adherida al primer
+contacto. La razón es un simple balance: la energía de adhesión medida,
+$E_{\rm adh}\propto N^{0.73}$ (cercana al escalado del área de contacto,
+$N^{2/3}$), supera con holgura a la energía que el CM logra retener tras
+el impacto. Extrapolando ese balance, el umbral de rebote se ubicaría en
+alturas de caída del orden de $h_0^*\sim10^2$--$10^3\,\sigma$ ---una
+estimación de orden de magnitud, pues a esas velocidades la bola ya se
+funde al impactar~\cite{Gutierrez2012}---, con la particularidad
+contraintuitiva de que los cúmulos \emph{grandes} escapan más fácil
+($h_0^*\propto N^{-0.27}$: la masa crece como $N$ pero la adhesión solo
+como $N^{0.73}$). Este régimen conecta el experimento de aula con la
+física de la deposición suave (\emph{soft landing}) de cúmulos sobre
+superficies~\cite{Awasthi2007,Haberland1994}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{../data/outputs/fig_paso_C_adhesion.pdf}
+    \caption{Caso con adhesión ($c_{ps}=1$). (a)~Trayectorias del CM para
+    $N=79$ y seis alturas: la bola pega al primer contacto en todos los
+    casos. (b)~Umbral de rebote extrapolado $h_0^*(N)$ (estimación de
+    orden de magnitud) y su escalado $\propto N^{-0.27}$.}
+    \label{fig:adhesion}
+\end{figure}
+
+% =============================================================================
+\section{Actividades propuestas}
+\label{sec:actividades}
+% =============================================================================
+
+El repositorio incluye todo lo necesario para reproducir el artículo.
+Algunas actividades que hemos encontrado fructíferas, en orden de
+dificultad creciente:
+
+\begin{enumerate}
+    \item \textbf{El COR no es constante.} Correr las seis alturas con
+    $N=79$ y graficar $e_1$ vs $v_{\rm imp}$. Discutir por qué a bajas
+    velocidades el rebote es casi elástico y contrastar con la hipótesis
+    ``$e$ = constante del material'' de los textos de mecánica.
+
+    \item \textbf{Cierre energético.} Medir los cuatro canales de las
+    ecuaciones~(\ref{eq:acm})--(\ref{eq:avb}) y verificar
+    $\sum\alpha_i=1$. Repetir con el potencial truncado sin desplazar y
+    explicar el origen del error de cierre resultante.
+
+    \item \textbf{Predecir antes de simular.} Con la
+    ecuación~(\ref{eq:equiparticion}) y $N_c=N$, predecir
+    $\alpha_{\rm bola}$ para un tamaño no simulado (por ejemplo $N=43$,
+    capa completa) y luego correr la simulación para contrastar.
+
+    \item \textbf{El destino final.} Estimar con la
+    ecuación~(\ref{eq:hstar}) la altura del primer rebote y, con la
+    serie geométrica de $e_1^{\rm ef}$, el tiempo total hasta el
+    atrapamiento; comparar con la simulación larga.
+
+    \item \textbf{Gravedad como perilla.} Repetir el experimento con
+    $\gstar$ diez veces mayor y discutir qué cambia (velocidad de
+    impacto, tiempo de vuelo) y qué no (la partición a igual
+    $v_{\rm imp}$).
+\end{enumerate}
+
+% =============================================================================
+\section{Comentarios finales}
+\label{sec:conclusiones}
+% =============================================================================
+
+La pelota que rebota, uno de los sistemas más familiares de la física
+introductoria, se convierte a escala nanométrica en un laboratorio
+completo: la dinámica molecular permite abrir la caja negra del
+coeficiente de restitución y mostrar, con contabilidad exacta, que la
+energía ``perdida'' se reparte en cuatro canales bien definidos
+---y que la mayor parte queda dentro de la propia pelota, no en el piso.
+El escalado con el tamaño conecta el resultado con el teorema de
+equipartición y da una predicción falsable
+(ecuaciones~(\ref{eq:equiparticion}) y~(\ref{eq:limite})); la simulación
+larga enseña la diferencia entre una escala útil y un atractor; y el caso
+con adhesión abre la puerta a la física de deposición de nanocúmulos. El
+costo computacional es el de un computador personal y las herramientas
+son gratuitas: el experimento completo cabe en un curso de física
+computacional, de física estadística o en un trabajo de titulación.
+
+Como extensiones naturales quedan la temperatura inicial finita y el
+promedio sobre orientaciones del cúmulo (que agregarían barras de error
+estadísticas a las fracciones), la medición del momento angular
+post-rebote, y los tamaños intermedios $N=19$ y $43$ para poblar la
+transición molécula--sólido entre $N=13$ y $N=55$.
+
+% =============================================================================
+\section*{Agradecimientos}
+% =============================================================================
+
+Los autores agradecen al programa de Magíster del Instituto de Matemáticas
+de la PUCV por el apoyo académico. Las simulaciones se realizaron con
+\lammps{}~\cite{Thompson2022}. El código fuente y los datos están
+disponibles en \url{https://github.com/fwasaff/inelastic-rebound-md}.
+
+% =============================================================================
+\begin{thebibliography}{99}
+
+\bibitem{Cross1999}
+R. Cross, Am. J. Phys. \textbf{67}, 222 (1999).
+
+\bibitem{Aguiar2003}
+C.E. Aguiar y F. Laudares, Am. J. Phys. \textbf{71}, 499 (2003).
+
+\bibitem{AllenTildesley}
+M.P. Allen y D.J. Tildesley, \textit{Computer Simulation of Liquids}
+(Oxford University Press, Oxford, 1987).
+
+\bibitem{FrenkelSmit}
+D. Frenkel y B. Smit, \textit{Understanding Molecular Simulation: From
+Algorithms to Applications} (Academic Press, San Diego, 2002), 2.ª ed.
+
+\bibitem{Gutierrez2012}
+G. Gutiérrez, S. Davis, C. Loyola, J. Peralta, F. González, Y. Navarrete
+y F. González-Wasaff, in \textit{Molecular Dynamics -- Theoretical
+Developments and Applications in Nanotechnology and Energy}, editado por
+L. Wang (InTech, Rijeka, 2012).
+
+\bibitem{Thompson2022}
+A.P. Thompson, H.M. Aktulga, R. Berger, D.S. Bolintineanu, W.M. Brown,
+P.S. Crozier, P.J. in 't Veld, A. Kohlmeyer, S.G. Moore, T.D. Nguyen,
+R. Shan, M.J. Stevens, J. Tranchida, C. Trott y S.J. Plimpton,
+Comput. Phys. Commun. \textbf{271}, 108171 (2022).
+
+\bibitem{Awasthi2007}
+A. Awasthi, S.C. Hendy, P. Zoontjens y S.A. Brown,
+Phys. Rev. B \textbf{76}, 115437 (2007).
+
+\bibitem{Haberland1994}
+H. Haberland, M. Mall, M. Moseler, Y. Qiang, T. Reiners y Y. Thurner,
+J. Vac. Sci. Technol. A \textbf{12}, 2925 (1994).
+
+\end{thebibliography}
+
+\end{document}
