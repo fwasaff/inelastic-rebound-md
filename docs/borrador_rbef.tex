@@ -6,7 +6,10 @@
 % Compilar: pdflatex borrador_rbef.tex  (dos pasadas)
 % =============================================================================
 
-\documentclass[12pt,a4paper]{article}
+% Layout tipo RBEF publicada: cabecera y resúmenes a ancho completo,
+% cuerpo a dos columnas (los fascículos recientes de la revista usan
+% este formato; el protocolo no exige columnas para la submissão).
+\documentclass[10pt,a4paper,twocolumn]{article}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -14,39 +17,39 @@
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage[margin=2cm]{geometry}
 \usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
 
 \newcommand{\eps}{\varepsilon}
 \newcommand{\gstar}{g^*}
 \newcommand{\lammps}{\textsc{Lammps}}
 
-\title{%
-    \textbf{¿A dónde se va la energía de una pelota que rebota?\\
-    Partición energética del impacto de nanocúmulos de Lennard-Jones\\
-    mediante dinámica molecular}\\[10pt]
-    \large\textit{Where does the energy of a bouncing ball go?\\
-    Energy partition in the impact of Lennard-Jones nanoclusters\\
-    via molecular dynamics}
-}
-
-\author{%
-    Felipe González-Wasaff$^{1}$\thanks{felipe.wasaff.g@mail.pucv.cl
-    --- ORCID: \url{https://orcid.org/0009-0006-0280-4215}}
-    \quad y \quad
-    Gonzalo Gutiérrez$^{2}$\\[4pt]
-    \small $^{1}$Instituto de Matemáticas, Pontificia Universidad Católica
-    de Valparaíso, Valparaíso, Chile\\
-    \small $^{2}$Departamento de Física, Facultad de Ciencias,
-    Universidad de Chile, Santiago, Chile
-}
-
-\date{\today}
-
 \begin{document}
-\maketitle
 
-% -----------------------------------------------------------------------------
-\begin{abstract}
+% --- Cabecera y resúmenes a ancho completo -------------------------------------
+\twocolumn[{%
+\begin{center}
+    {\LARGE\bfseries ¿A dónde se va la energía de una pelota que rebota?\\
+    Partición energética del impacto de nanocúmulos de Lennard-Jones\\
+    mediante dinámica molecular\par}
+    \vspace{6pt}
+    {\large\itshape Where does the energy of a bouncing ball go?
+    Energy partition in the\\ impact of Lennard-Jones nanoclusters via
+    molecular dynamics\par}
+    \vspace{12pt}
+    Felipe Wasaff$^{1,*}$ \quad y \quad Gonzalo Gutiérrez$^{2}$\\[4pt]
+    {\small $^{1}$Instituto de Matemáticas, Pontificia Universidad
+    Católica de Valparaíso, Valparaíso, Chile}\\
+    {\small $^{2}$Departamento de Física, Facultad de Ciencias,
+    Universidad de Chile, Santiago, Chile}\\[2pt]
+    {\small $^{*}$Autor de correspondencia: felipe.wasaff.g@mail.pucv.cl
+    --- ORCID: \href{https://orcid.org/0009-0006-0280-4215}%
+    {0009-0006-0280-4215}}\\[4pt]
+    {\small \today}
+\end{center}
+\vspace{8pt}
+\begin{quotation}
+\small
 \noindent
 En los cursos de mecánica, el coeficiente de restitución $e<1$ resume toda
 la física del rebote inelástico en un número, y la energía ``perdida'' se
@@ -101,7 +104,9 @@ classroom activities are included.
 \noindent\textbf{Keywords:} molecular dynamics, coefficient of
 restitution, energy partition, equipartition, nanoclusters, computational
 physics teaching.
-\end{abstract}
+\end{quotation}
+\vspace{14pt}
+}]
 
 % =============================================================================
 \section{Introducción}
@@ -279,7 +284,7 @@ apogeo la bola se lleva la mayor parte de la energía no recuperada como
 energía \emph{interna} ---visible en el moteado caliente de sus átomos---
 mientras la superficie queda apenas tibia.
 
-\begin{figure}[htbp]
+\begin{figure*}[tp]
     \centering
     \includegraphics[width=\textwidth]{../data/outputs/fig_sequence.png}
     \caption{Cuatro instantes del primer rebote ($N=79$,
@@ -290,13 +295,13 @@ mientras la superficie queda apenas tibia.
     barra bajo cada panel es la partición instantánea de $E_0$; la energía
     de contacto $U_c$ (gris) solo existe durante la colisión.}
     \label{fig:secuencia}
-\end{figure}
+\end{figure*}
 
 La Tabla~\ref{tab:particion4} cuantifica la partición al primer apogeo
 para seis alturas de caída. Tres observaciones para discutir con
 estudiantes:
 
-\begin{table}[htbp]
+\begin{table*}[tp]
 \centering
 \small
 \caption{Partición de la energía del primer rebote para $N=79$,
@@ -317,7 +322,7 @@ $\alpha_{\rm surf}$ \\
 79.03 & 2.027 & 0.587 & 0.345 & 0.204 & 0.294 & 0.156 \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \textbf{Primero}, el rebote lento ($v_{\rm imp}=0.68\,\sigma/\tau$) es
 casi elástico: el 85\% de la energía vuelve al CM. Apenas la velocidad de
@@ -364,7 +369,7 @@ fracción absorbida con el tamaño de la pelota. Corrimos las mismas seis
 alturas para $N\in\{1,2,7,13,55,79,87\}$; la Tabla~\ref{tab:sweep_N} y la
 Figura~\ref{fig:sweep_N} resumen el resultado.
 
-\begin{table}[htbp]
+\begin{table*}[tp]
 \centering
 \small
 \caption{Fracciones del primer rebote promediadas sobre
@@ -387,9 +392,9 @@ $\alpha_{\rm surf}$ & $\hat\alpha_{\rm bola}(N_c{=}N)$ \\
 \end{tabular}\\
 \footnotesize $^a$ $N=13$ no alcanza el plateau en el rango estudiado
 (ver texto).
-\end{table}
+\end{table*}
 
-\begin{figure}[htbp]
+\begin{figure*}[tp]
     \centering
     \includegraphics[width=\textwidth]{../data/outputs/fig_alpha_TB_full_sweep.pdf}
     \caption{Barrido en $N$. (a)~$\alpha_{T_B}$ vs $v_{\rm imp}$: los
@@ -399,7 +404,7 @@ $\alpha_{\rm surf}$ & $\hat\alpha_{\rm bola}(N_c{=}N)$ \\
     para el ajuste $N_c=99\,N^{0.20}$ (curva negra discontinua). El
     símbolo abierto de $N=13$ indica que ese tamaño no alcanza el plateau.}
     \label{fig:sweep_N}
-\end{figure}
+\end{figure*}
 
 Los datos confirman la física esencial: $\alpha_{\rm bola}$ crece
 monótonamente con $N$ y, calibrando con los tamaños grandes, se obtiene
@@ -443,7 +448,7 @@ través de la red, en $t\approx713\,\tau$, es un artefacto del potencial
 puramente repulsivo, que no tiene barrera lateral; detectarlo y explicarlo
 es otro buen ejercicio de análisis crítico de simulaciones.)
 
-\begin{figure}[htbp]
+\begin{figure*}[tp]
     \centering
     \includegraphics[width=\textwidth]{../data/outputs/fig_paso_B_convergencia.pdf}
     \caption{Simulación larga ($5000\,\tau$, $N=79$,
@@ -452,7 +457,7 @@ es otro buen ejercicio de análisis crítico de simulaciones.)
     (b)~Alturas de apogeo $h_n$ y predicción $h^*_n=T_B^{(n)}/(Mg)$.
     (c)~Razón $h_n/h^*_n$: solo el primer rebote se aproxima a la unidad.}
     \label{fig:largo}
-\end{figure}
+\end{figure*}
 
 % =============================================================================
 \section{¿Y si la pelota es pegajosa? Adhesión}
@@ -476,7 +481,7 @@ como $N^{0.73}$). Este régimen conecta el experimento de aula con la
 física de la deposición suave (\emph{soft landing}) de cúmulos sobre
 superficies~\cite{Awasthi2007,Haberland1994}.
 
-\begin{figure}[htbp]
+\begin{figure*}[tp]
     \centering
     \includegraphics[width=\textwidth]{../data/outputs/fig_paso_C_adhesion.pdf}
     \caption{Caso con adhesión ($c_{ps}=1$). (a)~Trayectorias del CM para
@@ -484,7 +489,7 @@ superficies~\cite{Awasthi2007,Haberland1994}.
     casos. (b)~Umbral de rebote extrapolado $h_0^*(N)$ (estimación de
     orden de magnitud) y su escalado $\propto N^{-0.27}$.}
     \label{fig:adhesion}
-\end{figure}
+\end{figure*}
 
 % =============================================================================
 \section{Actividades propuestas}
