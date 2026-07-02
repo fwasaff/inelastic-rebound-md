@@ -32,7 +32,7 @@ variable    a0            equal 1.5496
 variable    Nx            equal 8
 variable    Ny            equal 8
 variable    Nz            equal 6
-variable    dt            equal 0.005
+variable    dt            index 0.005
 variable    thermo_freq   equal 100
 variable    print_freq    equal 20
 variable    t_total       index 400.0
@@ -71,6 +71,11 @@ else &
     "pair_coeff 1 1 1.0 1.0 2.5" &
     "pair_coeff 2 2 1.0 1.0 2.5" &
     "pair_coeff 1 2 1.0 1.0 2.5"
+
+# LJ truncado Y desplazado: sin shift, cada par que cruza rc salta ±U(rc) en la
+# energía contabilizada (~0.016 eps) y el balance VB/PE_surf acumula un error
+# de 2-6% de E0 por impacto. El shift no altera fuerzas ni trayectorias.
+pair_modify shift yes
 
 read_data   ${cluster_file} add append nocoeff shift $(v_Lx/2) $(v_Ly/2) ${z_ball_cm}
 
@@ -146,6 +151,14 @@ fix print_energy all print ${print_freq} &
     file bounce.dat &
     title "# time Zcm Vcmz KB TB VB Uc UF KB3d KS PE_surf" &
     screen no
+
+# --- Dump opcional para visualización (OVITO/ParaView) -------------------------
+# dump_freq=0 (defecto) desactiva; dump_freq=50 → 1 frame cada 0.25 tau (dt=0.005)
+variable    dump_freq     index 0
+if "${dump_freq} > 0" then &
+    "compute keratom all ke/atom" &
+    "dump viz all custom ${dump_freq} traj.lammpstrj id type x y z vx vy vz c_keratom c_pe_atom" &
+    "dump_modify viz sort id"
 
 # --- Correr -------------------------------------------------------------------
 run     ${steps_total}

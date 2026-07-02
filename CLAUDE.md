@@ -236,6 +236,11 @@ se miden relativas a z₀. El parámetro LAMMPS h0 se mide desde z_box_top
 - Bola-bola: LJ completo, rc=2.5σ
 - Bola-superficie: puramente repulsivo (c=0), tabla pre-generada
   - Para c_ps=1 (Paso 5): `pair_coeff 1 2 lj/cut 1.0 1.0 2.5`
+- **`pair_modify shift yes` es obligatorio** para el balance energético:
+  sin shift, cada par que cruza rc salta ±0.0163ε en la PE registrada y el
+  cierre Σα=1 falla por 2–6% de E₀ por impacto (la 5ª capa de vecinos FCC
+  está en 2.45σ). El shift no cambia fuerzas ni trayectorias: los α por
+  método residuo de runs antiguos siguen siendo válidos.
 
 ### Dinámica
 - NVE global, sin termostato (reproduce Gutiérrez 2012)
