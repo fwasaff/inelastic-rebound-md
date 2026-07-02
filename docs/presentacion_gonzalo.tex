@@ -1,0 +1,283 @@
+% =============================================================================
+% Presentación para reunión con Gonzalo — resultados y plan de publicación
+% Compilar: pdflatex presentacion_gonzalo.tex  (dos pasadas)
+% =============================================================================
+\documentclass[11pt,aspectratio=169]{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{seahorse}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+
+\newcommand{\eps}{\varepsilon}
+\newcommand{\gstar}{g^*}
+\newcommand{\lammps}{\textsc{Lammps}}
+
+\title[Rebote de nanocúmulos LJ]{¿A dónde se va la energía de una pelota
+que rebota?\\ \large Partición energética del impacto de nanocúmulos LJ
+--- resultados y plan de publicación}
+\author[F. González-Wasaff]{Felipe González-Wasaff\\
+\footnotesize reunión con Gonzalo Gutiérrez}
+\institute[IMA-PUCV]{Instituto de Matemáticas, PUCV}
+\date{Julio 2026}
+
+\begin{document}
+
+% -----------------------------------------------------------------------------
+\begin{frame}
+\titlepage
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{De dónde venimos y qué hicimos}
+\begin{columns}[T]
+\column{0.55\textwidth}
+\textbf{Punto de partida (2012):} capítulo 4 del libro
+\emph{Inelastic Collisions and Hypervelocity Impacts at Nanoscopic Level}
+--- el rebote de la esfera de $N\approx79$ átomos de Ar.
+
+\bigskip
+\textbf{Lo que hicimos ahora:}
+\begin{itemize}
+    \item Reproducción completa con \lammps{} (código abierto, repo público)
+    \item Cúmulos pre-minimizados de $N$ \emph{exacto}
+    \item \textbf{Partición al primer apogeo en 4 canales} con cierre exacto
+    \item Barrido $N\in\{1,2,7,13,55,79,87\}$ + equipartición
+    \item Simulación larga ($5000\,\tau$) + caso con adhesión
+\end{itemize}
+\column{0.42\textwidth}
+\begin{block}{La pregunta del paper}
+El coeficiente de restitución $e<1$ dice \emph{cuánta} energía no vuelve.
+\medskip
+
+¿\textbf{Dónde} queda esa energía justo después del rebote?
+¿En la pelota o en el piso?
+\end{block}
+\end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{El resultado en una imagen}
+\begin{center}
+    \includegraphics[height=0.82\textheight]{../data/outputs/fig_sequence.png}
+\end{center}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Los cuatro canales ($N=79$, repulsivo, $T=0$)}
+\begin{columns}[T]
+\column{0.58\textwidth}
+\small
+\begin{tabular}{cccccc}
+\toprule
+$h_0^{\rm ef}$ & $v_{\rm imp}$ & $\alpha_{\rm cm}$ & $\alpha_{T_B}$ &
+$\alpha_{\Delta V_B}$ & $\alpha_{\rm surf}$ \\
+\midrule
+ 8.8 & 0.68 & 0.853 & 0.021 & 0.056 & 0.070 \\
+17.2 & 0.95 & 0.502 & 0.213 & 0.208 & 0.077 \\
+25.9 & 1.16 & 0.304 & 0.319 & 0.310 & 0.066 \\
+41.8 & 1.47 & 0.401 & 0.257 & 0.264 & 0.078 \\
+56.9 & 1.72 & 0.378 & 0.197 & 0.328 & 0.098 \\
+79.0 & 2.03 & 0.345 & 0.204 & 0.294 & 0.156 \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\footnotesize $\alpha_{\rm cm}+\alpha_{T_B}+\alpha_{\Delta V_B}
++\alpha_{\rm surf}=1$; cierre medido $<10^{-4}$.
+\column{0.40\textwidth}
+\begin{itemize}
+    \item Plateau $\alpha_{T_B}\approx0.22$ para $v>0.9\,\sigma/\tau$
+    \item Canal nuevo: \textbf{expansión anarmónica}
+    $\alpha_{\Delta V_B}\approx0.2$--$0.3$ (comparable al cinético)
+    \item La superficie se lleva solo 7--16\%
+\end{itemize}
+\begin{alertblock}{\small Mensaje central}
+\small La energía ``perdida'' queda mayoritariamente
+\textbf{dentro de la bola} ($\alpha_{\rm bola}\approx0.4$--$0.6$),
+no en el piso.
+\end{alertblock}
+\end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Validación contra 2012 (tu Fig.~7, digitalizada)}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\small
+\begin{tabular}{c|ccc|cc}
+\toprule
+ & \multicolumn{3}{c|}{2012 (Fig.~7)} & \multicolumn{2}{c}{2026} \\
+$h_0$ & $h_0^{\rm ef}$ & $h_1^{\rm ef}$ & $e_1$ & $h_0^{\rm ef}$ & $e_1$ \\
+\midrule
+11.03 &  0.6 &  0.4 & ---  &  8.8 & 0.92 \\
+18.64 &  8.4 &  6.8 & 0.90 & 17.2 & 0.71 \\
+28.15 & 17.9 &  3.3 & 0.43 & 25.9 & 0.55 \\
+41.47 & 31.3 &  8.2 & 0.51 & 41.8 & 0.63 \\
+58.60 & 48.4 & 14.3 & 0.54 & 56.9 & 0.61 \\
+79.53 & 69.2 & 18.2 & 0.51 & 79.0 & 0.59 \\
+\bottomrule
+\end{tabular}
+\column{0.46\textwidth}
+\begin{itemize}
+    \item \textbf{Hallazgo de convención:} en 2012, $h_0$ = altura
+    \emph{absoluta} del CM ($z_{\rm rest}\approx10.3\,\sigma$);
+    ahora se mide desde el tope de la caja
+    \item A caída efectiva comparable: \textbf{0.90 vs 0.92} en el
+    régimen cuasi-elástico
+    \item A alta energía, 2012 queda $\sim$0.06--0.09 abajo
+    (cúmulo sin minimizar, $N$ variable 79--84, Beeman)
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Un punto de autoría que necesito confirmar contigo}
+\begin{block}{Lo que el capítulo 2012 establece}
+Canales $K_B, T_B, V_B, U_c, \ldots$; alturas por rebote (Fig.~7);
+$U_c$ domina el balance \emph{durante} el contacto; fusión de la bola
+vía $g(r)$ para $h_0>41.5\,\sigma$.
+\end{block}
+\begin{alertblock}{Lo que el borrador presenta como contribución NUEVA (2026)}
+\begin{itemize}
+    \item El plateau cuantificado $\alpha_{T_B}\approx0.22$ al apogeo
+    \item La fórmula de equipartición
+    $\alpha_{\rm int}=(3N-3)/(3N-3+3N_c)$
+    \item La escala $h^*=T_B/(Mg)$
+\end{itemize}
+\end{alertblock}
+\centering
+¿De acuerdo con esa atribución? Si algo viene de notas tuyas no
+publicadas, lo citamos como corresponde.
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Equipartición: el tamaño de la pelota importa}
+\begin{center}
+    \includegraphics[width=0.9\textwidth]{../data/outputs/fig_alpha_TB_full_sweep.pdf}
+\end{center}
+\small Con $\alpha_{\rm bola}$ y $N_c\approx N$:
+$\alpha_{\rm bola}\to\tfrac12$ para $N\to\infty$.
+Salvedades honestas: datos de $N=79,87$ dan $0.543$ (leve exceso sobre
+$1/2$; ¿rotación?); $N=13$ no termaliza (régimen molecular).
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{$h^*=T_B/(Mg)$: útil para el primer rebote, no es atractor}
+\begin{columns}[T]
+\column{0.55\textwidth}
+\begin{center}
+    \includegraphics[width=\textwidth]{../data/outputs/fig_paso_B_convergencia.pdf}
+\end{center}
+\column{0.42\textwidth}
+\begin{itemize}
+    \item Primer rebote: $h_1/h^* = 0.96$ \checkmark
+    \item Rebotes sucesivos: la razón cae a $\sim$0.18
+    \item Atrapamiento tras 23 rebotes ($t\approx660\,\tau$)
+    \item El ``colapso'' posterior a través de la red es un artefacto
+    del potencial repulsivo puro (documentado como tal)
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Con adhesión ($c_{ps}=1$): la bola siempre pega}
+\begin{columns}[T]
+\column{0.55\textwidth}
+\begin{center}
+    \includegraphics[width=\textwidth]{../data/outputs/fig_paso_C_adhesion.pdf}
+\end{center}
+\column{0.42\textwidth}
+\begin{itemize}
+    \item 24/24 casos adheridos ($v$ hasta $2\,\sigma/\tau$)
+    \item $E_{\rm adh}\propto N^{0.73}$ ($\sim$ área de contacto)
+    \item Umbral extrapolado $h_0^*\sim10^2$--$10^3\,\sigma$
+    (solo orden de magnitud: a esas $v$ la bola se funde)
+    \item Los grandes escapan más fácil: $h_0^*\propto N^{-0.27}$
+    $\to$ conexión con \emph{soft landing}
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Rigor técnico y límites declarados}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\textbf{Resuelto en esta etapa}
+\begin{itemize}
+    \item \small Potencial truncado \emph{y desplazado}: sin shift, el
+    balance fallaba 2--6\% de $E_0$ por impacto; con shift,
+    $|\Delta E|<0.03\,\eps$ y cierre $<10^{-4}$
+    \item \small $\Delta t=5\times10^{-3}\,\tau$ validado contra la
+    conservación
+    \item \small Figuras 100\% reproducibles por script; repo público
+    con inputs y análisis
+\end{itemize}
+\column{0.48\textwidth}
+\textbf{Límites honestos (= trabajo futuro)}
+\begin{itemize}
+    \item \small $T=0$, una orientación del cúmulo, una trayectoria por
+    punto $\to$ sin barras de error estadísticas todavía
+    \item \small No monotonía de $e_1$ con $h_0$: ¿física o varianza?
+    \item \small Momento angular post-rebote sin medir
+    (\texttt{compute angmom})
+    \item \small $N=19,43$ pendientes (transición molécula--sólido)
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Plan editorial: RBEF, sección ``Artigos Gerais''}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\textbf{Manuscrito listo} (\texttt{borrador\_rbef.tex}):
+\begin{itemize}
+    \item \small Marco didáctico: la pregunta del curso de mecánica,
+    métodos como tutorial, 5 actividades propuestas
+    \item \small Protocolo RBEF cumplido: bilingüe ES+EN, \texttt{bibitem}
+    en orden de citación, sin TikZ, ``ecuación ($n$)''
+    \item \small Sin costos de publicación; SciELO, acceso abierto
+\end{itemize}
+\medskip
+\textbf{También existen} (para un eventual segundo paper de
+investigación): versión extendida ES + doble columna revtex ES y EN.
+\column{0.44\textwidth}
+\begin{block}{\small Flujo propuesto}
+\small
+\begin{enumerate}
+    \item Tu revisión del manuscrito
+    \item arXiv (\texttt{physics.ed-ph}), simultáneo con
+    \item Submissão RBEF (sistema pide ORCID)
+    \item Repo GitHub público al someter
+\end{enumerate}
+\end{block}
+\end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Decisiones que necesito de ti}
+\begin{enumerate}
+    \item \textbf{Atribución} de $\alpha_{T_B}\approx0.22$, la fórmula de
+    equipartición y $h^*$ (¿contribución nueva o notas previas tuyas?)
+    \item \textbf{Idioma} del envío a RBEF: ¿español (aceptado) o
+    portugués/inglés?
+    \item Tu \textbf{ORCID} (y visto bueno del flujo arXiv $\to$ RBEF)
+    \item \textbf{Autor correspondiente} y orden de autores
+    \item ¿Guardamos la versión de investigación (doble columna) para una
+    revista de física computacional más adelante, con la estadística de
+    orientaciones incluida?
+\end{enumerate}
+\bigskip
+\centering
+\footnotesize Repo: \texttt{github.com/fwasaff/inelastic-rebound-md}
+--- todo reproducible con \lammps{} + Python en un notebook.
+\end{frame}
+
+\end{document}

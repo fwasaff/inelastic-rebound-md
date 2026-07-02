@@ -46,3 +46,5 @@ Thumbs.db
 docs/*.log
 docs/*Notes.bib
 texput.log
+*.nav
+*.snm
