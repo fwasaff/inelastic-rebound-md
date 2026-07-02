@@ -36,3 +36,13 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# LaTeX aux
+*.aux
+*.out
+*.toc
+*.bbl
+*.blg
+docs/*.log
+docs/*Notes.bib
+texput.log
