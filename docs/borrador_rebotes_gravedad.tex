@@ -42,10 +42,14 @@
 }
 
 \author{%
-    Felipe González$^{1}$\thanks{fegonzalezw@gmail.com}
+    % alternativa de correo: felipe.wasaff@uchile.cl
+    Felipe González-Wasaff$^{1}$\thanks{felipe.wasaff.g@mail.pucv.cl}
     \quad y \quad
-    Gonzalo [Apellido]$^{1}$\\[4pt]
-    \small $^{1}$Pontificia Universidad Católica de Valparaíso (PUCV), Chile
+    Gonzalo Gutiérrez$^{2}$\\[4pt]
+    \small $^{1}$Instituto de Matemáticas, Pontificia Universidad Católica
+    de Valparaíso, Valparaíso, Chile\\
+    \small $^{2}$Departamento de Física, Facultad de Ciencias,
+    Universidad de Chile, Santiago, Chile
 }
 
 \date{\today}
@@ -72,12 +76,14 @@ igual a la energía de impacto $E_0$:
     + \alpha_{\mathrm{surf}} = 1,
 \]
 donde $\alpha_{T_B}\approx0.22$ es la fracción cinética interna de la bola
-(constante para $v>0.9\,\sigma/\tau$), $\alpha_{\Delta V_B}\approx0.21$--$0.31$
+(constante para $v>0.9\,\sigma/\tau$), $\alpha_{\Delta V_B}\approx0.21$--$0.33$
 es la variación neta de la PE intra-bola (expansión anarmónica post-impacto),
 y $\alpha_{\mathrm{surf}}\approx0.07$--$0.16$ es la excitación directa de
-fonones superficiales. Este desglose revierte la interpretación de
-Gutiérrez et al., donde $\alpha_{\Delta V_B}$ quedaba absorbida en el canal
-``superficial'' sobreestimándolo por un factor $\sim3$--$5$.
+fonones superficiales. Este desglose complementa el análisis original, que
+caracterizó la energía colisional $U_c$ \emph{durante} el contacto: la
+partición al primer apogeo separa por primera vez la expansión anarmónica
+$\alpha_{\Delta V_B}$ de la excitación superficial, y muestra que la mayor
+parte de la energía no recuperada permanece en la bola, no en la superficie.
 
 Extendemos el estudio a $N\in\{1,2,7,13,55,79,87\}$ con interacción repulsiva.
 La fracción interna total $\alpha_{\mathrm{bola}}=\alpha_{T_B}+\alpha_{\Delta V_B}$
@@ -88,16 +94,18 @@ Para $N=13$ (capa FCC completa más pequeña), la bola es demasiado rígida para
 alcanzar el plateau de equipartición en el rango $v\leq2.0\,\sigma/\tau$ estudiado.
 
 En simulaciones largas ($5000\,\tau$, $N=79$, $h_0=28\,\sigma$), la primera
-altura de rebote aproxima bien la predicción $h_1\approx T_B/(Mg)=8.3\,\sigma$
-(ratio $=0.95$), pero el sistema no converge a ese attractor: la altura CM
-decae más rápido que $T_B$, y tras 23 rebotes la bola queda atrapada sobre
-la superficie ($t_{\rm col}\approx740\,\tau$).
+altura de rebote aproxima bien la escala $h_1\approx T_B/(Mg)=8.3\,\sigma$
+que aquí proponemos (ratio $=0.96$), pero el sistema no converge a ese
+attractor: la altura CM decae más rápido que $T_B$, y tras 23 rebotes
+($t\approx660\,\tau$) la bola queda atrapada sobre la superficie con
+$h_n\lesssim1\,\sigma$.
 
 Con interacción LJ completa ($c_{ps}=1$, adhesión), la bola pega en los
 $4N\times6h_0=24$ casos estudiados ($v$ hasta $2.0\,\sigma/\tau$). La energía
 de adhesión $E_{\rm adh}\propto N^{0.73}$ (área de contacto) supera
-en todos los casos a la energía CM disponible tras el rebote, y el umbral
-estimado es $h_0^*(N)\approx260$--$440\,\sigma$ con $h_0^*\propto N^{-0.27}$.
+en todos los casos a la energía CM disponible tras el rebote; una
+extrapolación de orden de magnitud sitúa el umbral en
+$h_0^*(N)\sim260$--$440\,\sigma$ con $h_0^*\propto N^{-0.27}$.
 
 \medskip
 \noindent\textbf{Palabras clave:} dinámica molecular, nanocúmulos LJ,
@@ -114,24 +122,29 @@ La pelota que rebota es uno de los arquetipos más estudiados de la física
 disipativa. A escala macroscópica, el coeficiente de restitución
 $\cor = |v_f|/|v_i|$ es una propiedad del material y la energía disipada
 va íntegramente a la superficie (o al medio). A escala nanométrica este
-supuesto falla: un cúmulo de $N$ átomos tiene $3N-6$ grados de libertad
-vibracionales internos que pueden absorber energía durante cada impacto.
+supuesto falla: un cúmulo de $N$ átomos tiene $3N-3$ grados de libertad
+internos ---$3N-6$ vibracionales más 3 rotacionales--- que pueden absorber
+energía durante cada impacto.
 
 El trabajo de Gutiérrez et al.~\cite{Gutierrez2012} fue el primero en estudiar
 esta \emph{cascada de disipación} mediante dinámica molecular: un cúmulo FCC
 de argón de $N\approx79$ átomos bajo gravedad reducida $\gstar=0.026\,\sigma/\tau^2$,
 con interacción bola-superficie puramente repulsiva. Sus resultados principales
 fueron: (i)~la secuencia de alturas $h_n$ decrece más rápido que la serie
-geométrica; (ii)~la KE interna de la bola $T_B\approx 22\%\,E_0$ es
-prácticamente constante para impactos suficientemente energéticos;
-(iii)~para alturas de caída grandes la bola se funde durante el impacto.
-Sin embargo, su descomposición energética no separó la variación de la PE
+geométrica; (ii)~durante la colisión, la energía colisional bola-superficie
+$U_c$ almacena transitoriamente la mayor parte de la energía ``disipada'',
+más que la energía vibracional transferida a la superficie;
+(iii)~para alturas de caída grandes la bola se funde durante el impacto
+(un solo pico en $g(r)$ para $h_0>41.5\,\sigma$).
+Sin embargo, su descomposición energética se evaluó \emph{durante} el
+contacto (donde $U_c$ es un transitorio que se anula al separarse la bola):
+no cuantificó la partición al primer apogeo, no separó la variación de la PE
 intra-bola de la excitación directa de la superficie, y no estudió la
 dependencia con $N$.
 
 En este trabajo reproducimos ese experimento con \lammps{} usando un cúmulo de
 $N=79$ átomos exactamente (capa FCC completa pre-minimizada, no creada con
-\texttt{create\_atoms}) y extendemos el análisis en tres direcciones:
+\texttt{create\_atoms}) y extendemos el análisis en cuatro direcciones:
 \textbf{(i)}~descomposición en \emph{cuatro} canales medidos de forma independiente;
 \textbf{(ii)}~barrido $N\in\{1,2,7,13,55,79,87\}$ para calibrar la fórmula de
 equipartición y determinar su escalado;
@@ -186,24 +199,38 @@ impacto (referencia, superíndice $(0)$), definimos los cuatro canales:
     \alpha_{\Delta V_B}     &= 1-\alpha_{\rm cm}-\alpha_{T_B}-\alpha_{\rm surf}.
     \label{eq:avb}
 \end{align}
-La cuarta fracción $\alpha_{\Delta V_B}=(V_B^{(1)}-V_B^{(0)})/E_0$ se obtiene
-por sustracción, garantizando $\sum\alpha_i=1$ exactamente rebote a rebote.
-La predicción h* de Gutiérrez et al.\ para la altura de primer rebote es
+La cuarta fracción $\alpha_{\Delta V_B}=(V_B^{(1)}-V_B^{(0)})/E_0$ puede
+obtenerse de dos maneras: por sustracción (ec.~\eqref{eq:avb}, que garantiza
+$\sum\alpha_i=1$ exactamente) o midiendo directamente $V_B$ en \lammps{}.
+La diferencia entre ambas define el \emph{error de cierre}
+$\varepsilon_{\rm cierre}=|\sum\alpha_i^{\rm medido}-1|$, que reportamos en
+la Sección~\ref{sec:lammps} como control de calidad de la partición.
+
+A partir del plateau observado $\alpha_{T_B}\approx0.22$ (Sección~\ref{sec:4canales}),
+proponemos la escala de altura para el primer rebote
 \begin{equation}
     h^* = T_B^{(1)}/(Mg),
     \label{eq:hstar}
 \end{equation}
-con $\alpha_{T_B}\approx0.22$ constante, lo que predice $h_1\approx\alpha_{T_B}\,h_0^{\rm ef}$.
+que predice $h_1\approx\alpha_{T_B}\,h_0^{\rm ef}$ cuando
+$\alpha_{\rm cm}\approx\alpha_{T_B}$.
 
 \subsection{Fórmula de equipartición}
 \label{sec:equiparticion}
 
-Gutiérrez et al.\ propusieron que la fracción interna del primer rebote sigue
+Proponemos que la fracción interna del primer rebote sigue una ley de
+equipartición entre los grados de libertad activos durante el contacto:
 \begin{equation}
     \alpha_{\rm int}(N) = \frac{3N-3}{3N-3+3N_c},
-    \label{eq:gutierrez}
+    \label{eq:equiparticion}
 \end{equation}
 donde $N_c$ es el número efectivo de osciladores de la huella de contacto.
+El numerador cuenta los $3N-3$ grados de libertad internos de la bola
+(vibracionales más rotacionales): un impacto no perfectamente central también
+excita rotación, por lo que no restamos los 3 modos rotacionales. Para
+$N\gtrsim13$ la diferencia entre $3N-3$ y $3N-6$ es menor que el resto de
+las incertezas; para $N=2$ y $N=7$ no lo es, y esos tamaños se tratan solo
+como controles cualitativos.
 Si se identifica $\alpha_{\rm int}$ con $\alpha_{T_B}$ solo, se obtiene
 $N_c\approx290$ (sin interpretación geométrica obvia). Si se identifica con
 la fracción interna total $\alpha_{\rm bola}=\alpha_{T_B}+\alpha_{\Delta V_B}$
@@ -229,9 +256,10 @@ Sin termostato (NVE global, $T=0$ inicial).
 
 \paragraph{Cúmulo.}
 El cúmulo de $N$ átomos se construye seleccionando las $N$ posiciones más
-cercanas al origen de la red FCC del mismo parámetro de red, de modo que
-los $N$ corresponden a capas esféricas completas:
-$N\in\{1,13,19,43,55,79,87,\ldots\}$.
+cercanas al origen de la red FCC del mismo parámetro de red. Las capas
+esféricas completas corresponden a $N\in\{1,13,19,43,55,79,87,\ldots\}$;
+de ellas simulamos $N\in\{1,13,55,79,87\}$, y agregamos $N=2$ y $N=7$
+(capas incompletas) como controles del régimen molecular.
 Se minimiza en vacío (algoritmo CG + FIRE) hasta fuerza máxima
 $<10^{-6}\,\eps/\sigma$, obteniéndose energías de cohesión por átomo de
 $-5.24\,\eps$ ($N=79$) y $-5.19\,\eps$ ($N=87$). Este protocolo garantiza
@@ -247,11 +275,31 @@ bola (\texttt{fix gravity}). $Z_{\rm cm}(t)$ se registra cada 20 pasos
 se identifican en post-análisis con \texttt{scipy.signal.find\_peaks}.
 
 \paragraph{Interacción bola-superficie.}
-Para $c_{ps}=0$: tabla LJ repulsiva pre-generada ($r^{-12}$ puro),
-implementada como \texttt{pair\_style table}.
+Para $c_{ps}=0$: tabla LJ repulsiva pre-generada ($4/r^{12}$ puro, con
+fuerza analítica $F=-dV/dr$), tabulada en $r\in[0.75,2.5]\,\sigma$ con
+5000 puntos e interpolación lineal (\texttt{pair\_style table}).
 Para $c_{ps}=1$: LJ completo con \texttt{pair\_coeff 1 2 lj/cut 1.0 1.0 2.5}.
 El cambio se controla con la variable \lammps{} \texttt{c\_ps} en
 \texttt{in.bounce\_cluster}.
+
+\paragraph{Integración y conservación de energía.}
+Las ecuaciones de movimiento se integran con velocity-Verlet
+(\texttt{fix nve}) y paso de tiempo $\Delta t = 5\times10^{-3}\,\tau$
+(el estudio original~\cite{Gutierrez2012} usó Beeman con
+$\Delta t = 4.65\times10^{-4}\,\tau$). Todos los potenciales se truncan
+\emph{y desplazan} en $r_c=2.5\,\sigma$ (\texttt{pair\_modify shift yes});
+el desplazamiento no altera fuerzas ni trayectorias, pero es esencial para
+el balance energético: sin él, cada par que cruza $r_c$ introduce un salto
+de $\pm|U(r_c)|=0.016\,\eps$ en la energía potencial registrada, y el error
+acumulado alcanza 2--6\% de $E_0$ por impacto. Con potenciales desplazados,
+la energía total (incluida la PE gravitatoria) se conserva a
+$|\Delta E|<0.03\,\eps$ ($\sim4\times10^{-4}\,E_0$) en $120\,\tau$
+incluyendo un impacto completo, lo que valida $\Delta t=5\times10^{-3}\,\tau$.
+Como control de la partición, medimos $\alpha_{\Delta V_B}$ de forma
+independiente (directamente de $V_B$) además de por sustracción
+(ec.~\eqref{eq:avb}): el error de cierre resultante es
+$|\sum\alpha_i-1|<10^{-4}$ para el primer rebote de $N=79$,
+$h_0=28.15\,\sigma$.
 
 % =============================================================================
 \section{Resultados}
@@ -268,10 +316,62 @@ Reproducimos los parámetros originales ($c_{ps}=0$, $T=0$, $\gstar=0.026$,
 pre-minimizado de $N=79$ átomos. El nivel de contacto efectivo es
 $z_0\approx11.5\,\sigma$ (altura del CM en los mínimos).
 
-El COR del primer rebote va de $e_1=0.92$ ($h_0=8.8\,\sigma$) a
-$e_1=0.59$ ($h_0=79.0\,\sigma$), en acuerdo cuantitativo con los valores
-reportados en~\cite{Gutierrez2012}. La caída más rápida que la predicción
-geométrica $e_1=\mathrm{cte}$ confirma la cascada de disipación.
+El COR del primer rebote va de $e_1=0.92$ ($h_0^{\rm ef}=8.8\,\sigma$) a
+$e_1=0.59$ ($h_0^{\rm ef}=79.0\,\sigma$). La referencia~\cite{Gutierrez2012}
+no reporta valores numéricos de $e_1$, pero sí las secuencias de alturas
+$h_n$ (su Fig.~7), que digitalizamos para la comparación cuantitativa de la
+Tabla~\ref{tab:comparacion2012}. La digitalización revela además una
+diferencia de convención: en~\cite{Gutierrez2012} el parámetro $h_0$ es la
+altura \emph{absoluta} del CM (las curvas de su Fig.~7 parten exactamente
+en $h_0$ y convergen al nivel de reposo $z_{\rm rest}\approx10.3\,\sigma$),
+mientras que aquí $h_0$ se mide desde el tope de la caja de la superficie.
+Por eso la comparación debe hacerse a altura efectiva de caída
+$h_0^{\rm ef}$ comparable, no a $h_0$ nominal igual.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Comparación con la Fig.~7 de~\cite{Gutierrez2012} (valores
+digitalizados; incerteza $\approx\pm0.7\,\sigma$ en las alturas, que domina
+el error de $e_1$). Las alturas efectivas de 2012 son
+$h_0^{\rm ef}=h_0-z_{\rm rest}$ con $z_{\rm rest}\approx10.3\,\sigma$.
+La fila $h_0=11.03$ de 2012 es una caída de $<1\,\sigma$ (cuasi-elástica
+trivial) y no admite un $e_1$ confiable.}
+\label{tab:comparacion2012}
+\begin{tabular}{c|ccc|cc}
+\toprule
+ & \multicolumn{3}{c|}{Gutiérrez et al.\ 2012 (Fig.~7)} &
+ \multicolumn{2}{c}{Este trabajo ($N=79$)} \\
+$h_0$ ($\sigma$) & $h_0^{\rm ef}$ & $h_1^{\rm ef}$ & $e_1$ &
+$h_0^{\rm ef}$ & $e_1$ \\
+\midrule
+11.03 &  0.6 &  0.4 & ---  &  8.81 & 0.924 \\
+18.64 &  8.4 &  6.8 & 0.90 & 17.21 & 0.708 \\
+28.15 & 17.9 &  3.3 & 0.43 & 25.91 & 0.552 \\
+41.47 & 31.3 &  8.2 & 0.51 & 41.80 & 0.633 \\
+58.60 & 48.4 & 14.3 & 0.54 & 56.93 & 0.614 \\
+79.53 & 69.2 & 18.2 & 0.51 & 79.03 & 0.587 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Comparando a $h_0^{\rm ef}$ comparable, el acuerdo es excelente en el
+régimen cuasi-elástico ($e_1=0.90$ en 2012 con $h_0^{\rm ef}=8.4\,\sigma$
+frente a $0.92$ aquí con $8.8\,\sigma$) y bueno a alta energía, donde los
+valores de 2012 quedan sistemáticamente $\sim0.06$--$0.09$ por debajo
+(p.~ej.\ $0.51$ con $h_0^{\rm ef}=69\,\sigma$ frente a $0.59$ con
+$79\,\sigma$). Esa diferencia es atribuible a que el cúmulo de 2012 se
+generó con \texttt{create\_atoms} sin pre-minimización ($N$ variable
+79--84 y energía interna residual, que abre canales de absorción
+adicionales) y a que el integrador difiere (Beeman en 2012,
+velocity-Verlet aquí), por lo que solo cabe esperar acuerdo estadístico.
+El caso $h_0^{\rm ef}=17.9\,\sigma$ de 2012 ($e_1=0.43$) es un outlier
+frente a la tendencia de ambos conjuntos; nótese que nuestra serie también
+presenta no monotonía en esa zona (mínimo $e_1=0.55$ en
+$h_0^{\rm ef}=25.9\,\sigma$, Tabla~\ref{tab:particion4}), lo que sugiere
+sensibilidad genuina a la fase interna de la bola al impactar.
+La caída más rápida que la predicción geométrica $e_1=\mathrm{cte}$
+confirma la cascada de disipación en ambos conjuntos de datos.
 
 % -----------------------------------------------------------------------------
 \subsection{Partición en cuatro canales para \texorpdfstring{$N=79$}{N=79}}
@@ -309,17 +409,45 @@ $\alpha_{\rm surf}$ \\
 \end{table}
 
 La fracción cinética interna $\alpha_{T_B}$ es prácticamente constante para
-$v_{\rm imp}\geq0.9\,\sigma/\tau$ ($\alpha_{T_B}\approx0.21$--$0.24$),
-consistente con el hallazgo de~\cite{Gutierrez2012}.
+$v_{\rm imp}\geq0.9\,\sigma/\tau$ ($\alpha_{T_B}\approx0.21$--$0.24$).
+Este plateau cuantifica, al primer apogeo, el calentamiento interno de la
+bola que~\cite{Gutierrez2012} describió cualitativamente durante el contacto.
 La fracción interna total $\alpha_{\rm bola}=\alpha_{T_B}+\alpha_{\Delta V_B}$
 varía entre 0.42 y 0.63, superando en todos los casos a $\alpha_{\rm cm}$
 para $v>1.0\,\sigma/\tau$.
 
 La excitación superficial directa $\alpha_{\rm surf}$ es la contribución
 más pequeña del sistema, entre 7 y 16\% de $E_0$.
-Esto contrasta con la estimación original de Gutiérrez et al., que obtenía
-$\approx30$--$50\%$ para la «fracción superficial» al incluir implícitamente
-$\alpha_{\Delta V_B}$ en ese canal.
+Este resultado matiza la imagen que sugiere el análisis durante el contacto
+de~\cite{Gutierrez2012}: allí la energía colisional $U_c$ domina el balance
+\emph{transitorio}, pero $U_c$ se anula cuando la bola se separa. La
+partición al apogeo muestra que la mayor parte de esa energía regresa a la
+bola como expansión anarmónica ($\alpha_{\Delta V_B}$) y no queda en la
+superficie. Ambas descripciones son compatibles: miden la distribución en
+instantes distintos del rebote.
+
+La Figura~\ref{fig:secuencia} ilustra esta secuencia con instantáneas de la
+simulación ($h_0=28.15\,\sigma$): en la compresión máxima la energía está
+mayoritariamente almacenada como PE intra-bola y de contacto (transitorias),
+mientras que al primer apogeo la bola retiene $\sim$62\% de $E_0$ como
+energía interna ($T_B+\Delta V_B$) ---visible como el ``moteado'' caliente
+de sus átomos--- y la superficie solo $\sim$6\%.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{../data/outputs/fig_sequence.png}
+    \caption{Cuatro instantes del primer rebote ($N=79$, $h_0=28.15\,\sigma$,
+    $c_{ps}=0$): \textbf{(a)}~caída libre, \textbf{(b)}~compresión máxima,
+    \textbf{(c)}~expansión post-impacto y \textbf{(d)}~primer apogeo.
+    Los átomos de la bola se colorean por su KE interna (sin el movimiento
+    del CM, escala $0$--$0.30\,\eps$) y los de la superficie por su KE
+    ($0$--$0.01\,\eps$, escala $\times30$ más sensible para visualizar los
+    fonones). La barra bajo cada panel muestra la partición instantánea de
+    $E_0$; $U_c$ (gris) solo es apreciable durante el contacto, y en el
+    apogeo la barra reproduce los cuatro canales de la
+    Tabla~\ref{tab:particion4} (con $U_F=\alpha_{\rm cm}E_0$).}
+    \label{fig:secuencia}
+\end{figure}
 
 % -----------------------------------------------------------------------------
 \subsection{Escalado con \texorpdfstring{$N$}{N}: calibración de \texorpdfstring{$N_c$}{Nc}}
@@ -335,7 +463,7 @@ Tabla~\ref{tab:sweep_N} y la Figura~\ref{fig:sweep_N}.
 \centering
 \caption{Fracciones del primer rebote promediadas sobre $v_{\rm imp}>1.1\,\sigma/\tau$,
 en función de $N$. Las dos últimas columnas muestran la predicción de la
-ec.~\eqref{eq:gutierrez} calibrada con $\alpha_{T_B}$ ($N_c=290$) y con
+ec.~\eqref{eq:equiparticion} calibrada con $\alpha_{T_B}$ ($N_c=290$) y con
 $\alpha_{\rm bola}$ ($N_c=N$).}
 \label{tab:sweep_N}
 \begin{tabular}{cccccccc}
@@ -347,25 +475,43 @@ $\hat\alpha_{T_B}(N_c{=}290)$ & $\hat\alpha_{\rm bola}(N_c{=}N)$ \\
  1 & 1 (completa) & — & 0.000 & 0.000 & —     & 0.000 & 0.000 \\
  2 & 1+1          & 0.902 & 0.002 & 0.003 & 0.183 & 0.003 & 0.333 \\
  7 & 1+6/12$^a$   & 0.840 & 0.034 & 0.093 & 0.198 & 0.020 & 0.462 \\
-13 & 2 (completa) & 0.735 & 0.066 & 0.107 & 0.339 & 0.040 & 0.480 \\
+13$^b$ & 2 (completa) & 0.735 & 0.066 & 0.107 & 0.339 & 0.040 & 0.480 \\
 55 & 4 (completa) & 0.521 & 0.217 & 0.474 & 0.254 & 0.157 & 0.495 \\
 79 & 5 (completa) & 0.597 & 0.244 & 0.543 & 0.100 & 0.212 & 0.497 \\
 87 & 6 (completa) & 0.594 & 0.250 & 0.543 & 0.103 & 0.229 & 0.497 \\
 \bottomrule
 \end{tabular}
 \footnotesize $^a$ N=7 es una capa incompleta (7 de 13 posibles en la 2.ª capa FCC);
-sus valores presentan mayor dispersión.
+sus valores presentan mayor dispersión.\\
+\footnotesize $^b$ N=13 no alcanza el plateau en $v\leq2.0\,\sigma/\tau$
+(ver texto); su promedio no es representativo y se excluye de la
+calibración de $N_c$.\\
+\footnotesize Para $N=1$ no existen modos internos ($\alpha_{T_B}\equiv0$);
+la fila es un control. Para $N=2$, casi toda la energía no recuperada va a
+la superficie ($\alpha_{\rm surf}=0.183$, con
+$\alpha_{\rm cm}=\langle e_1\rangle^2\approx0.81$): el dímero apenas se
+acopla a sus 3 modos internos en impactos verticales.
 \end{table}
 
 \paragraph{Calibración de $N_c$.}
-Para $\alpha_{T_B}$ solo (ec.~\eqref{eq:gutierrez}), el ajuste da
+Para $\alpha_{T_B}$ solo (ec.~\eqref{eq:equiparticion}), el ajuste da
 $N_c^{\rm ef}\in\{169,195,241,258\}$ para $N\in\{13,55,79,87\}$,
-creciendo débilmente con $N$ ($N_c\propto N^{0.22}$) sin una interpretación
+creciendo débilmente con $N$ ($N_c\propto N^{0.20}$) sin una interpretación
 geométrica directa. En cambio, usando $\alpha_{\rm bola}$ en
-ec.~\eqref{eq:gutierrez} se obtiene $N_c\approx N$ para $N\geq55$
-(columna $\hat\alpha_{\rm bola}$), con acuerdo cuantitativo a nivel del 10\%.
-Esto implica que cada átomo de la bola se acopla efectivamente con un oscilador
-de la superficie y predice el límite $\alpha_{\rm bola}\to1/2$ para $N\to\infty$.
+ec.~\eqref{eq:equiparticion} se obtiene $N_c\approx N$ para $N\geq55$
+(columna $\hat\alpha_{\rm bola}$). El acuerdo no es perfecto: los datos
+($\alpha_{\rm bola}=0.543$ para $N=79$ y $87$) superan sistemáticamente
+la predicción con $N_c=N$ (0.497) e incluso la cota asintótica $1/2$,
+lo que en sentido estricto implica $N_c<N$: la inversión de la
+ec.~\eqref{eq:equiparticion} da $N_c/N=1.09$, $0.83$ y $0.83$ para
+$N=55$, $79$ y $87$. El exceso sistemático puede originarse en
+la energía rotacional de la bola (incluida en $\alpha_{\rm bola}$ pero
+no en el conteo de osciladores armónicos) o en una subestimación de
+$\alpha_{\rm surf}$; discriminar ambas requiere medir el momento angular
+post-rebote (\texttt{compute angmom}), pendiente para una revisión.
+Con esa salvedad, la identificación $N_c\sim N$ ---cada átomo de la bola
+acoplado efectivamente a un oscilador de la superficie--- captura la
+tendencia y predice el límite $\alpha_{\rm bola}\to1/2$ para $N\to\infty$.
 
 \paragraph{Régimen de bola pequeña ($N=13$).}
 El cúmulo de $N=13$ (única capa esférica FCC completa de radio $1.10\,\sigma$)
@@ -376,16 +522,19 @@ daría $\alpha_{T_B}\approx0.04$ ($N_c=290$) o $\alpha_{\rm bola}\approx0.48$
 ($N_c=N$). La rigidez del icosaedro de una sola capa impide la termalización
 rápida que permite el plateau en cúmulos más grandes.
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{../data/outputs/fig_alpha_TB_full_sweep.pdf}
     \caption{Barrido $N\in\{1,2,7,13,55,79,87\}$, $c_{ps}=0$, $T=0$.
-    \textbf{Izquierda}: $\alpha_{T_B}$ vs $v_{\rm imp}$ para cada $N$.
-    La línea vertical punteada marca $v^*=1.1\,\sigma/\tau$ (inicio del plateau).
-    \textbf{Derecha}: $\langle\alpha_{T_B}\rangle_{\rm plateau}$ vs $N$,
-    comparado con la fórmula ec.~\eqref{eq:gutierrez} para $N_c=290$
-    (curva azul sólida) y con $N_c(N)=92\,N^{0.22}$ (curva negra discontinua).
-    El inset muestra $N_c^{\rm ef}(N)$ y su ajuste de ley de potencias.}
+    \textbf{(a)}~$\alpha_{T_B}$ vs $v_{\rm imp}$ para cada $N$; la línea
+    vertical punteada marca $v^*=1.1\,\sigma/\tau$ (inicio del plateau).
+    \textbf{(b)}~$\langle\alpha_{T_B}\rangle_{\rm plateau}$ vs $N$ (las barras
+    de error son la desviación estándar sobre los puntos con $v>v^*$),
+    comparado con la fórmula ec.~\eqref{eq:equiparticion} para $N_c=290$
+    (curva azul sólida) y con el ajuste $N_c(N)=99\,N^{0.20}$ (curva negra
+    discontinua). El símbolo abierto de $N=13$ indica que ese tamaño no
+    alcanza el plateau. El inset muestra $N_c^{\rm ef}(N)$ y su ajuste de
+    ley de potencias.}
     \label{fig:sweep_N}
 \end{figure}
 
@@ -394,27 +543,28 @@ rápida que permite el plateau en cúmulos más grandes.
 \label{sec:largo}
 % -----------------------------------------------------------------------------
 
-Para verificar la predicción de Gutiérrez et al.\ de que la altura de rebote
-converge a $h^*=T_B/(Mg)$, corremos una simulación de $5000\,\tau$
+Para poner a prueba la escala $h^*=T_B/(Mg)$ propuesta en la
+Sección~\ref{sec:balance} ---y en particular si la altura de rebote
+\emph{converge} a ella---, corremos una simulación de $5000\,\tau$
 ($N=79$, $h_0=28.15\,\sigma$, $c_{ps}=0$, mismos parámetros).
 
 \paragraph{Primer rebote.}
-La altura medida $h_1=7.89\,\sigma$ está en excelente acuerdo con la predicción
-$h^*(T_B^{(1)})=T_B^{(1)}/(Mg)=8.27\,\sigma$ (ratio $=0.95$).
+La altura medida $h_1=7.91\,\sigma$ está en excelente acuerdo con la predicción
+$h^*(T_B^{(1)})=T_B^{(1)}/(Mg)=8.27\,\sigma$ (ratio $=0.96$).
 Este resultado confirma que la relación $h_1\approx T_B/(Mg)$ es válida para
 el primer impacto.
 
 \paragraph{Rebotes sucesivos y colapso.}
 A diferencia de lo que sugiere la nomenclatura «$h^*$» como attractor
 estacionario, el ratio $h_n/h^*(T_B^{(n)})$ decrece monotónamente rebote a
-rebote (de 0.95 en $n=1$ a $\sim0.19$ en $n=20$--$23$).
+rebote (de 0.96 en $n=1$ a $\sim0.18$ en $n=20$--$23$).
 La altura CM $h_n$ decae geométricamente ($e_1^{\rm ef}\approx0.97$ por rebote),
 mientras que $T_B$ disminuye más despacio (de $17.0\,\eps$ en $n=1$ a
 $11.8\,\eps$ en $n=23$, factor $\times0.7$).
 
 Tras 23 rebotes ($t\approx660\,\tau$), la altura de apogeo se ha reducido a
 $h_n\approx1.0\,\sigma$: la bola ya no se separa efectivamente de la
-superficie. En $t\approx740\,\tau$ el CM cae por debajo de $z_0$
+superficie. En $t\approx713\,\tau$ el CM cae por debajo de $z_0$
 (colapso): átomos de la bola se filtran entre los huecos del lattice de
 la superficie al no haber barrera repulsiva superior en la pared $+z$.
 
@@ -425,17 +575,19 @@ Tabla~\ref{tab:particion4}), no un attractor dinámico. En rebotes sucesivos,
 la energía CM adicional disponible (caída desde $h_n\ll h_0$) es pequeña,
 por lo que $T_B$ crece poco mientras $h_n$ sigue cayendo por inelasticidad.
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{../data/outputs/fig_paso_B_convergencia.pdf}
     \caption{Simulación larga ($5000\,\tau$, $N=79$, $h_0=28.15\,\sigma$,
     $c_{ps}=0$).
-    \textbf{Superior}: trayectoria $Z_{\rm cm}(t)-z_0$; la línea roja discontinua
-    marca el colapso en $t\approx740\,\tau$.
-    \textbf{Centro}: alturas de apogeo $h_n$ (círculos azules) y predicción
+    \textbf{(a)}~Trayectoria $Z_{\rm cm}(t)-z_0$ durante los primeros
+    $1000\,\tau$; la línea roja discontinua marca el colapso a través de la
+    red en $t\approx713\,\tau$ (artefacto del potencial repulsivo puro).
+    El inset muestra los $5000\,\tau$ completos.
+    \textbf{(b)}~Alturas de apogeo $h_n$ (círculos azules) y predicción
     $h^*_n=T_B^{(n)}/(Mg)$ (cuadrados rojos) por número de rebote.
-    \textbf{Inferior}: ratio $h_n/h^*_n$; el valor del primer rebote
-    (0.95, línea azul punteada) es el único que se aproxima a la unidad.}
+    \textbf{(c)}~Razón $h_n/h^*_n$: el valor del primer rebote (0.96) es el
+    único que se aproxima a la unidad (línea discontinua).}
     \label{fig:largo}
 \end{figure}
 
@@ -493,16 +645,32 @@ La dependencia $h_0^*\propto N^{-0.27}$ indica que cúmulos \emph{más grandes}
 tienen umbrales \emph{más bajos}: su masa crece como $N$ pero la adhesión
 solo como $N^{0.73}$, haciendo más fácil el escape para proyectiles grandes.
 
-\begin{figure}[ht]
+Este umbral debe leerse como cota de \emph{orden de magnitud}, no como
+predicción cuantitativa, por tres razones. Primero, es una extrapolación a
+$3$--$5$ veces la altura máxima validada. Segundo, a esas alturas
+($v_{\rm imp}\sim3.7$--$4.8\,\sigma/\tau$) el cúmulo ya no rebota como
+sólido: \cite{Gutierrez2012} observó fusión de la bola para
+$h_0>41.5\,\sigma$, de modo que en el régimen del umbral el área de
+contacto ---y con ella $E_{\rm adh}$--- crecería con $v$, en vez de ser
+constante como supone la ec.~\eqref{eq:h0star}. Tercero,
+$\alpha_{\rm cm}\approx0.35$ está tomado del caso repulsivo; con adhesión
+la retención de energía CM será menor. Los tres sesgos apuntan en la misma
+dirección (retrasar el rebote), por lo que $h_0^*$ es probablemente una
+cota inferior. Verificarlo requiere simulaciones con $c_{ps}=1$ a
+$h_0$ intermedias-altas midiendo $E_{\rm adh}(v)$.
+
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{../data/outputs/fig_paso_C_adhesion.pdf}
-    \caption{\textbf{Izquierda}: trayectorias $Z_{\rm cm}(t)$ para $N=79$,
-    $c_{ps}=1$, 6 alturas (primeros $400\,\tau$). Todas terminan en
-    $Z_{\rm cm}\approx10\,\sigma$ (tope de superficie, línea gris discontinua):
-    adhesión en los 6 casos.
-    \textbf{Derecha}: umbral $h_0^*(N)$ estimado de la
-    ec.~\eqref{eq:h0star} (círculos rojos) comparado con la escala
-    teórica $\propto N^{-1/3}$ (punteada).}
+    \caption{\textbf{(a)}~Trayectorias $Z_{\rm cm}(t)$ para $N=79$,
+    $c_{ps}=1$, 6 alturas (primeros $120\,\tau$; no hay más eventos después).
+    Todas terminan en $Z_{\rm cm}\approx10\,\sigma$ (tope de la superficie,
+    línea gris discontinua): adhesión en los 6 casos.
+    \textbf{(b)}~Umbral $h_0^*(N)$ estimado de la ec.~\eqref{eq:h0star}
+    (círculos rojos; la barra de error propaga la dispersión de
+    $E_{\rm adh}$ entre alturas), comparado con el ajuste
+    $E_{\rm adh}=7.9\,N^{0.73}$ (discontinua negra) y con la escala
+    $\propto N^{-1/3}$ (punteada azul).}
     \label{fig:adhesion}
 \end{figure}
 
@@ -522,9 +690,10 @@ hacia el equilibrio tarda varias vibraciones ($\sim1$--$5\,\tau$), tiempo en que
 el cúmulo ya se aleja. En el primer apogeo, $V_B>V_B^{(0)}$, y la diferencia
 registra la energía potencial que la bola «se lleva».
 
-Esta asimetría tiene dos consecuencias: (i)~el análisis de~\cite{Gutierrez2012}
-subestima el calor depositado en la bola al usar solo $T_B^{(1)}$; (ii)~la
-cantidad conservada para el balance es $\alpha_{\rm bola}$, no $\alpha_{T_B}$.
+Esta asimetría tiene dos consecuencias: (i)~cualquier partición que use solo
+la KE interna $T_B^{(1)}$ subestima en un factor $\sim2$ el calor depositado
+en la bola; (ii)~la cantidad natural para el balance de equipartición es
+$\alpha_{\rm bola}=\alpha_{T_B}+\alpha_{\Delta V_B}$, no $\alpha_{T_B}$.
 
 \subsection{Nc efectivo y escalado con N}
 \label{sec:Nc_interpretacion}
@@ -585,8 +754,10 @@ con \lammps{} usando cúmulos FCC pre-minimizados de tamaño exacto
 
     \item \textbf{La fracción interna total $\alpha_{\rm bola}$ escala según
     equipartición con $N_c\approx N$ para $N\geq55$.}
-    Esto predice $\alpha_{\rm bola}\to1/2$ para $N\to\infty$.
-    Usando $\alpha_{T_B}$ solo, $N_c\propto N^{0.22}$ no converge a una
+    Esto predice $\alpha_{\rm bola}\to1/2$ para $N\to\infty$, aunque los
+    datos exceden sistemáticamente esa cota en $\sim8\%$
+    ($N_c^{\rm libre}\approx0.8$--$1.1\,N$; ver Sección~\ref{sec:sweep_N}).
+    Usando $\alpha_{T_B}$ solo, $N_c\propto N^{0.20}$ no converge a una
     interpretación simple.
 
     \item \textbf{$N=13$ está en un régimen distinto.}
@@ -594,25 +765,36 @@ con \lammps{} usando cúmulos FCC pre-minimizados de tamaño exacto
     la rigidez de la capa FCC completa más pequeña impide la termalización
     interna rápida.
 
-    \item \textbf{La predicción $h_1\approx T_B/(Mg)$ es válida para el primer
-    rebote (ratio$=0.95$) pero no como attractor.}
+    \item \textbf{La escala $h_1\approx T_B/(Mg)$ es válida para el primer
+    rebote (ratio$=0.96$) pero no como attractor.}
     La altura CM decae geométricamente mientras $T_B$ decrece más despacio,
-    y la bola queda atrapada tras $\sim23$ rebotes ($t_{\rm col}\approx740\,\tau$
-    para $h_0=28\,\sigma$, $N=79$).
+    y la bola queda atrapada sobre la superficie ($h_n\lesssim1\,\sigma$)
+    tras $\sim23$ rebotes ($t\approx660\,\tau$ para $h_0=28\,\sigma$, $N=79$).
+    La posterior filtración de átomos a través de la red
+    ($t\approx713\,\tau$) es un artefacto del potencial repulsivo puro,
+    no parte de la física del atrapamiento.
 
     \item \textbf{Con adhesión ($c_{ps}=1$), la bola pega en todos los casos
     estudiados ($v$ hasta $2.0\,\sigma/\tau$).}
     $E_{\rm adh}\propto N^{0.73}$, $h_0^*(N)\propto N^{-0.27}$.
-    El umbral $h_0^*\approx260$--$440\,\sigma$ está fuera del rango estudiado;
+    El umbral extrapolado $h_0^*\sim260$--$440\,\sigma$ es una cota de orden
+    de magnitud (probablemente inferior; ver Sección~\ref{sec:adhesion});
     la escala favorable a cúmulos grandes tiene implicaciones para el
     \emph{soft landing}.
 
 \end{enumerate}
 
-Como trabajo futuro, la extensión a temperatura inicial $\Tstar>0$ y a múltiples
-orientaciones del cúmulo permitirá cuantificar la dependencia estadística de
-$n_{\rm adh}$ (número de rebotes hasta adhesión) y el papel de la fusión interna
-en la cascada.
+Como trabajo futuro, la extensión a temperatura inicial $\Tstar>0$ y a
+múltiples orientaciones del cúmulo (3--5 réplicas por punto) permitirá
+asignar barras de error a las fracciones $\alpha_i$ ---y decidir si la no
+monotonía de $e_1$ con $h_0$ (Tabla~\ref{tab:particion4}) es física o
+varianza de condición inicial---, cuantificar la dependencia estadística de
+$n_{\rm adh}$ (número de rebotes hasta adhesión) y el papel de la fusión
+interna en la cascada. La medición del momento angular post-rebote
+(\texttt{compute angmom}) separará la contribución rotacional de
+$\alpha_{\rm bola}$, y el barrido de las capas completas intermedias
+$N=19$ y $43$ poblará la transición molecular$\to$bulk entre
+$N=13$ y $N=55$.
 
 % =============================================================================
 \section*{Agradecimientos}
