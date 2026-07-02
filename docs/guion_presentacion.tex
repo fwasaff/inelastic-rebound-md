@@ -1,0 +1,640 @@
+% =============================================================================
+% Guion de estudio — presentación a Gonzalo
+% Compilar: pdflatex guion_presentacion.tex  (dos pasadas)
+% =============================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{mdframed}
+
+\newcommand{\eps}{\varepsilon}
+\newcommand{\gstar}{g^*}
+\newcommand{\lammps}{\textsc{Lammps}}
+
+% caja para las respuestas preparadas
+\newmdenv[backgroundcolor=blue!5, linecolor=blue!40, linewidth=1pt,
+          skipabove=4pt, skipbelow=8pt, innertopmargin=6pt,
+          innerbottommargin=6pt]{respuesta}
+
+\title{\textbf{Guion de estudio --- presentación a Gonzalo}\\
+\large Partición de energía en el rebote de nanocúmulos LJ}
+\author{Felipe Wasaff}
+\date{Julio 2026}
+
+\setlength{\parskip}{4pt}
+
+\begin{document}
+\maketitle
+
+\noindent Este documento tiene tres partes: \textbf{(A)} los conceptos que
+tienes que dominar antes de la reunión, explicados desde cero;
+\textbf{(B)} el guion lámina por lámina (qué decir, qué señalar en cada
+figura, cuánto tiempo); \textbf{(C)} las preguntas que Gonzalo
+probablemente hará ---es profesor de mecánica estadística--- con las
+respuestas preparadas.
+
+\tableofcontents
+
+% =============================================================================
+\section{PARTE A --- Conceptos que debes dominar}
+% =============================================================================
+
+\subsection{Unidades de Lennard-Jones (por si pregunta por números)}
+
+Todo el trabajo está en unidades reducidas: la longitud se mide en
+$\sigma$ (el ``tamaño'' de un átomo, $\sim$3.4~\AA{} para argón), la
+energía en $\eps$ (la profundidad del pozo atractivo entre dos átomos,
+$\sim$0.0104~eV) y el tiempo en $\tau=\sqrt{m\sigma^2/\eps}\approx2.15$~ps.
+Cuando digas ``la bola cae desde $26\,\sigma$'' estás diciendo ``desde
+$\sim$9 nanómetros''; cuando digas ``el impacto dura $\sim2\,\tau$'' es
+``$\sim$4 picosegundos''. La gravedad $\gstar=0.026\,\sigma/\tau^2$ es
+\emph{enormemente} más grande que la gravedad real a esa escala --- es una
+gravedad artificial para que el experimento quepa en tiempos de
+simulación. Si Gonzalo pregunta: no afecta la física del impacto, porque
+lo que importa es la velocidad de impacto $v_{\rm imp}=\sqrt{2gh}$, y esa
+la controlamos con $h_0$.
+
+\subsection{El coeficiente de restitución (COR) y por qué \texorpdfstring{$e<1$}{e<1}}
+
+\begin{itemize}[leftmargin=1.4em]
+    \item Definición: $e = |v_{\rm después}|/|v_{\rm antes}|$ del impacto.
+    Como la altura de vuelo es $h=v^2/2g$, se cumple
+    $\boxed{h_1/h_0=e^2}$.
+    \item En los cursos de mecánica, $e$ se trata como constante del
+    material. El primer resultado del trabajo es que \textbf{$e$ no es
+    constante}: va de 0.92 (impacto suave) a 0.55--0.59 (impacto fuerte).
+    Una pelota atómica rebota ``mejor'' cuando cae despacio.
+    \item Intuición: a baja velocidad la bola no alcanza a excitar sus
+    vibraciones internas (el impacto es ``adiabático'' respecto de los
+    modos internos); a alta velocidad el golpe es violento comparado con
+    el período de vibración de los átomos y la energía se reparte.
+\end{itemize}
+
+\subsection{Los cuatro canales --- la ecuación más importante del paper}
+
+En el \textbf{primer apogeo} (el punto más alto después del primer
+rebote, donde la velocidad del centro de masa es cero) se mide:
+\begin{equation*}
+    \alpha_{\rm cm} + \alpha_{T_B} + \alpha_{\Delta V_B}
+    + \alpha_{\rm surf} = 1 \qquad \text{(todo dividido por $E_0$)}
+\end{equation*}
+
+\begin{enumerate}[leftmargin=1.6em]
+    \item $\alpha_{\rm cm}=h_1/h_0^{\rm ef}=e_1^2$ --- la fracción que el
+    centro de masa (CM) recuperó. Es la única energía ``útil'' para
+    seguir rebotando.
+    \item $\alpha_{T_B}$ --- energía cinética de los átomos de la bola
+    \textsc{medida en el sistema del CM} (es decir, restando el
+    movimiento de traslación). Es el ``calor'' cinético: los átomos
+    vibran alrededor de sus posiciones. $T_B$ es literalmente lo que
+    usarías para definir una temperatura interna instantánea de la bola
+    ($T_B=(3N-3)\,k_B T_{\rm interna}/2$ si estuviera equilibrada).
+    \item $\alpha_{\Delta V_B}$ --- el cambio de energía \textsc{potencial}
+    interna de la bola entre antes del impacto y el apogeo. Ver
+    \S\ref{sec:anarm}: es la ``expansión anarmónica''.
+    \item $\alpha_{\rm surf}$ --- cuánta energía (cinética + potencial)
+    ganó la superficie. Son los fonones: ondas elásticas que el golpe
+    radia por el cristal.
+\end{enumerate}
+
+\textbf{El mensaje que tienes que poder decir en una frase:} ``la energía
+que la pelota no recupera queda mayoritariamente \emph{dentro} de la
+pelota ($\alpha_{T_B}+\alpha_{\Delta V_B}\approx0.4$--$0.6$), y el piso se
+lleva poco (0.07--0.16). La intuición macroscópica de que `la energía se
+disipa en el suelo' falla a esta escala.''
+
+\subsection{La expansión anarmónica (\texorpdfstring{$\alpha_{\Delta V_B}$}{α\_ΔVB}) --- el canal ``nuevo''}
+\label{sec:anarm}
+
+Este es el canal conceptualmente más fino, prepáralo bien:
+
+\begin{itemize}[leftmargin=1.4em]
+    \item El potencial LJ \textbf{no es simétrico} alrededor del mínimo:
+    es muy duro al comprimir ($r^{-12}$) y blando al estirar ($r^{-6}$).
+    Eso es ``anarmonicidad''.
+    \item Cuando la bola se calienta internamente ($T_B$ sube), sus
+    átomos oscilan en ese pozo asimétrico y pasan \textbf{más tiempo del
+    lado estirado}: la distancia media entre átomos crece. Es
+    \textsc{exactamente} el mismo mecanismo de la \textbf{dilatación
+    térmica} de los sólidos --- a Gonzalo le va a gustar esa conexión.
+    \item Consecuencia: en el apogeo, la energía potencial interna $V_B$
+    es \textsc{mayor} que antes del impacto (la bola está ``expandida''),
+    y esa diferencia $\Delta V_B$ viaja con la bola. Es energía potencial
+    almacenada, tan real como la cinética.
+    \item Números: $\alpha_{\Delta V_B}\approx0.21$--$0.33$, comparable a
+    $\alpha_{T_B}\approx0.22$. De hecho, que sean comparables \textsc{es}
+    equipartición: en un oscilador, $\langle KE\rangle\approx\langle
+    PE\rangle$ (virial). Si te preguntan por qué son parecidos, esa es
+    la respuesta: ``es el teorema del virial actuando dentro de la
+    bola''.
+\end{itemize}
+
+\subsection{¿Qué es el ``plateau''? (tu duda --- apréndete esto)}
+\label{sec:plateau}
+
+``Plateau'' = \emph{meseta}. Se refiere a esto: si graficas
+$\alpha_{T_B}$ (la fracción cinética interna) contra la velocidad de
+impacto $v_{\rm imp}$, la curva \textbf{sube y luego se aplana} en un
+valor casi constante:
+
+\begin{itemize}[leftmargin=1.4em]
+    \item Para $v_{\rm imp}<0.9\,\sigma/\tau$: $\alpha_{T_B}$ es pequeño
+    y crece con $v$ (régimen cuasi-elástico: el impacto apenas excita los
+    modos internos).
+    \item Para $v_{\rm imp}>0.9$--$1.1\,\sigma/\tau$: $\alpha_{T_B}$ se
+    queda ``pegado'' en $\approx0.22$ sin importar cuánto más fuerte
+    golpees. \textsc{Eso} es el plateau: la meseta de la curva
+    $\alpha_{T_B}(v)$.
+\end{itemize}
+
+\textbf{Por qué existe la meseta (la física):} cuando el golpe es
+suficientemente violento, el tiempo de contacto ($\sim2\,\tau$) basta
+para que la energía se reparta (``termalice'') entre todos los grados de
+libertad dinámicamente accesibles. Una vez que el reparto es completo, la
+\textsc{fracción} que le toca a cada canal ya no depende de cuánta
+energía entra --- solo de \textsc{cuántos} grados de libertad compiten.
+Por eso la fracción se vuelve constante. Es el mismo motivo por el que el
+calor específico de un sólido clásico no depende de la temperatura (ley
+de Dulong-Petit): la equipartición reparte por igual entre modos, y la
+fracción de cada modo es fija.
+
+En cambio, si el golpe es suave ($v$ pequeña), la termalización \textsc{no}
+alcanza a ocurrir y la fracción sí depende de $v$: por eso la curva sube
+antes de aplanarse. Y en el cúmulo de $N=13$, que es muy rígido (una sola
+capa cerrada, frecuencias propias altas), la termalización no ocurre ni
+siquiera a $v=2$: \textbf{$N=13$ nunca alcanza el plateau} en el rango
+estudiado. Por eso en la figura va con símbolo abierto y excluido del
+ajuste.
+
+\subsection{La fórmula de equipartición y \texorpdfstring{$N_c$}{Nc}}
+\label{sec:equip}
+
+\begin{equation*}
+    \alpha_{\rm int}(N) = \frac{3N-3}{3N-3+3N_c}
+\end{equation*}
+
+\begin{itemize}[leftmargin=1.4em]
+    \item \textbf{De dónde sale:} si en el contacto la energía $E_0$ se
+    reparte por igual entre $f_{\rm bola}=3N-3$ grados de libertad
+    internos de la bola y $f_{\rm sup}=3N_c$ grados de libertad
+    ``activos'' de la superficie, la fracción de la bola es
+    $f_{\rm bola}/(f_{\rm bola}+f_{\rm sup})$. Eso es todo: conteo de
+    grados de libertad, puro espíritu de equipartición.
+    \item \textbf{Por qué $3N-3$ y no $3N-6$:} un cúmulo de $N$ átomos
+    tiene $3N$ grados de libertad; se restan 3 de traslación del CM
+    (esos son $\alpha_{\rm cm}$, no son ``internos''). Las 3 rotaciones
+    \textsc{sí} se cuentan como internas porque un impacto no
+    perfectamente centrado excita rotación. Para $N$ grande la diferencia
+    entre $3N-3$ y $3N-6$ es irrelevante; para $N=2$ o 7 no lo es, y por
+    eso esos tamaños son solo controles cualitativos.
+    \item \textbf{$N_c$ = número efectivo de átomos de la superficie que
+    participan.} No es un parámetro microscópico medible directamente; se
+    \textsc{calibra} con los datos. El resultado interesante: si usas la
+    fracción interna \textsc{total}
+    ($\alpha_{\rm bola}=\alpha_{T_B}+\alpha_{\Delta V_B}$), la
+    calibración da $\boxed{N_c\approx N}$. Lectura física: cada átomo de
+    la bola ``recluta'' aproximadamente un átomo del piso. Plausible
+    porque la bola de radio $\sim N^{1/3}$ penetra una profundidad
+    comparable a su radio: volumen activado $\sim N$, no solo el área de
+    contacto $\sim N^{2/3}$.
+    \item \textbf{La predicción estrella:} con $N_c=N$, la fórmula da
+    $\alpha_{\rm bola}\to 3N/(3N+3N)=\boxed{1/2}$ cuando $N\to\infty$.
+    Una nanopelota grande, fría y sin adhesión absorbe como energía
+    interna la \textsc{mitad} de su energía de impacto. Límite limpio,
+    memorizable, falsable.
+    \item \textbf{La salvedad honesta (dila tú antes de que la encuentre
+    Gonzalo):} los datos de $N=79$ y 87 dan $\alpha_{\rm bola}=0.543$,
+    \textsc{levemente por encima} de la cota $1/2$. Estrictamente eso
+    implica $N_c<N$ (invertir la fórmula da $N_c/N=1.09$, $0.83$, $0.83$
+    para $N=55$, 79, 87). Origen probable: (i)~la energía rotacional está
+    incluida en $\alpha_{\rm bola}$ pero la rotación no es un oscilador
+    (no tiene PE asociada, ``cuenta distinto'' en equipartición), o
+    (ii)~$\alpha_{\rm surf}$ está algo subestimado. Distinguirlas
+    requiere medir el momento angular post-rebote (\texttt{compute
+    angmom} en \lammps) --- está declarado como trabajo pendiente.
+\end{itemize}
+
+\subsection{\texorpdfstring{$h^*=T_B/(Mg)$}{h*=TB/(Mg)}: qué es y qué NO es}
+
+\begin{itemize}[leftmargin=1.4em]
+    \item Idea: si al primer rebote $\alpha_{\rm cm}\approx\alpha_{T_B}$
+    (mira la tabla: 0.304 vs 0.319 en la fila $h_0^{\rm ef}=25.9$),
+    entonces la altura del primer rebote
+    $h_1=\alpha_{\rm cm}h_0^{\rm ef}\approx\alpha_{T_B}h_0^{\rm ef}
+    =T_B/(Mg)$. Es una \textsc{coincidencia numérica} del primer rebote
+    elevada a escala útil: conociendo el calentamiento interno predices
+    la altura. Funciona: $h_1/h^*=0.96$.
+    \item Lo que \textsc{no} es: un \textbf{atractor}. ``Atractor'' =
+    estado al que la dinámica converge y en el que se queda. Uno podría
+    conjeturar que las alturas de rebote convergen a $h^*(T_B)$ porque
+    $T_B$ ``recarga'' el rebote. La simulación larga ($5000\,\tau$, 23
+    rebotes) muestra lo contrario: la razón $h_n/h_n^*$ cae de 0.96 a
+    $\sim$0.18. La altura decae geométricamente (cada rebote pierde un
+    factor $e^2$) mientras que $T_B$, una vez depositada, casi no cambia
+    (baja solo $\times0.7$ en 23 rebotes). Son dos relojes distintos:
+    $h_n$ decae rápido, $T_B$ lento. Al final la bola queda
+    \textsc{atrapada} vibrando a menos de $1\,\sigma$ del piso --- el
+    análogo exacto del ``prrrrt'' final de una pelota real.
+    \item El ``colapso'' en $t\approx713\,\tau$ (la bola se cuela
+    \textsc{entre} los átomos del piso) es un \textbf{artefacto}: con
+    interacción puramente repulsiva y sin atracción lateral, los átomos
+    de la bola terminan filtrándose por los huecos de la red. Lo decimos
+    explícitamente en el paper. Saber distinguir física de artefacto es
+    parte del mensaje pedagógico.
+\end{itemize}
+
+\subsection{Adhesión (\texorpdfstring{$c_{ps}=1$}{cps=1})}
+
+\begin{itemize}[leftmargin=1.4em]
+    \item Restauramos el término atractivo bola--piso del LJ. Resultado:
+    en los 24 casos (4 tamaños $\times$ 6 alturas) la bola queda pegada
+    al primer contacto. No es sorpresa: la energía de adhesión medida
+    ($E_{\rm adh}=52$--$209\,\eps$ según $N$) es mucho mayor que la
+    energía CM disponible tras el rebote
+    ($\alpha_{\rm cm}E_0\sim5$--$50\,\eps$).
+    \item $E_{\rm adh}\propto N^{0.73}\approx N^{2/3}$ = escalado del
+    \textsc{área} de contacto (los átomos del interior no tocan el piso).
+    Compara con la masa $\propto N$. De ahí la predicción
+    contraintuitiva: el umbral de caída para lograr rebote escala
+    $h_0^*\propto N^{0.73}/N=N^{-0.27}$ --- \textbf{los cúmulos grandes
+    escapan más fácil} (más energía por unidad de adhesión).
+    \item El valor absoluto del umbral ($\sim10^2$--$10^3\,\sigma$) es
+    \textsc{solo} orden de magnitud: a esas velocidades la bola se funde
+    al impactar (lo vio el propio trabajo 2012 vía $g(r)$), el área de
+    contacto crecería con $v$, y $\alpha_{\rm cm}$ está tomado del caso
+    sin adhesión. Preséntalo siempre con esa triple salvedad.
+    \item Conexión con literatura: \emph{soft landing} de cúmulos sobre
+    superficies (deposición de nanopartículas sin destruirlas) ---
+    Awasthi et al., Phys.\ Rev.\ B.
+\end{itemize}
+
+\subsection{Los detalles técnicos que dan credibilidad}
+\label{sec:tecnicos}
+
+\begin{enumerate}[leftmargin=1.6em]
+    \item \textbf{Cúmulos de $N$ exacto}: en 2012 la bola se creaba
+    recortando una esfera de una red $\to$ $N$ variable (79--84) y bola
+    no relajada. Ahora: capas FCC completas (13, 55, 79, 87\ldots)
+    minimizadas en vacío $\to$ $N$ exacto, bola inicialmente fría. Sin
+    esto, la medición de $\alpha_{T_B}$ estaría contaminada con energía
+    interna inicial espuria.
+    \item \textbf{Potencial truncado y desplazado (shift)}: el LJ se
+    corta en $r_c=2.5\,\sigma$. Si solo lo cortas,
+    $U(r_c)=-0.0163\,\eps\neq0$, y cada par de átomos que cruza $r_c$
+    hace saltar la energía potencial \textsc{registrada} en
+    $\pm0.0163\,\eps$. Con miles de cruces por impacto, el balance de
+    energía fallaba en 2--6\% de $E_0$ --- lo descubrimos porque el
+    cierre $\sum\alpha_i=1$ no cuadraba al medir los 4 canales de forma
+    independiente. La solución estándar: desplazar el potencial
+    ($U-U(r_c)$), que \textsc{no} cambia las fuerzas (la derivada es la
+    misma) y por tanto \textsc{no} cambia ninguna trayectoria --- solo
+    arregla la contabilidad. Con shift: conservación a
+    $|\Delta E|<0.03\,\eps\approx4\times10^{-4}E_0$ por impacto y cierre
+    $<10^{-4}$. Detalle importante: los resultados anteriores eran
+    válidos porque $\alpha_{\Delta V_B}$ se calculaba por residuo.
+    \item \textbf{Digitalización de la Fig.~7 de 2012}: extrajimos las
+    curvas del PDF del capítulo por color de píxel, calibrando con los 6
+    valores conocidos del rebote 0 (error rms de calibración:
+    $0.08\,\sigma$). Hallazgo: en 2012 $h_0$ es la \textsc{altura
+    absoluta} del CM (las curvas convergen al nivel de reposo
+    $\approx10.3\,\sigma$), mientras que nuestro $h_0$ se mide desde el
+    tope de la caja. Con la \textsc{misma} etiqueta $h_0$, las caídas
+    efectivas difieren en $\sim8\,\sigma$. Comparando a caída efectiva
+    igual: acuerdo excelente a baja energía ($e_1$: 0.90 de ellos vs
+    0.92 nuestro) y 2012 queda $\sim$0.06--0.09 abajo a alta energía
+    (explicable: bola sin minimizar + $N$ variable).
+    \item \textbf{Reproducibilidad}: cada figura del paper la genera un
+    script del repo desde los datos crudos. Cualquier número que Gonzalo
+    cuestione, se puede regenerar delante de él.
+\end{enumerate}
+
+% =============================================================================
+\section{PARTE B --- Guion lámina por lámina ($\sim$15 min total)}
+% =============================================================================
+
+\subsection*{Lámina 1 --- Portada (15 s)}
+``Te traigo el estado del trabajo del rebote: qué reprodujimos del
+capítulo 2012, qué encontramos nuevo, y una propuesta concreta de
+publicación que quiero cerrar contigo hoy.''
+
+\subsection*{Lámina 2 --- De dónde venimos (1 min)}
+\begin{itemize}[leftmargin=1.4em]
+    \item Señala el bloque de la derecha: ``la pregunta que ordena todo
+    el paper es esta: $e<1$ te dice \textsc{cuánta} energía no vuelve;
+    nosotros respondemos \textsc{dónde} queda.''
+    \item Recorre los 5 bullets de la izquierda rápido; no te detengas en
+    detalles técnicos (vuelven en la lámina 10).
+    \item Frase puente: ``el resultado central cabe en una imagen --- es
+    la siguiente.''
+\end{itemize}
+
+\subsection*{Lámina 3 --- La imagen OVITO (2 min; deja que la mire)}
+\begin{itemize}[leftmargin=1.4em]
+    \item Deja 10 segundos de silencio; la figura se explica sola.
+    \item Recorrido: ``(a) cae --- toda la energía es mecánica del CM.
+    (b) compresión máxima --- mira la barra: la energía está como
+    deformación, 54\% potencial intra-bola, y el canal gris $U_c$ es el
+    contacto, que solo existe durante la colisión. (c) al separarse ya
+    está caliente --- mira el moteado de colores en la bola. (d) apogeo:
+    31\% cinética interna, 31\% potencial interna, 6\% superficie, 32\%
+    altura recuperada.''
+    \item Remate: ``o sea: la bola se lleva \textsc{adentro} el 62\% de
+    la energía; el piso se queda con el 6\%. La intuición de `se disipa
+    en el suelo' falla.''
+    \item Detalle si pregunta por los colores: bola coloreada por KE
+    interna (sin el CM), superficie por KE con escala 30 veces más
+    sensible para ver los fonones.
+\end{itemize}
+
+\subsection*{Lámina 4 --- Los cuatro canales (2 min)}
+\begin{itemize}[leftmargin=1.4em]
+    \item ``Esto es lo mismo cuantificado para seis alturas de caída.''
+    \item Señala la columna $\alpha_{T_B}$: ``aquí está el plateau: sobre
+    $v\approx0.9$, la fracción cinética interna se clava en 0.21--0.24.
+    La fracción deja de depender de cuán fuerte golpeas --- señal de que
+    el contacto alcanza a termalizar'' (si pide detalle $\to$
+    \S\ref{sec:plateau}).
+    \item Señala $\alpha_{\Delta V_B}$: ``y este es el canal que nadie
+    había separado: la expansión anarmónica --- dilatación térmica
+    instantánea de la bola. Es tan grande como el cinético; es el virial
+    actuando.''
+    \item Señala la fila 1: ``impacto lento = casi elástico, 85\%
+    recuperado.''
+    \item Cierre con el bloque rojo: ``suma exacta 1, cierre medido mejor
+    que $10^{-4}$ --- la contabilidad es completa.''
+\end{itemize}
+
+\subsection*{Lámina 5 --- Validación contra 2012 (2 min; lámina delicada, tono de colaboración)}
+\begin{itemize}[leftmargin=1.4em]
+    \item ``Antes de extender, validamos contra ustedes. Como el capítulo
+    no publica $e_1$ numérico, digitalicé la Fig.~7 por color, calibrando
+    con las alturas iniciales conocidas.''
+    \item El hallazgo de convención: ``encontré que en el capítulo $h_0$
+    es la altura absoluta del CM --- las curvas parten en $h_0$ y
+    descansan en $\sim10.3\,\sigma$. La nuestra se mide desde el tope de
+    la caja. Misma etiqueta, caída distinta; hay que comparar a caída
+    efectiva igual.''
+    \item ``Así comparado: 0.90 ustedes, 0.92 nosotros en el régimen
+    suave --- excelente. A alta energía ustedes quedan un poco abajo,
+    consistente con la bola sin minimizar y el $N$ variable del
+    \texttt{create\_atoms}.''
+    \item \textsc{No} digas ``error de ustedes''; di ``diferencia de
+    convención documentada''.
+\end{itemize}
+
+\subsection*{Lámina 6 --- Atribución (2 min; LA lámina de la conversación)}
+\begin{itemize}[leftmargin=1.4em]
+    \item Léela casi literal: ``esto lo necesito confirmar contigo antes
+    de someter. El capítulo establece los canales, las alturas por
+    rebote, el rol de $U_c$ durante el contacto y la fusión. El borrador
+    presenta como contribución nueva: el plateau cuantificado
+    $\alpha_{T_B}\approx0.22$, la fórmula de equipartición con $N_c$, y
+    la escala $h^*$.''
+    \item Pregunta directa: ``¿esto coincide con tu recuerdo? ¿Algo de
+    esto viene de notas tuyas de la época que debamos citar?''
+    \item Escucha. Si algo era de él, la solución es simple y ya está
+    prevista: se cita como comunicación privada o pasa a la introducción
+    como idea previa. No es un conflicto, es limpieza de autoría.
+\end{itemize}
+
+\subsection*{Lámina 7 --- Equipartición (2.5 min; la lámina más ``mecánica estadística'')}
+\begin{itemize}[leftmargin=1.4em]
+    \item Panel (a): ``cada curva es un tamaño de bola. Los grandes (55,
+    79, 87) suben y se aplanan --- ese es el plateau. El de 13 (cuadrados
+    abiertos azules) nunca se aplana: demasiado rígido para termalizar en
+    $2\,\tau$ de contacto. Se comporta como molécula, no como sólido.''
+    \item Panel (b): ``el valor del plateau contra $N$. La fórmula es
+    puro conteo de grados de libertad: $3N-3$ de la bola contra $3N_c$
+    del piso.''
+    \item El límite: ``calibrando con $\alpha_{\rm bola}$ total sale
+    $N_c\approx N$ --- cada átomo de la bola recluta uno del piso --- y
+    eso da el límite $\alpha_{\rm bola}\to1/2$.''
+    \item La salvedad \textsc{antes} de que la encuentre él: ``los datos
+    de 79 y 87 dan 0.543, un pelo sobre $1/2$. Lo decimos en el paper:
+    probablemente la rotación, que está en $\alpha_{\rm bola}$ pero no es
+    un oscilador. Medir el momento angular es el siguiente paso.''
+\end{itemize}
+
+\subsection*{Lámina 8 --- \texorpdfstring{$h^*$}{h*} (1.5 min)}
+\begin{itemize}[leftmargin=1.4em]
+    \item ``Del plateau sale una escala: $h^*=T_B/Mg$. Primer rebote:
+    0.96 --- funciona. ¿Es un atractor? No: la razón cae a 0.18 porque la
+    altura decae geométricamente y $T_B$ casi no cambia. La bola termina
+    atrapada a menos de $1\,\sigma$ tras 23 rebotes.''
+    \item Artefacto: ``el desplome final a través de la red es un
+    artefacto del potencial repulsivo puro y está documentado como tal.''
+\end{itemize}
+
+\subsection*{Lámina 9 --- Adhesión (1.5 min)}
+\begin{itemize}[leftmargin=1.4em]
+    \item ``Con la atracción encendida, pega siempre: 24 de 24.''
+    \item ``$E_{\rm adh}$ escala como $N^{0.73}\approx$ área de contacto;
+    la masa como $N$. Por eso los grandes escapan más fácil: umbral
+    $\propto N^{-0.27}$.''
+    \item ``El valor absoluto del umbral es solo orden de magnitud --- a
+    esas velocidades la bola se funde, como mostraron ustedes con
+    $g(r)$.''
+\end{itemize}
+
+\subsection*{Lámina 10 --- Rigor y límites (1.5 min)}
+\begin{itemize}[leftmargin=1.4em]
+    \item Columna izquierda, el shift en una frase: ``descubrimos que sin
+    desplazar el potencial truncado, la contabilidad energética falla en
+    2--6\% por impacto --- puro artefacto de \emph{bookkeeping}, las
+    trayectorias no cambian. Con shift, cierre exacto.''
+    \item Columna derecha, sé el primero en decirlo: ``$T=0$, una
+    orientación, una trayectoria por punto: aún no hay barras de error
+    estadísticas. Eso define la extensión natural del trabajo, y está
+    declarado en el paper.''
+\end{itemize}
+
+\subsection*{Lámina 11 --- Plan editorial (1.5 min)}
+\begin{itemize}[leftmargin=1.4em]
+    \item ``Según lo que conversaron, apunté a la RBEF, sección Artigos
+    Gerais: física computacional con punto de vista didáctico. El
+    manuscrito ya cumple el protocolo: bilingüe, referencias en orden,
+    formato de la revista, y agregué una sección de actividades para el
+    aula.''
+    \item ``Además existe la versión de investigación en doble columna
+    (español e inglés) si después queremos un segundo paper con la
+    estadística completa.''
+    \item Flujo: tu revisión $\to$ arXiv (\texttt{physics.ed-ph}) $\to$
+    submissão $\to$ repo público.
+\end{itemize}
+
+\subsection*{Lámina 12 --- Decisiones (2 min; cierre operativo)}
+Recorre las 5 y anota sus respuestas:
+\begin{enumerate}[leftmargin=1.6em]
+    \item Atribución (viene de la lámina 6).
+    \item Idioma del envío (español está aceptado por la RBEF).
+    \item Su ORCID + visto bueno a arXiv.
+    \item Autor correspondiente y orden de autores.
+    \item ¿Guardamos la versión PRE para más adelante con la estadística?
+\end{enumerate}
+
+% =============================================================================
+\section{PARTE C --- Preguntas probables de Gonzalo (y tus respuestas)}
+% =============================================================================
+
+\subsection*{C1. ``¿Equipartición? Esto no está en equilibrio. ¿Con qué
+derecho usan el teorema?'' (la más probable de un mecánico estadístico)}
+\begin{respuesta}
+Correcto, no hay equilibrio ni ensamble --- hay \textsc{una} colisión.
+Usamos equipartición como \emph{ansatz de reparto}: si el tiempo de
+contacto basta para redistribuir la energía entre los modos dinámicamente
+accesibles, cada uno recibe en promedio lo mismo. No lo suponemos: lo
+\textsc{contrastamos}. La evidencia de que el reparto ocurre es el
+plateau (la fracción deja de depender de la energía inyectada) y de que
+\textsc{no} ocurre cuando no puede ocurrir: $N=13$, rígido, no plateau.
+La fórmula es fenomenológica con un parámetro calibrado ($N_c$); su
+mérito es predecir el \textsc{escalado} con $N$ y el límite $1/2$.
+\end{respuesta}
+
+\subsection*{C2. ``¿Y por qué la energía cinética interna equivale a la
+mitad de la interna total? ¿Virial?''}
+\begin{respuesta}
+Sí: para osciladores, $\langle KE\rangle=\langle PE\rangle$. Por eso
+$\alpha_{T_B}\approx\alpha_{\Delta V_B}$ en el plateau (0.22 vs
+0.21--0.33; la PE fluctúa más porque incluye la deformación anarmónica
+neta, no solo la oscilación).
+\end{respuesta}
+
+\subsection*{C3. ``¿Cómo definen temperatura de la bola si son 79
+átomos?''}
+\begin{respuesta}
+No la definimos: reportamos $T_B$, la KE interna, que es una cantidad
+mecánica bien definida sin hipótesis de equilibrio. Si uno \textsc{quiere}
+una temperatura instantánea, $T=2T_B/(3N-3)k_B$, pero el paper trabaja
+siempre con fracciones de energía, nunca con temperatura.
+\end{respuesta}
+
+\subsection*{C4. ``$3N-3$ y no $3N-6$, ¿por qué cuentan la rotación como
+modo interno?''}
+\begin{respuesta}
+Porque un impacto no perfectamente central transfiere momento angular;
+esa energía no está en el CM ni en la superficie, queda ``en la bola''.
+La contamos como interna, y decimos explícitamente que la rotación no es
+un oscilador --- probablemente explica el pequeño exceso sobre $1/2$.
+Para $N\geq13$ el cambio $3N-3\to3N-6$ mueve la fórmula menos que las
+otras incertezas.
+\end{respuesta}
+
+\subsection*{C5. ``El $e_1$ no es monótono con $h_0$ (0.55 en
+$25.9\,\sigma$ pero 0.63 en $41.8\,\sigma$). ¿Eso es física o ruido?''}
+\begin{respuesta}
+No lo sabemos aún, y lo decimos: con $T=0$ y una sola orientación hay
+\textsc{una} trayectoria por punto, sin estadística. Puede ser resonancia
+con la fase de la vibración interna al llegar al piso, o varianza de
+condición inicial. Es la primera prioridad del trabajo futuro (3--5
+réplicas con orientaciones aleatorias). Nota: la serie de ustedes en 2012
+también tiene un no-monótono en esa zona ($e_1=0.43$ en su tercera
+altura).
+\end{respuesta}
+
+\subsection*{C6. ``¿La superficie no es demasiado chica? ¿El fonón no
+rebota en el borde y vuelve?''}
+\begin{respuesta}
+La losa es $8\times8\times6$ celdas con las 2 capas de abajo congeladas y
+bordes periódicos laterales. En el tiempo hasta el primer apogeo
+($\sim25\,\tau$) la onda alcanza a recorrer la caja, así que
+$\alpha_{\rm surf}$ incluye energía que re-circula por los bordes
+periódicos --- posible subestimación del flujo saliente ``verdadero'' de
+una superficie semi-infinita. Es una limitación conocida de las MD de
+impacto; agrandar la losa y medir $\alpha_{\rm surf}(L)$ es un chequeo
+pendiente razonable. [Sé honesto: no lo hemos barrido.]
+\end{respuesta}
+
+\subsection*{C7. ``¿Termostato? ¿Cómo controlan $T$?''}
+\begin{respuesta}
+No hay termostato: NVE puro, $T$ inicial $=0$ exacto (velocidades cero,
+cúmulo minimizado). Toda la energía viene de la caída. Por eso la
+conservación de energía es \textsc{el} control de calidad, y por eso el
+asunto del shift importaba tanto.
+\end{respuesta}
+
+\subsection*{C8. ``¿Paso de tiempo? ¿Se conserva la energía en el
+impacto?''}
+\begin{respuesta}
+$\Delta t=5\times10^{-3}\,\tau$, velocity-Verlet. Validado midiendo la
+energía total (incluida la PE gravitatoria) a lo largo de un impacto
+completo: $|\Delta E|<0.03\,\eps\approx4\times10^{-4}E_0$. Ustedes usaron
+Beeman con $\Delta t$ 10 veces menor; con Verlet y potencial desplazado
+no hace falta.
+\end{respuesta}
+
+\subsection*{C9. ``¿Por qué la superficie se lleva tan poco? Uno
+esperaría acoplo fuerte al continuo de fonones.''}
+\begin{respuesta}
+Dos razones: (i)~impedancia --- el contacto dura $\sim2\,\tau$ y excita
+preferentemente los modos de la huella, no el continuo; (ii)~el canal
+dominante durante el contacto ($U_c$) es potencial de contacto, y esa
+energía \textsc{regresa} mayoritariamente a la bola al separarse (es lo
+que se ve en la barra gris de la lámina 3). El análisis de 2012, hecho
+durante el contacto, veía $U_c$ grande; nuestra partición al apogeo
+muestra su destino final. Ambas descripciones son compatibles: miden en
+instantes distintos.
+\end{respuesta}
+
+\subsection*{C10. ``¿Y esto es publicable en RBEF? Es una revista de
+enseñanza.''}
+\begin{respuesta}
+Sección ``Artigos Gerais'': acepta física
+teórica/computacional/experimental ``bajo un punto de vista didáctico,
+con temas poco discutidos en textos clásicos, a nivel accesible a no
+especialistas'' --- es exactamente este manuscrito. Sin costo de
+publicación, SciELO, acepta español. Y la versión de investigación queda
+disponible para una revista de física computacional cuando tengamos la
+estadística de orientaciones (ahí sí PRE o EPJ~B).
+\end{respuesta}
+
+\subsection*{C11. ``¿Qué pasa con $N$ intermedios? ¿19, 43?''}
+\begin{respuesta}
+Son las capas completas que faltan entre 13 y 55, justo donde ocurre la
+transición molécula$\to$sólido. Están en la lista de trabajo futuro; los
+cúmulos son triviales de generar con el mismo script.
+\end{respuesta}
+
+\subsection*{C12. ``¿El $N=2$ con $\alpha_{\rm surf}=0.18$? ¿Dónde se fue
+el resto?''}
+\begin{respuesta}
+$e_1=0.90\to\alpha_{\rm cm}=0.81$; $\alpha_{\rm surf}=0.18$;
+$\alpha_{\rm bola}\approx0.003$. Suma $\approx1$. El dímero vertical casi
+no acopla el golpe a su único modo de vibración (que es perpendicular al
+movimiento si cae ``acostado''): todo lo que no vuelve al CM se lo lleva
+el piso. Es el único caso donde la intuición macroscópica (``el piso
+absorbe'') es correcta --- porque la bola no tiene dónde guardar energía.
+\end{respuesta}
+
+% =============================================================================
+\section*{Chuleta de números (para tener a mano)}
+% =============================================================================
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Cantidad} & \textbf{Valor} \\
+\midrule
+Plateau $\alpha_{T_B}$ ($N=79$) & 0.21--0.24, arranca en $v\approx0.9\,\sigma/\tau$ \\
+$\alpha_{\Delta V_B}$ & 0.21--0.33 \\
+$\alpha_{\rm surf}$ & 0.07--0.16 \\
+$\alpha_{\rm bola}$ ($N=79,87$, plateau) & 0.543 (cota teórica $1/2$) \\
+$N_c$ calibrado & $\approx N$ (1.09 / 0.83 / 0.83 para 55/79/87) \\
+$h_1/h^*$ primer rebote & 0.96; cae a $\sim$0.18 en $n=20$--23 \\
+Atrapamiento & 23 rebotes, $t\approx660\,\tau$; colapso (artefacto) $t\approx713\,\tau$ \\
+$E_{\rm adh}$ & 52--209$\,\eps$; $\propto N^{0.73}$; umbral $\propto N^{-0.27}$ \\
+Conservación con shift & $|\Delta E|<0.03\,\eps\approx4\times10^{-4}E_0$; cierre $<10^{-4}$ \\
+Validación vs 2012 & $e_1$ 0.90 vs 0.92 (baja $E$); $-0.06$ a $-0.09$ (alta $E$) \\
+Costo & $\sim$1.5 min/rebote en notebook, 1 núcleo \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}
