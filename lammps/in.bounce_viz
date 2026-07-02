@@ -1,0 +1,119 @@
+# ==============================================================================
+# in.bounce_viz — Script de visualización
+#
+# Corre un impacto con dump de trayectoria para ParaView/OVITO.
+# Caso seleccionado: h0=41.47σ (alta energía, bola se deforma visiblemente)
+#
+# Uso:
+#   cd data/outputs/reprod_2012/h0_41.47   (o cualquier directorio con table_repulsiva.txt)
+#   lmp -in ../../../../lammps/in.bounce_viz -var h0 41.47 -log viz.log -screen none
+#
+# Salida:
+#   traj.lammpstrj  — trayectoria LAMMPS custom, legible por ParaView y OVITO
+#
+# En ParaView:
+#   File → Open → traj.lammpstrj  (lector: "LAMMPS Dump Reader")
+#   Colorear por "velmag" (rapidez) o por "type" (bola vs superficie)
+# ==============================================================================
+
+units           lj
+atom_style      atomic
+boundary        p p f
+newton          on
+
+# --- Variables ----------------------------------------------------------------
+variable    h0      index 41.47
+variable    g       index 0.026
+variable    a0      equal 1.5496
+variable    Nx      equal 8
+variable    Ny      equal 8
+variable    Nz      equal 6
+variable    rball   equal 2.64
+variable    dt      equal 0.005
+
+# Tiempo: 150 tau = suficiente para el primer impacto completo + apogeo
+# Para h0=41.47, primer rebote ocurre ~t=56 tau, apogeo ~t=110 tau
+variable    t_viz   index 200.0
+variable    steps_viz equal round(v_t_viz/v_dt)
+
+# Dump cada 50 pasos = 0.25 tau/frame → ~800 frames en 200 tau
+# Suficiente resolución temporal para ver la deformación del impacto
+variable    dump_freq equal 50
+
+# --- Caja y superficie -------------------------------------------------------
+lattice         fcc $(4.0/(v_a0*v_a0*v_a0))
+region          box_surf block 0 ${Nx} 0 ${Ny} 0 ${Nz} units lattice
+create_box      2 box_surf
+create_atoms    1 box
+
+mass            1 1.0
+mass            2 1.0
+
+variable    z_surf_top  equal $(zhi)
+variable    z_ball_cm   equal $(v_z_surf_top + v_h0)
+variable    z_box_top   equal $(v_z_ball_cm + v_rball + 5.0)
+change_box  all z final -0.5 ${z_box_top} units box
+
+# --- Bola --------------------------------------------------------------------
+variable    Lx  equal xhi-xlo
+variable    Ly  equal yhi-ylo
+region      ball_region sphere $(v_Lx/2) $(v_Ly/2) ${z_ball_cm} ${rball} units box
+create_atoms 2 region ball_region
+
+# --- Potenciales -------------------------------------------------------------
+pair_style  hybrid lj/cut 2.5 table linear 5000
+pair_coeff  1 1  lj/cut 1.0 1.0 2.5
+pair_coeff  2 2  lj/cut 1.0 1.0 2.5
+pair_coeff  1 2  table table_repulsiva.txt REPULSIVE_LJ
+
+# --- Grupos ------------------------------------------------------------------
+group       surface type 1
+group       ball    type 2
+
+variable    z_fixed_top equal 2.0
+region      reg_fixed block INF INF INF INF 0 ${z_fixed_top} units lattice
+group       fixed_surf  region reg_fixed
+group       mobile_surf subtract surface fixed_surf
+
+# --- Minimización T=0 --------------------------------------------------------
+fix         f_fix_bot   fixed_surf  setforce 0.0 0.0 0.0
+fix         f_tmp_ball  ball        setforce 0.0 0.0 0.0
+minimize    1.0e-6 1.0e-8 5000 50000
+unfix       f_tmp_ball
+
+fix         f_tmp_surf  mobile_surf setforce 0.0 0.0 0.0
+minimize    1.0e-6 1.0e-8 5000 50000
+unfix       f_tmp_surf
+
+unfix       f_fix_bot
+velocity    all set 0.0 0.0 0.0
+
+# --- Computes para colorear en visualización ---------------------------------
+# velocidad de cada átomo (magnitud) → color de fonones en superficie
+compute     peratom  all  pe/atom
+compute     keratom  all  ke/atom
+
+# --- Dinámica ----------------------------------------------------------------
+fix         f_freeze_fixed  fixed_surf  setforce 0.0 0.0 0.0
+fix         f_nve           all         nve
+fix         f_wall_bot  mobile_surf  wall/reflect zlo EDGE
+fix         f_grav  ball    gravity ${g} vector 0 0 -1
+
+# --- Dump de trayectoria (formato LAMMPS custom) -----------------------------
+# Campos: id type x y z vx vy vz c_keratom c_peratom
+# En ParaView: colorear por "c_keratom" para ver excitación de fonones
+dump    viz_dump all custom ${dump_freq} traj.lammpstrj id type x y z vx vy vz c_keratom c_peratom
+dump_modify viz_dump sort id
+
+# --- Thermo mínima -----------------------------------------------------------
+variable    time  equal  step*${dt}
+variable    Zcm   equal  xcm(ball,z)
+timestep    ${dt}
+thermo      1000
+thermo_style custom step time v_Zcm etotal
+thermo_modify norm no lost warn
+
+# --- Correr ------------------------------------------------------------------
+run     ${steps_viz}
+
+print "Dump guardado en traj.lammpstrj (${steps_viz} pasos, ${dump_freq} pasos/frame)"
