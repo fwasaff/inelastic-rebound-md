@@ -21,14 +21,20 @@ nanocúmulo Lennard-Jones sobre una superficie FCC bajo gravedad constante.
 
 **Observable clave:** α_TB ≈ 0.22 constante para v > 0.9 σ/τ (con N=79).
 El canal anarmónico α_VB ≈ α_TB (equipartición aproximada).
-La hipótesis a verificar para el NUEVO paper:
+
+**REFORMULACIÓN tras arbitraje simulado (2026-07-03, ver docs/arbitraje/carta_respuesta_referi.md):**
+La equipartición se aplica a la energía DISIPADA, no a E₀. Cantidad correcta:
 
 ```
-α_TB(N) = (3N - 3) / (3N - 3 + 3·N_c)
+f_ball = α_ball/(α_ball + α_surf) = (3N-3)/(3N-3 + 3·N_c^ef)
 ```
 
-donde N_c ≈ 290 es el número efectivo de átomos de superficie en la huella.
-Predicciones: α_TB(13)≈0.040, α_TB(55)≈0.157, α_TB(79)≈0.212, α_TB(87)≈0.229.
+con N_c^ef ≈ 25 ± 8 CONSTANTE (no ≈290, no =N). Consecuencia: f_ball → 1
+(no 1/2) para N grande. N_c medido directamente en el dump da TRES escalas:
+N_c^ef≈25 << N_c^geom≈45-90 << N_c^part≈300-410 (la superficie es un
+reservorio ancho pero casi elástico). El viejo N_c≈290 coincidía por
+accidente con N_c^part. La bola es sólida para v≲1.7 y se funde en v≈2.
+Manuscrito revisado: docs/manuscrito/borrador_rbef_v2.tex.
 
 **Nota sobre N:** Los shells FCC completos centrados en un sitio de red son
 N=13, 55, 79, 87, ... El shell completo N=79 (r < 2.45σ) es el cluster
@@ -73,7 +79,13 @@ inelastic-rebound-md/
 │   ├── analizar_reprod_fisica.py       ← partición energética (4 figuras)
 │   └── analizar_gr.py                  ← función de distribución g(r) de la bola
 ├── docs/
-│   └── borrador_rebotes_gravedad.tex   ← borrador del artículo
+│   ├── manuscrito/
+│   │   ├── borrador_rbef_v2.tex        ← manuscrito ACTIVO (RBEF, post-arbitraje)
+│   │   ├── einstein_approach.tex       ← nota teórica complementaria
+│   │   └── historico/                  ← borradores previos (rbef, rbf, rbf_en, rebotes_gravedad)
+│   ├── arbitraje/                      ← informes de arbitraje simulado + carta de respuesta
+│   ├── reunion_gonzalo/                ← material de reuniones (presentación, guiones, videos)
+│   └── figuras_rbef/                   ← figuras compartidas entre manuscrito/ y reunion_gonzalo/
 └── data/
     └── outputs/
         └── reprod_2012/                ← resultados (ignorado por git)

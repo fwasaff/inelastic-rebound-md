@@ -1,0 +1,427 @@
+% =============================================================================
+% borrador_estudio_reunion.tex — Documento de estudio para la reunión con
+% Gonzalo Gutiérrez (martes). Sincronizado con presentacion_gonzalo.pdf
+% (16 láminas, versión v2 post-arbitraje simulado).
+%
+% NOTA: este documento REEMPLAZA la Parte B de guion_presentacion.tex, que
+% describe el deck antiguo de 12 láminas con la física pre-corrección
+% (equipartición sobre E0 con Nc=N). NO estudiar esa versión.
+%
+% Compilar (desde docs/): pdflatex borrador_estudio_reunion.tex (dos pasadas)
+% =============================================================================
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!50!black]{hyperref}
+
+\newcommand{\eps}{\varepsilon}
+\newcommand{\clave}[1]{\textcolor{red!60!black}{\textbf{#1}}}
+\newcommand{\decir}[1]{\begin{quote}\itshape``#1''\end{quote}}
+
+\title{\vspace{-1.2cm}Borrador de estudio --- reunión con Gonzalo\\
+\large Guion de la presentación (16 láminas, v2) + física de respaldo +
+preguntas probables}
+\author{Felipe Wasaff}
+\date{Julio 2026}
+
+\begin{document}
+\maketitle
+
+\section*{La historia en tres frases (memorízala)}
+
+\begin{enumerate}[leftmargin=1.6em]
+    \item La energía que un impacto ``pierde'' no se va al piso: queda
+    mayoritariamente \clave{dentro de la bola}, mitad cinética
+    ($\alpha_{T_B}\approx0.22$, plateau) y mitad anarmónica
+    ($\Delta V_B$, virial).
+    \item La equipartición correcta se aplica a la \clave{energía
+    disipada}, no a $E_0$:
+    $f_{\rm ball}=(3N-3)/(3N-3+3N_c^{\rm ef})$ con
+    $N_c^{\rm ef}=25\pm8$ constante $\Rightarrow$ $f_{\rm ball}\to1$
+    para $N$ grande (no $1/2$).
+    \item $N_c^{\rm ef}\approx25$ es chico porque la superficie es un
+    reservorio \clave{ancho pero casi elástico}: cientos de átomos se
+    mueven durante el contacto ($N_c^{\rm part}\approx300$--$410$,
+    medido) pero devuelven casi toda la energía al despegue.
+\end{enumerate}
+
+\noindent\textbf{Estrategia narrativa:} contar el error corregido
+explícitamente. El argumento viejo ($N_c=N$, $\alpha_{\rm bola}\to1/2$)
+era inconsistente; el arbitraje simulado lo detectó; la medición directa
+de $N_c$ lo descartó. Presentarlo así demuestra control metodológico y se
+anticipa a la objeción natural de cualquier físico estadístico ---
+incluida la que haría el propio Gonzalo.
+
+% =============================================================================
+\section{Guion lámina por lámina ($\sim$45 min de exposición + discusión)}
+% =============================================================================
+
+\subsection*{Lámina 1 --- Portada (15 s)}
+\decir{Te traigo el trabajo completo del rebote: la reproducción del
+2012, lo nuevo que encontramos, una corrección importante que hicimos en
+el camino, y cinco decisiones que necesito cerrar contigo hoy.}
+
+\subsection*{Lámina 2 --- De dónde venimos y qué hicimos (2 min)}
+\begin{itemize}[leftmargin=1.4em]
+    \item Bloque derecho primero: $e<1$ dice \textsc{cuánta} energía no
+    vuelve; nosotros respondemos \textsc{dónde} queda.
+    \item Izquierda, sin detenerse: partición al primer apogeo, 4
+    canales con cierre exacto; barrido
+    $N\in\{1,2,7,13,55,79,87\}\times6$ alturas $\times$
+    \clave{5 orientaciones = 210 corridas}, todo media$\,\pm\,\sigma$;
+    $N_c$ \clave{medido} en el dump; estado de la bola, losa doble,
+    simulación larga, adhesión.
+    \item Puente: ``el experimento cabe en un video de 30 segundos.''
+\end{itemize}
+
+\subsection*{Lámina 3 --- Video 1: rebote sólido (3 min)}
+\texttt{videos\_reunion/video\_N79\_v1.16\_solido.mp4} ($N{=}79$,
+$h_0{=}28\,\sigma$, $v_{\rm imp}{=}1.16$; impacto en $t\approx46\,\tau$,
+apogeo en $t\approx72\,\tau$; color = KE por átomo).
+\begin{itemize}[leftmargin=1.4em]
+    \item Deja correr el video una vez completo, sin hablar.
+    \item Segunda pasada, narrada: ``mira la onda de compresión que entra
+    a la bola en el impacto; los fonones que radian en la losa; y al
+    separarse, la bola queda \emph{moteada}: caliente por dentro.''
+    \item La figura estática (\texttt{fig\_sequence}) queda en pantalla:
+    (a) caída, (b) compresión máxima, (c) separación, (d) apogeo.
+    \item Remate: ``la intuición `se disipa en el suelo' falla: el piso
+    se queda con menos del 15\%.''
+\end{itemize}
+
+\subsection*{Lámina 4 --- Los cuatro canales (3 min)}
+\begin{itemize}[leftmargin=1.4em]
+    \item ``Lo mismo, cuantificado: seis alturas, cinco orientaciones
+    cada una, media y desviación.''
+    \item Columna $\alpha_{T_B}$: \clave{plateau $\approx0.22$ para
+    $0.9<v\lesssim1.7$} --- la fracción deja de depender de cuán fuerte
+    golpeas; señal de termalización interna.
+    \item Columna $\alpha_{\Delta V_B}$: canal anarmónico comparable al
+    cinético ($T_B\approx\Delta V_B$: virial de sólido casi armónico).
+    \item Cierre: $|\sum\alpha_i-1|<10^{-4}$, \clave{medido canal por
+    canal, no impuesto}.
+    \item Ojo: el límite superior $v\lesssim1.7$ se justifica en la
+    lámina 11 (fusión); si pregunta antes, adelantar ``la bola se funde a
+    $v\approx2$, lo vemos en dos láminas''.
+\end{itemize}
+
+\subsection*{Lámina 5 --- Control de calidad I: conservación (2 min)}
+\begin{itemize}[leftmargin=1.4em]
+    \item ``Primera pregunta obligada de cualquier simulador: ¿se
+    conserva la energía? Sí: $|\Delta E|=0.023\,\eps=4.3\times10^{-4}E_0$
+    en $400\,\tau$, NVE, $\Delta t=5\times10^{-3}\,\tau$.''
+    \item Panel (b): $U_c$ es \clave{transitorio} (solo existe durante el
+    contacto y regresa a la bola); $T_B$ y $\Delta V_B$ quedan,
+    aproximadamente iguales.
+    \item Anécdota técnica que da credibilidad: sin
+    \texttt{pair\_modify shift yes} el cierre fallaba 2--6\% de $E_0$
+    (saltos de $\pm0.016\,\eps$ por par al cruzar $r_c$). Trayectorias
+    idénticas; pura contabilidad.
+\end{itemize}
+
+\subsection*{Lámina 6 --- Control de calidad II: termalización (2 min)}
+\begin{itemize}[leftmargin=1.4em]
+    \item Panel (a): salto de $T_{\rm ef}$ en el impacto y equilibrio
+    interno en $\sim10\,\tau$ de contacto $\gg$ período vibracional ---
+    \clave{esta es la condición que autoriza hablar de equipartición}.
+    \item Panel (b): $T_{\rm ef}$ en el apogeo vs $v_{\rm imp}$: la bola
+    queda \emph{fría} respecto de la fusión hasta $v\approx1.7$.
+\end{itemize}
+
+\subsection*{Lámina 7 --- Control de calidad III: validación contra su
+Fig.~7 (3 min; tono de colaboración)}
+\begin{itemize}[leftmargin=1.4em]
+    \item ``Antes de extender, validamos contra ustedes. Digitalicé tu
+    Fig.~7 por color de píxel, calibrada con las alturas conocidas.''
+    \item El hallazgo de convención: en 2012 $h_0$ es la altura
+    \clave{absoluta} del CM ($z_{\rm rest}\approx10.3\,\sigma$); nosotros
+    medimos desde el tope de la losa. Misma etiqueta, caída distinta.
+    \item Comparando a caída efectiva igual: \clave{0.90 vs 0.92} en el
+    régimen cuasi-elástico; a alta energía diferencias 0.06--0.09,
+    dentro de la dispersión entre orientaciones ($\pm0.05$--$0.14$) y
+    explicables (cúmulo sin minimizar, $N$ variable 79--84, Beeman).
+    \item \textsc{Nunca} decir ``error de ustedes''; decir ``lección de
+    convenciones, documentada en la Sec.~3c''.
+\end{itemize}
+
+\subsection*{Lámina 8 --- El argumento que corregimos (4 min; lámina
+bisagra)}
+Esta lámina es la más importante de contar bien. Guion casi literal:
+\decir{La primera versión del manuscrito aplicaba equipartición sobre
+$E_0$ con $N_c=N$, y predecía $\alpha_{\rm bola}\to1/2$. Sometimos el
+texto a un arbitraje simulado y detectó tres inconsistencias: el CM no
+participa del reparto, $N_c$ tenía tres calibraciones distintas según la
+sección, y la predicción $\alpha_{\rm surf}\to1/2$ no está en los datos.
+La corrección: la única energía que se reparte es la \textbf{disipada},
+$1-\alpha_{\rm cm}$. Eso define
+$f_{\rm ball}=\alpha_{\rm bola}/(\alpha_{\rm bola}+\alpha_{\rm surf})$,
+y el conteo de modos da $f_{\rm ball}=(3N-3)/(3N-3+3N_c^{\rm ef})$. Con
+$N_c^{\rm ef}=25\pm8$ constante, $f_{\rm ball}\to1$: la bola grande se
+queda con casi todo lo que disipa.}
+\begin{itemize}[leftmargin=1.4em]
+    \item Si pregunta quién fue el árbitro: arbitraje simulado interno;
+    el informe está en \texttt{docs/} del repo
+    (\texttt{informe\_arbitraje\_simulado}). Mostrarlo si lo pide --- es
+    evidencia de método, no debilidad.
+\end{itemize}
+
+\subsection*{Lámina 9 --- El resultado central: $f_{\rm ball}(N)$ (3 min)}
+\begin{itemize}[leftmargin=1.4em]
+    \item Tabla: $f_{\rm ball}$ crece de $0.34$ ($N{=}2$) a $0.77$
+    ($N{=}87$); ajuste global con \clave{una sola constante}
+    $N_c^{\rm ef}=25\pm8$.
+    \item Ser honesto sin que lo pida: ``$N_c^{\rm ef}$ es
+    \emph{ajustado}, pero acotado por dos mediciones directas
+    independientes --- siguiente lámina.''
+    \item $N=7$ y $N=13$: régimen molecular, no termalizan; la
+    \clave{excepción que confirma el mecanismo}. Acuerdo cuantitativo
+    para $N\ge55$, cualitativo por debajo. (Pendiente v3: excluirlos del
+    ajuste o reportar $\chi^2$/dof --- está en la lámina 15.)
+\end{itemize}
+
+\subsection*{Lámina 10 --- Las tres escalas de $N_c$ (3 min)}
+\begin{itemize}[leftmargin=1.4em]
+    \item La jerarquía medida en el dump ($v\approx1.47$):
+    \[ N_c^{\rm ef}\approx25 \;\ll\; N_c^{\rm geom}\approx45\text{--}90
+       \;\ll\; N_c^{\rm part}\approx300\text{--}410. \]
+    \item La frase que resume el paper: \decir{la superficie es un
+    reservorio ancho pero casi elástico: cientos de átomos se mueven
+    transitoriamente, pero devuelven la energía al despegue; el sumidero
+    neto equivale a solo $\sim$25 osciladores.}
+    \item El viejo $N_c\approx290$ coincidía \clave{por accidente} con
+    $N_c^{\rm part}$: número correcto, balance equivocado.
+\end{itemize}
+
+\subsection*{Lámina 11 --- Video 2 + fusión (3 min)}
+\texttt{videos\_reunion/video\_N79\_v2.0\_fusion.mp4} ($v_{\rm imp}
+\approx2.0$; impacto en $t\approx78\,\tau$, apogeo $t\approx124\,\tau$).
+\begin{itemize}[leftmargin=1.4em]
+    \item ``A $v\approx2$ el rebote es cualitativamente distinto: mira
+    cómo la bola pierde la forma.''
+    \item $g(r)$: a $v=1.47$ picos FCC nítidos (contraste $\approx11$);
+    a $v=2.03$ colapsada (contraste $\approx2$) --- \clave{fundida},
+    consistente con la fusión que el 2012 reportó.
+    \item Matiz importante: a $v=2.03$, $T_{\rm ef}=0.28$ queda
+    \emph{bajo} el rango de fusión ($0.30$--$0.35$); el criterio decisivo
+    es $g(r)$, no $T_{\rm ef}$.
+    \item Consecuencia: plateau y conteo de modos se restringen a
+    $v\lesssim1.7$.
+\end{itemize}
+
+\subsection*{Lámina 12 --- Tamaño finito de la losa (2 min)}
+\begin{itemize}[leftmargin=1.4em]
+    \item ``El árbitro tenía razón'': con losa $16\times16\times12$,
+    $\alpha_{\rm surf}$ sube $0.083\to0.143$ ($\sim0.06\,E_0$ de sesgo
+    por fonones reflejados) y $f_{\rm ball}$ baja $0.87\to0.75$.
+    \item \clave{La conclusión no cambia}: $f_{\rm ball}=0.75$ aun con
+    losa doble. Sesgo declarado junto a los datos.
+    \item Punto débil conocido: es \emph{un} caso de control; un segundo
+    (otro $N$ u otra altura) son $\sim$30 min de cómputo si lo pide.
+\end{itemize}
+
+\subsection*{Lámina 13 --- $h^*=T_B/(Mg)$ (2 min)}
+\begin{itemize}[leftmargin=1.4em]
+    \item Primer rebote: $h_1/h^*=0.96$ --- la escala funciona
+    (predicción de su 2012).
+    \item No es atractor: la razón cae monótonamente; atrapamiento tras
+    23 rebotes ($t\approx660\,\tau$).
+    \item El ``colapso'' final a través de la red: artefacto del
+    potencial repulsivo puro (sin barrera lateral), documentado como
+    ejercicio de análisis crítico.
+\end{itemize}
+
+\subsection*{Lámina 14 --- Adhesión (2 min)}
+\begin{itemize}[leftmargin=1.4em]
+    \item Con $c_{ps}=1$: 24/24 casos adheridos hasta $v=2$.
+    \item $E_{\rm adh}\propto N^{0.73}$ ($\approx$ área de contacto
+    $N^{2/3}$); masa $\propto N$ $\Rightarrow$ los grandes escapan más
+    fácil ($h_0^*\propto N^{-0.27}$) --- conexión con \emph{soft
+    landing}.
+    \item Umbral extrapolado $h_0^*\sim10^2$--$10^3\,\sigma$: solo orden
+    de magnitud (a esas $v$ la bola se funde).
+\end{itemize}
+
+\subsection*{Lámina 15 --- Estado editorial (2 min)}
+\begin{itemize}[leftmargin=1.4em]
+    \item Hecho: 5 puntos mayores del arbitraje resueltos \clave{con
+    simulaciones nuevas}; manuscrito v2 compila (9 págs), protocolo RBEF
+    cumplido (bilingüe, \texttt{bibitem} en orden, sin TikZ).
+    \item Falta ($\approx$1 h, nada es cómputo): su ORCID (bloqueante),
+    frase sobre $N=7$ en el ajuste, criterio de plateau explícito,
+    recorte del resumen, ``surprising'' del abstract EN, párrafo de
+    público objetivo.
+\end{itemize}
+
+\subsection*{Lámina 16 --- Decisiones (5 min; cierre operativo)}
+Recorrer las 5 y \clave{anotar las respuestas}:
+\begin{enumerate}[leftmargin=1.6em]
+    \item \textbf{Atribución}: plateau $\alpha_{T_B}$, fórmula de
+    equipartición sobre disipada, $h^*$ --- ¿contribución nueva o notas
+    previas suyas? Si algo es suyo, se cita; no es conflicto, es
+    limpieza de autoría.
+    \item \textbf{ORCID} de Gonzalo (único bloqueante logístico).
+    \item \textbf{Idioma} del envío (español aceptado por RBEF).
+    \item \textbf{Orden de autores} / correspondencia (hoy: Wasaff,
+    Gutiérrez).
+    \item \textbf{Flujo}: ¿arXiv \texttt{physics.ed-ph} simultáneo?
+    ¿Versión extendida (doble columna) para una revista de física
+    computacional después?
+\end{enumerate}
+
+% =============================================================================
+\section{Física de respaldo (versión v2 --- estudiar esta, no la vieja)}
+% =============================================================================
+
+\subsection{Los cuatro canales y el cierre}
+Al primer apogeo, $E_0=KE$ de impacto se reparte en
+\[ \alpha_{\rm cm}=e_1^2=\frac{h_1}{h_0},\qquad
+   \alpha_{T_B}=\frac{T_B}{E_0},\qquad
+   \alpha_{\Delta V_B}=\frac{\Delta V_B}{E_0},\qquad
+   \alpha_{\rm surf}=\frac{\Delta E_{\rm surf}}{E_0}, \]
+con $\alpha_{\rm bola}\equiv\alpha_{T_B}+\alpha_{\Delta V_B}$ y cierre
+medido $|\sum\alpha_i-1|<10^{-4}$. Cada canal se mide
+independientemente en el dump; la suma no está impuesta.
+
+\subsection{El plateau}
+Para $0.9<v_{\rm imp}\lesssim1.7\,\sigma/\tau$ (y $N\ge55$),
+$\alpha_{T_B}$ es constante $\approx0.22$: la \emph{fracción} de energía
+que termina como KE interna no depende de la violencia del impacto.
+Interpretación: el contacto ($\sim10\,\tau$) dura decenas de períodos
+vibracionales y la bola termaliza internamente; el reparto queda fijado
+por el conteo de modos, no por $E_0$. Por debajo de $v\approx0.9$:
+régimen cuasi-elástico. Por encima de $v\approx1.7$: fusión.
+
+\subsection{Equipartición sobre la energía disipada (la corrección)}
+El CM no participa del reparto: es un modo macroscópico que \emph{se
+lleva} $\alpha_{\rm cm}$. Lo que se reparte entre modos es lo disipado,
+$1-\alpha_{\rm cm}$, entre los $3N-3$ modos internos de la bola y los
+$3N_c^{\rm ef}$ grados efectivos del sumidero neto de la superficie:
+\[ f_{\rm ball}\equiv
+   \frac{\alpha_{\rm bola}}{\alpha_{\rm bola}+\alpha_{\rm surf}}
+   =\frac{3N-3}{3N-3+3N_c^{\rm ef}},\qquad N_c^{\rm ef}=25\pm8. \]
+Límites: $f_{\rm ball}\to1$ para $N\to\infty$ (la superficie neta no
+crece con $N$); validez declarada: bola fría, sin adhesión, superficie
+cristalina casi elástica, un solo impacto. No se extrapola a pelotas
+macroscópicas.
+
+\subsection{Las tres escalas de $N_c$ (todas con significado físico)}
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Escala & Valor & Cómo se obtiene & Qué significa \\
+\midrule
+$N_c^{\rm ef}$   & $25\pm8$    & ajuste global de $f_{\rm ball}(N)$ & sumidero \emph{neto} \\
+$N_c^{\rm geom}$ & 45--90      & huella geométrica en el dump       & contacto directo \\
+$N_c^{\rm part}$ & 300--410    & átomos con KE $>$ umbral           & participación transitoria \\
+\bottomrule
+\end{tabular}
+\end{center}
+La jerarquía $N_c^{\rm ef}\ll N_c^{\rm geom}\ll N_c^{\rm part}$ es el
+contenido físico: reservorio ancho, casi elástico.
+
+\subsection{$T_B\approx\Delta V_B$: el virial}
+En un sólido casi armónico, $\langle KE\rangle=\langle\Delta
+PE\rangle$ por modo. Que los dos canales internos salgan iguales
+(visible en \texttt{fig\_conservacion}b y en las tablas) es evidencia
+independiente de termalización interna --- no un supuesto.
+
+\subsection{Números de contexto}
+Unidades de argón: $\eps\approx0.0104$~eV, $\sigma\approx3.4$~\AA,
+$\tau\approx2.15$~ps. Contacto efectivo $z_0\approx11.6$--$11.8\,\sigma$;
+$g=0.026\,\sigma/\tau^2$; $\Delta t=0.005\,\tau$. Shells FCC completos:
+$N=13,55,79,87$ ($N{=}79$: $r<2.45\,\sigma$, cluster canónico). El
+``$N=83$'' antiguo era artefacto de \texttt{create\_atoms} con centro
+fuera de sitio de red.
+
+% =============================================================================
+\section{Preguntas probables y respuestas (resumen operativo)}
+% =============================================================================
+Versión condensada; el detalle completo está en
+\texttt{docs/plan\_reunion\_gonzalo.md} (imprimirlo también).
+
+\begin{description}[leftmargin=1.2em,style=nextline]
+    \item[¿Por qué sus $e_1$ no coinciden con mi Fig.~7?] Convención de
+    $h_0$ (absoluta vs desde el tope de la losa). A caída efectiva
+    igual: 0.90 vs 0.92; resto dentro de la dispersión entre
+    orientaciones.
+    \item[El 2012 ya mostraba que $U_c$ domina. ¿Qué agregan?] El 2012
+    describe el balance \emph{durante} el contacto; nosotros la
+    partición \emph{al apogeo}, cuando los canales ya se separaron.
+    $U_c$ es transitorio y regresa a la bola. Nuevo: 4 $\alpha$ con
+    cierre, plateau, equipartición sobre disipada, $N_c$ medido, $h^*$,
+    adhesión.
+    \item[¿$N_c^{\rm ef}$ es medido o ajustado?] Ajustado --- un
+    parámetro global sobre $f_{\rm ball}(N)$, acotado por dos mediciones
+    directas ($N_c^{\rm geom}$, $N_c^{\rm part}$). No sobrevender.
+    \item[¿Equipartición sin equilibrio?] Aproximada, en el subsistema
+    que sí termaliza durante el contacto. Dos evidencias:
+    $T_B\approx\Delta V_B$ y el éxito del conteo de modos para
+    $N\ge55$. Los fallos ($N=7,13$) son los que no termalizan.
+    \item[¿$f_{\rm ball}\to1$ vale en el límite macroscópico?] No se
+    extrapola: régimen declarado (fría, sin adhesión, cristalina, un
+    impacto). El punto es que el reservorio interno crece como $3N-3$ y
+    el neto de la superficie no crece.
+    \item[¿La losa no es muy chica?] Correcto y cuantificado: sesgo
+    $\sim0.06\,E_0$ en $\alpha_{\rm surf}$; $f_{\rm ball}$ $0.87\to0.75$
+    con losa doble; conclusión intacta.
+    \item[¿La bola sigue sólida?] Sí hasta $v\approx1.7$ (criterio
+    $g(r)$, contraste $\approx11$ vs $\approx2$ fundida). A $v=2.03$,
+    $T_{\rm ef}=0.28<T_{\rm fus}$: el criterio decisivo es $g(r)$.
+    \item[¿Barras de error?] 210 corridas (5 orientaciones); todo
+    media$\,\pm\,\sigma$. La dispersión entre orientaciones es grande y
+    es parte del mensaje (sin promediar, el ruido parece física).
+    \item[¿Rotación / momento angular?] No medido; declarado futuro
+    (\texttt{compute angmom} es una línea). Está dentro de $T_B$, no
+    afecta el cierre.
+    \item[¿Temperatura inicial finita?] Futuro. $T=0$ aísla el
+    mecanismo; el plateau debería sobrevivir mientras
+    $T\ll T_{\rm fus}$.
+    \item[¿Por qué RBEF?] Ángulo pedagógico genuino (corre en un
+    notebook, actividades, repo público), sin costos, acceso abierto.
+    La versión de investigación existe para una segunda revista ---
+    decisión 5.
+\end{description}
+
+% =============================================================================
+\section*{Chuleta de números}
+% =============================================================================
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+Plateau & $\alpha_{T_B}\approx0.22$ ($0.9<v\lesssim1.7$, $N\ge55$) \\
+Equipartición & $f_{\rm ball}=(3N-3)/(3N-3+3N_c^{\rm ef})$, $N_c^{\rm ef}=25\pm8$ \\
+Tres escalas & $25\ll45$--$90\ll300$--$410$ (ef / geom / part) \\
+$f_{\rm ball}$ medidos & 0.34 (N2), 0.55 (N7), 0.38 (N13), 0.49 (N55), 0.70 (N79), 0.77 (N87) \\
+Conservación & $|\Delta E|=0.023\,\eps=4.3\times10^{-4}E_0$ en $400\,\tau$; cierre $<10^{-4}$ \\
+Validación 2012 & $e_1$: 0.90 (2012) vs 0.92 (2026) cuasi-elástico; $z_{\rm rest}\approx10.3\,\sigma$ \\
+Losa doble & $\alpha_{\rm surf}$: $0.083\to0.143$; $f_{\rm ball}$: $0.87\to0.75$ \\
+Fusión & sólida $v\le1.47$ (contraste 11); fundida $v=2.03$ (contraste 2); $T_{\rm fus}^*\approx0.30$--$0.35$ \\
+$h^*$ & $h_1/h^*=0.96$ primer rebote; atrapamiento tras 23 rebotes ($t\approx660\,\tau$) \\
+Adhesión & 24/24 pegados; $E_{\rm adh}\propto N^{0.73}$; $h_0^*\propto N^{-0.27}$ \\
+Estadística & 7 tamaños $\times$ 6 alturas $\times$ 5 orientaciones = 210 corridas \\
+Videos & sólido: impacto $46\,\tau$, apogeo $72\,\tau$ / fusión: impacto $78\,\tau$, apogeo $124\,\tau$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Checklist del día anterior}
+\begin{itemize}[leftmargin=1.4em]
+    \item[$\square$] Probar \texttt{presentacion\_gonzalo.pdf} y los 2
+    videos en el notebook/proyector.
+    \item[$\square$] Imprimir \texttt{borrador\_rbef\_v2.pdf} (9 págs) +
+    este borrador + \texttt{plan\_reunion\_gonzalo.md}.
+    \item[$\square$] \texttt{git push} --- repo al día.
+    \item[$\square$] A mano: \texttt{tabla\_orient.txt},
+    \texttt{fig\_conservacion.pdf}, \texttt{fig\_termalizacion.pdf},
+    informe de arbitraje simulado.
+\end{itemize}
+
+\end{document}
