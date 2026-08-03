@@ -27,6 +27,11 @@ build/
 *.eps
 !docs/**/*.png
 
+# Media derivada (regenerable con scripts/render_video_*.py sobre los dumps;
+# el podcast es un artefacto de NotebookLM, no un resultado)
+*.mp4
+*.mp3
+
 # Editor
 .vscode/
 .idea/
