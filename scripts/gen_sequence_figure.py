@@ -33,12 +33,13 @@ from PIL import Image
 
 import sys
 LANG = "en" if "--en" in sys.argv else "es"
+CH4  = "--ch4" in sys.argv   # 4 canales alpha del manuscrito, en vez de las 6 barras de 2012
 
 RUN     = "data/outputs/viz_N79_h28"
 TRAJ    = f"{RUN}/traj.lammpstrj"
 BOUNCE  = f"{RUN}/bounce.dat"
-OUT     = ("data/outputs/fig_sequence.png" if LANG == "es"
-           else "data/outputs/fig_sequence_en.png")
+_suffix = ("_4ch" if CH4 else "") + ("_en" if LANG == "en" else "")
+OUT     = f"data/outputs/fig_sequence{_suffix}.png"
 TMPDIR  = "/tmp/claude-1000/sequence_panels"
 
 DT_DUMP = 0.25   # tau/frame (dump_freq=50, dt=0.005)
@@ -91,7 +92,27 @@ def particion(t_ev):
     UF   = max(M * G * (Zcm[i] - z0), 0.0)
     return np.array([KCM, TB, dVB, dEs, Uc, UF]) / E0
 
-FRACS = [particion(t) for t in T_EVENTS]
+
+# Los mismos 4 canales alpha del manuscrito (borrador_rbef_v2.tex), evaluados
+# en cada instante y no solo en el apogeo. Ahí, U_c=0 por construcción y los
+# 4 canales son exactamente K_CM+U_F, T_B, Delta(V_B), Delta(K_S+V_surf); en
+# los paneles (b)/(c), donde la bola todavía toca la superficie, U_c>0 y le
+# devolvemos a cada lado la mitad que pe/atom ya le había asignado (misma
+# convención 50/50 que corrige VB en in.bounce_cluster) para que las 4
+# fracciones sigan sumando 1 en todo instante, no solo al apogeo.
+def particion_4ch(t_ev):
+    i = np.argmin(np.abs(tt - t_ev))
+    Uc     = arr["Uc"][i]
+    a_cm   = arr["KB3d"][i] + max(M * G * (Zcm[i] - z0), 0.0)
+    a_TB   = arr["TB"][i]
+    a_dVB  = (arr["VB"][i] - arr["VB"][0]) + 0.5 * Uc
+    a_surf = (arr["KS"][i] + arr["PE_surf"][i]
+              - arr["KS"][0] - arr["PE_surf"][0])
+    return np.array([a_cm, a_TB, a_dVB, a_surf]) / E0
+
+FRACS = [particion_4ch(t) if CH4 else particion(t) for t in T_EVENTS]
+_LBLS = ["a_cm", "a_TB", "a_dVB", "a_surf"] if CH4 else \
+        ["KB", "TB", "dVB", "d(KS+TS+VS)", "Uc", "UF"]
 
 # ---------------------------------------------------------------------------
 # Render OVITO
@@ -158,30 +179,42 @@ for i, t_ev in enumerate(T_EVENTS):
                         background=BG, filename=out_png)
     pngs.append(out_png)
     print(f"  {PANLAB[i]} {DESCS[i]:18s} t={t_ev:6.1f}τ (frame {fr})  "
-          + "  ".join(f"{n}={100*f:.0f}%" for n, f in
-                      zip(["KCM", "TB", "dVB", "dEs", "Uc", "UF"], FRACS[i])))
+          + "  ".join(f"{n}={100*f:.0f}%" for n, f in zip(_LBLS, FRACS[i])))
 
 # ---------------------------------------------------------------------------
 # Composición
 # ---------------------------------------------------------------------------
 C_CM, C_TB, C_dVB = "#1565C0", "#B71C1C", "#E65100"
 C_SURF, C_UC, C_UF = "#2E7D32", "#757575", "#F9A825"
-BAR_COLS = [C_CM, C_TB, C_dVB, C_SURF, C_UC, C_UF]
-LEG = {"es": [
-    r"$K_{\rm CM}$ — KE traslacional del CM",
-    r"$T_B$ — KE interna de la bola",
-    r"$\Delta V_B$ — PE intra-bola (expansión anarmónica)",
-    r"$\Delta E_{\rm surf}$ — energía de la superficie (fonones)",
-    r"$U_c$ — PE de contacto (transitoria)",
-    r"$U_F$ — PE gravitatoria restante",
+BAR_COLS = [C_CM, C_TB, C_dVB, C_SURF] if CH4 else \
+           [C_CM, C_TB, C_dVB, C_SURF, C_UC, C_UF]
+LEG4 = {"es": [
+    r"$\alpha_{\rm cm}$ — CM (traslación + PE gravitatoria restante)",
+    r"$\alpha_{T_B}$ — KE interna de la bola",
+    r"$\alpha_{\Delta V_B}$ — PE interna de la bola",
+    r"$\alpha_{\rm surf}$ — fonones de la superficie",
 ], "en": [
-    r"$K_{\rm CM}$ — CM translational KE",
-    r"$T_B$ — internal KE of the ball",
-    r"$\Delta V_B$ — intra-ball PE (anharmonic expansion)",
-    r"$\Delta E_{\rm surf}$ — surface energy (phonons)",
-    r"$U_c$ — contact PE (transient)",
-    r"$U_F$ — remaining gravitational PE",
+    r"$\alpha_{\rm cm}$ — CM (translation + remaining grav. PE)",
+    r"$\alpha_{T_B}$ — internal KE of the ball",
+    r"$\alpha_{\Delta V_B}$ — internal PE of the ball",
+    r"$\alpha_{\rm surf}$ — surface phonons",
 ]}[LANG]
+LEG6 = {"es": [
+    r"$K_B$ — KE traslacional del CM de la bola",
+    r"$T_B$ — KE interna (vibracional) de la bola",
+    r"$\Delta V_B$ — PE intra-bola (expansión anarmónica)",
+    r"$\Delta(K_S{+}T_S{+}V_S)$ — energía de la superficie (fonones)",
+    r"$U_c$ — PE de contacto bola–superficie (transitoria)",
+    r"$U_F$ — PE gravitatoria restante de la bola",
+], "en": [
+    r"$K_B$ — CM translational KE of the ball",
+    r"$T_B$ — internal (vibrational) KE of the ball",
+    r"$\Delta V_B$ — intra-ball PE (anharmonic expansion)",
+    r"$\Delta(K_S{+}T_S{+}V_S)$ — surface energy (phonons)",
+    r"$U_c$ — ball–surface contact PE (transient)",
+    r"$U_F$ — remaining gravitational PE of the ball",
+]}[LANG]
+LEG = LEG4 if CH4 else LEG6
 
 TCOLD = {"es": "0 (fría)", "en": "0 (cold)"}[LANG]
 TBALL = {"es": "Bola: KE interna / átomo", "en": "Ball: internal KE / atom"}[LANG]
@@ -221,9 +254,27 @@ for i, p in enumerate(POS):
 
 # leyenda (fila propia, sin solaparse con las colorbars)
 patches = [mpatches.Patch(color=c, label=l) for c, l in zip(BAR_COLS, LEG)]
-fig.legend(handles=patches, loc="center", ncol=2, fontsize=9,
+fig.legend(handles=patches, loc="center", ncol=2, fontsize=(10.5 if CH4 else 9),
            bbox_to_anchor=(0.5, 0.125), frameon=False,
            handlelength=1.4, columnspacing=1.2)
+if CH4:
+    NOTE = {"es": (r"Los cuatro canales $\alpha_i$ de este estudio, evaluados en cada instante (no solo el apogeo).$\;$"
+                   "\n"
+                   r"$U_c$ (PE de contacto, transitoria) se reparte 50/50 entre $\alpha_{\Delta V_B}$ y $\alpha_{\rm surf}$ "
+                   r"mientras la bola toca la superficie (misma convención de pe/atom); en (d), al apogeo, $U_c=0$."),
+            "en": (r"The four $\alpha_i$ channels of this study, evaluated at every instant (not only the apex).$\;$"
+                   "\n"
+                   r"$U_c$ (contact PE, transient) is split 50/50 between $\alpha_{\Delta V_B}$ and $\alpha_{\rm surf}$ "
+                   r"while the ball touches the surface (same pe/atom convention); in (d), at the apex, $U_c=0$.")}[LANG]
+else:
+    NOTE = {"es": (r"Las ocho energías de Gutiérrez et al. (2012): $K_S\approx0$ "
+                   r"porque las capas inferiores de la losa están fijas, "
+                   r"así que $\Delta(K_S{+}T_S{+}V_S)\approx\Delta(T_S{+}V_S)$."),
+            "en": (r"The eight energies of Gutiérrez et al. (2012): $K_S\approx0$ "
+                   r"because the slab's bottom layers are fixed, "
+                   r"so $\Delta(K_S{+}T_S{+}V_S)\approx\Delta(T_S{+}V_S)$.")}[LANG]
+fig.text(0.5, 0.082, NOTE, ha="center", va="center", fontsize=7.5,
+          color="0.35", style="italic", wrap=True)
 
 # dos colorbars en la franja inferior
 cmap = LinearSegmentedColormap.from_list("thermal", _NODES.tolist())

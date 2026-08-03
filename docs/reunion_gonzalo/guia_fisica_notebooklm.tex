@@ -1,0 +1,713 @@
+% =============================================================================
+% guia_fisica_notebooklm.tex — Documento maestro para NotebookLM.
+% Física completa del proyecto con derivaciones, análisis y citas, más el
+% guion lámina por lámina de presentacion_gonzalo.pdf (16 láminas).
+% Pensado como fuente principal para un podcast de estudio en español.
+% Compilar: pdflatex guia_fisica_notebooklm.tex (dos pasadas)
+% =============================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black]{hyperref}
+
+\newcommand{\eps}{\varepsilon}
+\newcommand{\kb}{k_B}
+\setlength{\parskip}{3pt}
+
+\title{\textbf{Física del rebote inelástico de nanocúmulos de Lennard-Jones}\\
+\large Documento maestro de estudio: derivaciones, análisis crítico y guion
+lámina por lámina}
+\author{Felipe Wasaff\\ \small (proyecto conjunto con Gonzalo Gutiérrez;
+manuscrito destinado a la Rev. Bras. Ens. Fís.)}
+\date{Julio 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Este documento acompaña la presentación \emph{``¿A dónde se va la energía de
+una pelota que rebota?''} (16 láminas) y el manuscrito
+\texttt{borrador\_rbef\_v2}. Contiene la física completa del proyecto con
+derivaciones explícitas: unidades reducidas, coeficiente de restitución,
+contabilidad exacta de los canales de energía en dinámica molecular NVE,
+teorema del virial y anarmonicidad, equipartición aplicada a la energía
+disipada, las tres escalas del número de átomos de superficie $N_c$, fusión
+de cúmulos finitos, la escala de altura $h^*$ y la adhesión. La Parte II es
+un guion detallado lámina por lámina, con las preguntas que un físico
+estadístico haría en cada punto y sus respuestas. Todas las afirmaciones
+cuantitativas provienen de las 210 simulaciones del proyecto o de la
+literatura citada.
+\end{abstract}
+
+\tableofcontents
+
+% =============================================================================
+\part{Física de fondo con derivaciones}
+% =============================================================================
+
+\section{El sistema y las unidades reducidas}
+
+\subsection{El potencial de Lennard-Jones}
+Todas las interacciones del proyecto derivan del potencial de par
+\begin{equation}
+V_{\rm LJ}(r) = 4\eps\left[\left(\frac{\sigma}{r}\right)^{12}
+- c\left(\frac{\sigma}{r}\right)^{6}\right],
+\label{eq:lj}
+\end{equation}
+con $c=1$ (LJ completo) dentro de la bola y dentro de la superficie, y
+$c=0$ (puramente repulsivo) entre bola y superficie en el caso base sin
+adhesión, siguiendo el modelo original de Gutiérrez y
+colaboradores~\cite{Gutierrez2012}. Propiedades exactas del caso $c=1$:
+el mínimo está en $r_m = 2^{1/6}\sigma \approx 1.1225\,\sigma$ con
+profundidad $V(r_m) = -\eps$, y la curvatura en el mínimo es
+\begin{equation}
+V''(r_m) = 4\eps\left(\frac{156\,\sigma^{12}}{r_m^{14}}
+- \frac{42\,\sigma^{6}}{r_m^{8}}\right)
+= 4\eps\,(156\cdot 2^{-7/3} - 42\cdot 2^{-4/3})\,\sigma^{-2}
+\approx 57.15\,\frac{\eps}{\sigma^2}.
+\label{eq:curvatura}
+\end{equation}
+Para un dímero (masa reducida $\mu = m/2$) esto da una frecuencia
+$\omega = \sqrt{V''/\mu} \approx 10.7\,\tau^{-1}$, es decir un período
+vibracional $T_{\rm vib} \approx 0.59\,\tau$. En el sólido FCC, donde cada
+átomo tiene 12 vecinos, la frecuencia efectiva (de Einstein) es mayor y el
+período correspondientemente menor ($\sim0.3$--$0.5\,\tau$). Este número es
+clave: el contacto bola--superficie dura $\sim10\,\tau$, es decir
+\emph{decenas de oscilaciones internas} --- tiempo suficiente para que la
+bola termalice internamente durante el impacto.
+
+\subsection{Unidades reducidas y el argón}
+En unidades LJ, las escalas son $\sigma$ (longitud), $\eps$ (energía),
+$m$ (masa) y el tiempo derivado $\tau = \sigma\sqrt{m/\eps}$. Con los
+parámetros del argón ($\eps \approx 0.0104$~eV $= 1.67\times10^{-21}$~J,
+$\sigma \approx 3.4$~\AA, $m = 39.95$~u $= 6.63\times10^{-26}$~kg):
+\begin{equation}
+\tau = 3.4\times10^{-10}\,\text{m}
+\sqrt{\frac{6.63\times10^{-26}\,\text{kg}}{1.67\times10^{-21}\,\text{J}}}
+\approx 2.15\,\text{ps}.
+\end{equation}
+La gravedad reducida se define como $g^* = g\,m\sigma/\eps$. La gravedad
+terrestre real daría $g^* \approx 1.3\times10^{-13}$: completamente
+inobservable en tiempos de simulación. El proyecto usa $g^* = 0.026$, unas
+$2\times10^{11}$ veces la gravedad terrestre --- una \emph{gravedad
+pedagógica} que comprime el experimento de la pelota que rebota a la escala
+de picosegundos, exactamente como en~\cite{Gutierrez2012}. La velocidad de
+impacto desde el reposo a altura efectiva $h_0^{\rm ef}$ es
+$v_{\rm imp} = \sqrt{2g h_0^{\rm ef}}$, entre $0.68$ y $2.03\,\sigma/\tau$
+en el barrido de seis alturas ($E_0 = Mgh_0^{\rm ef} \approx 18$--$162\,\eps$
+para $N=79$).
+
+\subsection{La geometría: bola y losa}
+La bola canónica es el cúmulo de $N=79$ átomos: todas las capas completas de
+una red FCC dentro de $r<2.45\,\sigma$ centradas en un sitio de red
+(la secuencia de capas completas es $N = 13, 55, 79, 87, \ldots$). Se
+minimiza en vacío antes de cada corrida, garantizando una bola inicialmente
+fría con exactamente el mismo $N$ --- a diferencia del método
+\texttt{create\_atoms region sphere}, que produce $N$ variable (79--84) según
+dónde caiga el centro. La losa es FCC de $8\times8\times6$ celdas
+($a_0 = 1.5496\,\sigma$, densidad reducida $\rho^* = 4/a_0^3 = 1.0742$),
+con las dos capas inferiores congeladas y condiciones periódicas laterales.
+La dinámica es NVE pura (integrador de Verlet de velocidades~\cite{Verlet1967},
+$\Delta t = 5\times10^{-3}\,\tau$), sin termostato: toda la energía del
+problema proviene de la caída.
+
+\section{El coeficiente de restitución y su lectura energética}
+
+Para una pelota que cae desde $h_0$ y rebota hasta $h_1$, el coeficiente de
+restitución del primer rebote es
+\begin{equation}
+e_1 = \frac{|v_{\rm salida}|}{|v_{\rm llegada}|} = \sqrt{\frac{h_1}{h_0}},
+\qquad\Longrightarrow\qquad
+\alpha_{\rm cm} \equiv e_1^2 = \frac{h_1}{h_0}
+\end{equation}
+es la \emph{fracción de energía que el centro de masa recupera}. Los textos
+elementales tratan $e$ como constante del material, pero tanto los
+experimentos clásicos (esferas de hielo~\cite{Bridges1984}, pelotas
+reales~\cite{Cross1999,Aguiar2003}) como la teoría viscoelástica
+($1-e \propto v^{1/5}$ para esferas viscoelásticas~\cite{Ramirez1999})
+muestran que $e$ \emph{decrece con la velocidad de impacto}. Nuestros datos
+lo reproducen: $e_1$ cae de $0.87$ ($v=0.70$) a $0.49$ ($v=2.02$) para
+$N=79$. El COR responde \emph{cuánta} energía no vuelve; el proyecto
+responde \emph{dónde queda}.
+
+\section{Contabilidad exacta de canales en dinámica molecular}
+\label{sec:contabilidad}
+
+\subsection{Separación cinética interna/CM}
+La energía cinética total de la bola se separa exactamente:
+\begin{equation}
+K_{\rm bola} = \underbrace{\tfrac12 M V_{\rm cm}^2}_{K_{\rm cm}\ (3D)}
++ \underbrace{\sum_i \tfrac12 m (\vec v_i - \vec V_{\rm cm})^2}_{T_B\
+(\text{interna})},
+\end{equation}
+identidad que se demuestra expandiendo el cuadrado y usando
+$\sum_i m(\vec v_i - \vec V_{\rm cm}) = 0$. $T_B$ contiene las vibraciones
+\emph{y} la rotación rígida de la bola; no contiene ninguna traslación del CM.
+
+\subsection{La energía potencial intra-bola y el medio $U_c$}
+LAMMPS reparte la energía de cada par mitad y mitad entre los dos átomos
+(\texttt{compute pe/atom}). Por lo tanto, la suma de energías por átomo
+sobre la bola vale
+$\sum_{i\in \rm bola} u_i = U_{\rm bola-bola} + \tfrac12 U_c$,
+donde $U_c$ es la interacción bola--superficie (\texttt{compute
+group/group}). La potencial \emph{interna} de la bola es entonces
+\begin{equation}
+V_B = \sum_{i\in\rm bola} u_i - \tfrac12 U_c ,
+\end{equation}
+y análogamente la potencial de la superficie es
+$\sum_{i\in\rm surf} u_i = U_{\rm ss} + \tfrac12 U_c$. En el apogeo la bola
+está fuera del alcance del potencial ($U_c = 0$, verificado exactamente en
+las 210 corridas), así que estas definiciones no dejan energía de contacto
+sin asignar.
+
+\subsection{Los cuatro canales y el quinto término}
+Medidos en el primer apogeo y normalizados por $E_0 = Mgh_0^{\rm ef}$:
+\begin{align}
+\alpha_{\rm cm} &= h_1/h_0^{\rm ef}, &
+\alpha_{T_B} &= T_B^{(1)}/E_0, \\
+\alpha_{\rm surf} &= \Delta(K_S + V_{\rm surf})/E_0, &
+\alpha_{\Delta V_B} &= (V_B^{(1)}-V_B^{(0)})/E_0 .
+\end{align}
+La conservación NVE (verificada: $|\Delta E| = 4.3\times10^{-4} E_0$ en
+$400\,\tau$) implica la identidad exacta
+\begin{equation}
+Mg(h_0^{\rm ef}-h_1) \;=\; T_B + \Delta V_B + \Delta E_{\rm surf}
++ \underbrace{\tfrac12 M (V_{{\rm cm},x}^2+V_{{\rm cm},y}^2)}_{\text{KE
+lateral del CM}},
+\label{eq:cierre}
+\end{equation}
+donde el último término es el retroceso \emph{lateral} del CM tras un rebote
+no perfectamente vertical: un quinto canal, pequeño pero real. Medido sobre
+las 210 corridas: mediana $5\times10^{-4}E_0$, inferior a $0.02\,E_0$ para
+$N\ge55$, y hasta $0.06\,E_0$ solo en los cúmulos moleculares ($N=2, 13$) a
+baja velocidad --- donde la bola, rígida, se dispersa de lado como una
+molécula. En las tablas del manuscrito $\alpha_{\Delta V_B}$ se reporta por
+cierre ($\sum\alpha_i = 1$) e incluye ese término; la comparación con la
+medición directa de $V_B$ es la que produce las cifras anteriores. En el
+caso canónico ($N=79$, $h_0=28.15\,\sigma$, orientación original) el cierre
+directo es $<10^{-4}$.
+
+\subsection{Una lección de contabilidad: el potencial desplazado}
+Con el potencial truncado en $r_c = 2.5\,\sigma$ \emph{sin desplazar}, cada
+par que cruza $r_c$ salta
+\begin{equation}
+|V_{\rm LJ}(r_c)| = 4\eps\left|\frac{1}{2.5^{12}} - \frac{1}{2.5^{6}}\right|
+= 4\eps\,|1.68\times10^{-5} - 4.10\times10^{-3}| \approx 0.0163\,\eps
+\end{equation}
+en la energía potencial \emph{registrada} (las fuerzas no cambian). Como la
+quinta capa de vecinos FCC está en $2.45\,\sigma \approx r_c$, muchos pares
+cruzan el corte durante el impacto y el error acumulado alcanza 2--6\% de
+$E_0$. Con \texttt{pair\_modify shift yes} (potencial truncado y desplazado,
+estándar en simulación~\cite{AllenTildesley,FrenkelSmit}) la contabilidad
+cierra. Trayectorias idénticas; solo cambia el libro de cuentas.
+
+\section{Resultados de la partición ($N=79$, 5 orientaciones)}
+\label{sec:particion}
+
+\begin{center}
+\begin{tabular}{cccccc}
+\toprule
+$v_{\rm imp}$ & $e_1$ & $\alpha_{\rm cm}$ & $\alpha_{T_B}$ &
+$\alpha_{\Delta V_B}$ & $\alpha_{\rm surf}$\\
+\midrule
+0.70 & $0.87\pm0.05$ & $0.76\pm0.08$ & $0.13\pm0.09$ & $0.04\pm0.02$ & $0.08\pm0.02$\\
+0.93 & $0.70\pm0.14$ & $0.51\pm0.17$ & $0.17\pm0.05$ & $0.21\pm0.17$ & $0.11\pm0.05$\\
+1.16 & $0.62\pm0.10$ & $0.40\pm0.12$ & $0.22\pm0.10$ & $0.24\pm0.10$ & $0.14\pm0.07$\\
+1.43 & $0.59\pm0.06$ & $0.35\pm0.06$ & $0.21\pm0.06$ & $0.26\pm0.09$ & $0.18\pm0.09$\\
+1.72 & $0.53\pm0.05$ & $0.28\pm0.05$ & $0.19\pm0.04$ & $0.31\pm0.05$ & $0.23\pm0.10$\\
+2.02 & $0.49\pm0.05$ & $0.24\pm0.05$ & $0.18\pm0.02$ & $0.31\pm0.05$ & $0.27\pm0.10$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Tres observaciones estructuran todo el trabajo:
+\begin{enumerate}[leftmargin=1.6em]
+\item \textbf{Plateau cinético}: para $0.9 < v \lesssim 1.7\,\sigma/\tau$,
+$\alpha_{T_B} \approx 0.22$, independiente de la violencia del impacto.
+\item \textbf{Canal potencial comparable}: $\alpha_{\Delta V_B} \approx
+\alpha_{T_B}$ (Sección~\ref{sec:virial}).
+\item \textbf{El piso se lleva poco}: $\alpha_{\rm surf} \approx
+0.08$--$0.27$; la mayor parte de la energía ``perdida'' queda \emph{dentro
+de la bola} ($\alpha_{\rm bola} \approx 0.4$--$0.6$).
+\end{enumerate}
+
+\section{Termalización, temperatura efectiva y el teorema del virial}
+\label{sec:virial}
+
+\subsection{Equipartición y temperatura efectiva}
+El teorema de equipartición asigna $\tfrac12\kb T$ a cada grado de libertad
+cuadrático en equilibrio~\cite{Tolman1918,Reif1965}. La bola tiene $3N$
+grados cinéticos menos los 3 del CM, de modo que su temperatura interna
+efectiva se define como
+\begin{equation}
+T_{\rm ef} = \frac{2\,T_B}{(3N-3)\,\kb},
+\end{equation}
+con $\kb = 1$ en unidades LJ. Valores medidos en el apogeo para $N=79$:
+$T_{\rm ef} \approx 0.19$ a $v_{\rm imp}=1.47$ y $T_{\rm ef} = 0.283$ a
+$v_{\rm imp}=2.03$. ¿Tiene sentido hablar de temperatura en un sistema de
+79 átomos fuera de equilibrio global? Sí, como temperatura del subsistema
+que \emph{sí} termaliza: el contacto dura $\sim10\,\tau$, decenas de
+períodos vibracionales (Sección 1.1), y dos evidencias independientes
+muestran reparto interno: la relación virial $T_B \approx \Delta V_B$
+(abajo) y el éxito del conteo de modos en $f_{\rm ball}(N)$ para $N\ge55$
+(Sección~\ref{sec:equiparticion}).
+
+\subsection{Virial del oscilador armónico: por qué $\Delta V_B \approx T_B$}
+Para un oscilador $V = \tfrac12 k x^2$, el teorema del virial da
+$\langle K \rangle = \tfrac12\langle x\,V'(x)\rangle = \langle V \rangle$:
+\emph{la mitad de la energía vibracional es potencial}. En un sólido casi
+armónico esto vale modo a modo, de modo que al calentarse la bola debe
+cumplir $\Delta V_B \approx T_B$ --- sin ninguna anarmonicidad. Esa es
+exactamente la firma observada (tabla anterior): el canal
+$\alpha_{\Delta V_B}$ es, en su mayor parte, \emph{la mitad potencial del
+calentamiento vibracional}, evidencia de una bola que se comporta como
+sólido termalizado.
+
+\subsection{El exceso anarmónico}
+Lo genuinamente anarmónico es el \emph{exceso} $\Delta V_B - T_B$, que
+crece con la velocidad: el cociente $\alpha_{\Delta V_B}/\alpha_{T_B}$ pasa
+de $\approx1.1$ en $v=1.16$ a $\approx1.7$ en $v=2.02$. Su origen es la
+asimetría del potencial LJ (ecuación~\ref{eq:lj}): más blando hacia afuera
+que hacia adentro, de modo que al vibrar con amplitud creciente el cúmulo
+queda oscilando alrededor de un estado \emph{expandido} --- el mecanismo
+microscópico de la dilatación térmica. Esa energía potencial de expansión
+``viaja'' con la bola.
+
+\section{Equipartición sobre la energía disipada: el resultado central}
+\label{sec:equiparticion}
+
+\subsection{La corrección conceptual}
+La primera versión del trabajo aplicaba el conteo de modos a $E_0$ completo
+con $N_c = N$, prediciendo $\alpha_{\rm bola}\to\tfrac12$. Un arbitraje
+simulado detectó tres inconsistencias: (i) el CM es un único grado de
+libertad macroscópico que \emph{no} participa del reparto térmico; (ii)
+$N_c$ tenía tres calibraciones distintas según la sección; (iii) la
+predicción $\alpha_{\rm surf}\to\tfrac12$ no aparece en los datos. La
+formulación correcta reparte solo la energía \emph{disipada},
+$1-\alpha_{\rm cm}$, entre los modos internos de la bola y los grados
+efectivos del sumidero superficial:
+\begin{equation}
+f_{\rm ball} \equiv
+\frac{\alpha_{\rm bola}}{\alpha_{\rm bola}+\alpha_{\rm surf}}
+= \frac{3N-3}{\,3N-3+3N_c^{\rm ef}\,},
+\qquad N_c^{\rm ef} = 25\pm8\ \text{(ajuste global, un parámetro)}.
+\label{eq:fball}
+\end{equation}
+Consecuencia: $f_{\rm ball}\to1$ para $N\to\infty$ (no $\tfrac12$): una
+bola grande, fría y sin adhesión retiene \emph{casi toda} la energía que no
+devuelve al CM, porque su reservorio interno crece como $3N-3$ mientras el
+sumidero neto de la superficie no crece.
+
+\subsection{El conteo de modos, con honestidad}
+Los $3N-3$ ``modos internos'' incluyen las 3 rotaciones rígidas, que llevan
+solo energía cinética ($\tfrac12\kb T$ cada una) sin pareja potencial. El
+conteo exacto de grados cuadráticos da
+$f_{\rm ball} = (3N-4.5)/(3N-4.5+3N_c^{\rm ef})$; la diferencia con la
+ecuación~(\ref{eq:fball}) es inferior al 1\% para $N\ge13$, invisible
+frente a las barras de error. Datos vs modelo (con $N_c^{\rm ef}=25$):
+
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+$N$ & $f_{\rm ball}$ medido & modelo & comentario\\
+\midrule
+2  & $0.34\pm0.29$ & 0.04 & dímero: sin huella real, excluido del ajuste\\
+7  & $0.55\pm0.23$ & 0.19 & residuo mayor del ajuste ($\sim1.5\sigma$)\\
+13 & $0.38\pm0.13$ & 0.32 & no termaliza en el rango (régimen molecular)\\
+55 & $0.49\pm0.18$ & 0.68 & $\sim1\sigma$ bajo el modelo\\
+79 & $0.70\pm0.14$ & 0.76 & acuerdo\\
+87 & $0.77\pm0.09$ & 0.78 & acuerdo\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+El acuerdo es \emph{cuantitativo para $N\ge55$ y cualitativo por debajo};
+los fallos ($N=7,13$) son precisamente los cúmulos que no alcanzan a
+termalizar --- la excepción que confirma el mecanismo. $N_c^{\rm ef}$ es un
+parámetro \emph{ajustado}, pero acotado por dos mediciones directas
+independientes (siguiente sección).
+
+\section{Las tres escalas de $N_c$}
+\label{sec:tresescalas}
+
+\subsection{Número de participación (IPR)}
+Para las energías cinéticas $\{K_i\}$ de los átomos de superficie, el
+número de participación
+\begin{equation}
+N_c^{\rm part} = \frac{\left(\sum_i K_i\right)^2}{\sum_i K_i^2}
+\end{equation}
+cuenta cuántos átomos comparten efectivamente la energía, sin umbrales
+libres: si $n$ átomos tienen la misma $K$ y el resto cero,
+$N_c^{\rm part} = n$ exactamente. Medido en la compresión máxima
+($v\approx1.47$): $N_c^{\rm part} \approx 284$--$414$ según $N$.
+
+\subsection{Huella geométrica}
+$N_c^{\rm geom}$ = átomos de superficie a menos de $r_c=2.5\,\sigma$ de
+algún átomo de la bola en la compresión máxima: $43$--$93$ según $N$.
+
+\subsection{La jerarquía y su física}
+\begin{equation}
+\underbrace{N_c^{\rm ef}\approx25}_{\text{sumidero neto (ajuste)}}
+\;\ll\;
+\underbrace{N_c^{\rm geom}\approx45\text{--}90}_{\text{contacto directo}}
+\;\ll\;
+\underbrace{N_c^{\rm part}\approx300\text{--}410}_{\text{participación
+transitoria}}
+\end{equation}
+Cientos de átomos se mueven \emph{durante} el contacto, pero la superficie
+cristalina es casi elástica: devuelve la mayor parte de esa energía a la
+bola antes del despegue. El sumidero \emph{neto} equivale a solo $\sim25$
+osciladores. El viejo $N_c\approx290$ de la primera versión coincidía por
+accidente con $N_c^{\rm part}$: era el número correcto en el balance
+equivocado. Nota crítica declarada: con losa $8\times8\times6$ los fonones
+se reflejan en el fondo fijo y los bordes periódicos; duplicando la losa
+($16\times16\times12$), $\alpha_{\rm surf}$ sube de $0.083$ a $0.143$
+($\sim0.06\,E_0$ de sesgo) y $f_{\rm ball}$ baja de $0.87$ a $0.75$ ---
+la conclusión $f_{\rm ball}\to1$ no cambia, pero el sesgo sistemático está
+cuantificado.
+
+\section{¿Sigue sólida la bola? Fusión de cúmulos finitos}
+\label{sec:fusion}
+
+Los cúmulos finitos funden a temperaturas muy inferiores al sólido macizo
+(depresión del punto de fusión $\propto 1/R$): el punto triple del LJ masivo
+está en $T^* \approx 0.69$~\cite{HansenVerlet1969}, pero LJ$_{55}$ funde en
+$T^* \approx 0.29$~\cite{Labastie1990} y los cúmulos de $\sim100$--$150$
+átomos entre $0.30$ y $0.36$~\cite{Labastie1990,Wales1997,Schmidt1998}. Para
+nuestra bola de $\sim80$ átomos la ventana relevante es
+$T^*_{\rm fus} \approx 0.30$--$0.35$.
+
+El criterio decisivo del proyecto no es $T_{\rm ef}$ sino la función de
+distribución de pares $g(r)$ de la bola en el apogeo, comparada con la
+referencia FCC ($t=0$; picos en $a_0/\sqrt2$, $a_0$, $a_0\sqrt{1.5}$,
+$a_0\sqrt2$), en el espíritu del criterio de
+Lindemann~\cite{Lindemann1910}: a $v_{\rm imp}=1.47$ los picos FCC siguen
+nítidos (contraste pico/valle $\approx11$: sólida); a $v_{\rm imp}=2.03$ la
+$g(r)$ colapsa (contraste $\approx2$: fundida), en acuerdo con la fusión
+que ya reportaba~\cite{Gutierrez2012}. Nótese que a $v=2.03$,
+$T_{\rm ef}=0.283$ queda \emph{por debajo} de la ventana de fusión: el
+criterio estructural manda. Por eso el plateau y el conteo de modos se
+restringen a $v \lesssim 1.7$.
+
+\section{La escala $h^*$ y los rebotes sucesivos}
+
+Del plateau sale una predicción sin parámetros nuevos: si
+$\alpha_{\rm cm} \approx \alpha_{T_B}$ en el primer rebote, entonces
+\begin{equation}
+h_1 \approx h^* = \frac{T_B^{(1)}}{Mg}.
+\end{equation}
+La simulación larga ($5000\,\tau$) da $h_1/h^* = 0.96$: excelente para el
+primer rebote. Pero $h^*$ \emph{no} es un atractor: las alturas decaen
+geométricamente ($h_n \sim e^{2n}h_0$) mientras $T_B$, ya depositada,
+decrece mucho más despacio, así que $h_n/h^*_n$ cae monótonamente. Tras 23
+rebotes ($t \approx 660\,\tau$) la bola queda atrapada vibrando a
+$h \lesssim 1\,\sigma$ sobre la superficie: el final del rebote de
+cualquier pelota real, en versión nanométrica. (El posterior ``colapso'' de
+la bola a través de la red, $t\approx713\,\tau$, es un artefacto del
+potencial puramente repulsivo, que carece de barrera lateral; está
+documentado como ejercicio de análisis crítico.)
+
+\section{Adhesión: la pelota pegajosa}
+
+Restaurando la atracción bola--superficie ($c=1$ en la
+ecuación~\ref{eq:lj}), los 24 casos simulados ($N$ hasta 87, $v$ hasta
+$2\,\sigma/\tau$) terminan \emph{adheridos}. La energía de adhesión escala
+como el área de contacto: medido $E_{\rm adh} \propto N^{0.73}$, cercano al
+$N^{2/3}$ geométrico. Como la energía disponible escala con la masa
+($E_0 = Mgh_0 \propto N$), el umbral de escape escala como
+\begin{equation}
+h_0^* \;\propto\; \frac{E_{\rm adh}}{Mg} \;\propto\; N^{0.73-1} = N^{-0.27}:
+\end{equation}
+\emph{los cúmulos grandes escapan más fácil}. La extrapolación da
+$h_0^* \sim 10^2$--$10^3\,\sigma$ (solo orden de magnitud: a esas
+velocidades la bola se funde). Este régimen conecta con la física de
+depósito de cúmulos y \emph{soft landing} en superficies
+~\cite{Haberland1994,Awasthi2007}.
+
+\section{Validación contra el trabajo de 2012}
+
+La comparación con la Fig.~7 de~\cite{Gutierrez2012} (digitalizada del PDF
+por color de píxel, calibración rms $0.08\,\sigma$) enseñó una lección de
+convenciones: allí $h_0$ es la altura \emph{absoluta} del CM (las curvas
+descansan en $z_{\rm rest}\approx10.3\,\sigma$), mientras que aquí se mide
+desde el tope de la losa; a igual etiqueta, las caídas efectivas difieren
+en $\sim8\,\sigma$. Comparando a caída efectiva igual: acuerdo excelente en
+el régimen cuasi-elástico ($e_1 = 0.90$ vs $0.92$) y diferencias de
+$0.06$--$0.09$ a alta energía, dentro de la dispersión entre orientaciones
+($\pm0.05$--$0.14$) y explicables por el cúmulo sin minimizar ($N$ variable
+79--84) y el integrador distinto de 2012.
+
+% =============================================================================
+\part{Guion lámina por lámina (16 láminas)}
+% =============================================================================
+
+\emph{Este guion sigue el orden exacto de} \texttt{presentacion\_gonzalo.pdf}.
+\emph{Cada bloque incluye qué decir, el número clave, y las preguntas de
+control que haría un profesor de mecánica estadística (marcadas ``P:''), con
+sus respuestas (``R:'').}
+
+\section*{LÁMINA 1 --- Portada}
+Mensaje: estado completo del trabajo del rebote; qué se reprodujo de 2012,
+qué se encontró nuevo, qué corrección se hizo en el camino, y las cinco
+decisiones a cerrar.
+
+\section*{LÁMINA 2 --- De dónde venimos y qué hicimos}
+El COR dice \emph{cuánta} energía no vuelve; este trabajo responde
+\emph{dónde queda}. Barrido: $N \in \{1,2,7,13,55,79,87\}$ $\times$ 6
+alturas $\times$ 5 orientaciones $= 210$ corridas, todo con media
+$\pm\,\sigma$; $N_c$ medido en el dump; estado sólido/líquido de la bola,
+losa doble, simulación larga, adhesión.
+
+\textbf{P:} ¿Por qué promediar sobre orientaciones? \textbf{R:} La
+dispersión entre orientaciones es grande y, sin promediar, las
+no-monotonías parecen física cuando son ruido; los 5 conjuntos de ángulos
+tienen semilla fija (reproducible).
+
+\section*{LÁMINA 3 --- El experimento en una imagen (Video 1: rebote sólido)}
+$N=79$, $v_{\rm imp}=1.16$: caída, onda de compresión entrando a la bola en
+el impacto ($t\approx46\,\tau$), fonones radiando en la losa, y al
+separarse la bola queda ``moteada'': caliente por dentro. Remate: el piso
+se queda con menos del 15\%; la intuición ``se disipa en el suelo'' falla.
+
+\section*{LÁMINA 4 --- Los cuatro canales}
+Tabla de la Sección~\ref{sec:particion}. Plateau $\alpha_{T_B}\approx0.22$;
+canal potencial $\Delta V_B \approx T_B$ (virial); el exceso creciente con
+$v$ es la parte anarmónica. $\alpha_{\Delta V_B}$ se reporta por cierre; la
+verificación directa con $V_B$ muestra que solo falta la KE lateral del CM
+(mediana $5\times10^{-4}E_0$; $<0.02\,E_0$ para $N\ge55$).
+
+\textbf{P:} ¿La suma $\sum\alpha_i=1$ está impuesta o medida? \textbf{R:}
+En las tablas, $\alpha_{\Delta V_B}$ sale por cierre; pero la medición
+independiente de $V_B$ reproduce el cierre hasta la KE lateral del CM,
+cuantificada (ecuación~\ref{eq:cierre}). En el caso canónico el cierre
+directo es $<10^{-4}$.
+
+\section*{LÁMINA 5 --- Control de calidad I: conservación}
+$|\Delta E| = 0.023\,\eps = 4.3\times10^{-4}E_0$ en $400\,\tau$ (NVE,
+$\Delta t = 5\times10^{-3}\,\tau$). Panel (b): $U_c$ es transitorio (solo
+existe durante el contacto y regresa mayoritariamente a la bola); $T_B$ y
+$\Delta V_B$ quedan, aproximadamente iguales. Anécdota del \texttt{shift}:
+sin desplazar el potencial, el cierre fallaba 2--6\% de $E_0$
+(Sección~\ref{sec:contabilidad}.4).
+
+\textbf{P:} ¿El desplazamiento del potencial no cambia la dinámica?
+\textbf{R:} No: desplaza $U$ por una constante por par dentro de $r_c$; las
+fuerzas son idénticas. Cambia solo la contabilidad.
+
+\section*{LÁMINA 6 --- Control de calidad II: termalización}
+Panel (a): $T_{\rm ef}(t)$ salta en el impacto y se equilibra en
+$\sim10\,\tau$ ($\gg$ período vibracional $\sim0.3$--$0.6\,\tau$): la
+condición que autoriza el lenguaje de equipartición. Panel (b):
+$T_{\rm ef}$ en el apogeo vs $v_{\rm imp}$: la bola queda fría respecto de
+la ventana de fusión $0.30$--$0.35$ hasta $v\approx1.7$.
+
+\textbf{P:} ¿Temperatura con 79 átomos y sin equilibrio global? \textbf{R:}
+Es la temperatura del subsistema que sí termaliza durante el contacto; las
+evidencias son la relación virial $T_B\approx\Delta V_B$ y el éxito del
+conteo de modos para $N\ge55$ (Secciones~\ref{sec:virial}
+y~\ref{sec:equiparticion}).
+
+\section*{LÁMINA 7 --- Control de calidad III: validación contra 2012}
+Convención de $h_0$ (absoluta vs desde el tope de la losa; difieren
+$\sim8\,\sigma$). A caída efectiva igual: $0.90$ vs $0.92$ en el régimen
+cuasi-elástico. Tono: ``lección de convenciones'', no ``error''.
+
+\section*{LÁMINA 8 --- El argumento que corregimos (lámina bisagra)}
+Contar el error con precisión: equipartición sobre $E_0$ con $N_c=N$
+predecía $\alpha_{\rm bola}\to1/2$; era inconsistente (el CM no participa;
+tres calibraciones de $N_c$; $\alpha_{\rm surf}\to1/2$ no está en los
+datos). La reformulación sobre la energía disipada
+(Sección~\ref{sec:equiparticion}) da $f_{\rm ball}\to1$ con
+$N_c^{\rm ef}=25\pm8$ constante. El arbitraje simulado detectó el problema;
+la medición directa de $N_c$ lo resolvió.
+
+\textbf{P:} ¿Por qué el CM no participa del reparto? \textbf{R:} Es un
+único modo colectivo macroscópico, no un baño: la energía que retiene está
+fijada por la dinámica del rebote ($e_1$), no por equipartición; solo lo
+disipado se reparte entre los modos microscópicos.
+
+\section*{LÁMINA 9 --- El resultado central: $f_{\rm ball}(N)$}
+Tabla de la Sección~\ref{sec:equiparticion}.2. Un solo parámetro global
+$N_c^{\rm ef}=25\pm8$. Acuerdo cuantitativo $N\ge55$; $N=7$ y $13$ son el
+régimen molecular que no termaliza. Honestidad: $N_c^{\rm ef}$ es ajustado,
+acotado por $N_c^{\rm geom}$ y $N_c^{\rm part}$ medidos.
+
+\section*{LÁMINA 10 --- Las tres escalas de $N_c$}
+Jerarquía de la Sección~\ref{sec:tresescalas}: $25 \ll 45$--$90 \ll
+300$--$410$. Frase clave: la superficie es un reservorio \emph{ancho pero
+casi elástico}; el viejo $N_c\approx290$ coincidía por accidente con
+$N_c^{\rm part}$ --- número correcto, balance equivocado.
+
+\textbf{P:} ¿Cómo puede el sumidero neto ser 25 si cientos de átomos se
+mueven? \textbf{R:} Se mueven \emph{transitoriamente}; la losa cristalina
+devuelve casi toda esa energía antes del despegue. El IPR mide la
+participación instantánea, no la absorción neta.
+
+\section*{LÁMINA 11 --- Límites I: fusión (Video 2)}
+$v\approx2$: la bola se aplasta ($t\approx78$--$80\,\tau$) y rebota
+desordenada. $g(r)$: contraste $\approx11$ (sólida, $v=1.47$) vs $\approx2$
+(fundida, $v=2.03$); consistente con 2012. El criterio decisivo es $g(r)$,
+no $T_{\rm ef}$ ($0.283 <$ ventana de fusión). Plateau restringido a
+$v\lesssim1.7$.
+
+\section*{LÁMINA 12 --- Límites II: tamaño de losa}
+El árbitro (simulado) tenía razón: losa chica subestima $\alpha_{\rm surf}$
+en $\sim0.06\,E_0$. Con losa doble, $f_{\rm ball} = 0.75$: la conclusión no
+cambia y el sesgo está declarado junto a los datos.
+
+\section*{LÁMINA 13 --- $h^*$: útil para el primer rebote, no es atractor}
+$h_1/h^* = 0.96$; luego la razón cae monótonamente; atrapamiento tras 23
+rebotes; el colapso final a través de la red es artefacto del potencial
+repulsivo puro, documentado.
+
+\section*{LÁMINA 14 --- Adhesión}
+24/24 adheridos; $E_{\rm adh}\propto N^{0.73} \approx$ área $N^{2/3}$;
+$h_0^* \propto N^{-0.27}$ (los grandes escapan más fácil); conexión con
+\emph{soft landing}~\cite{Haberland1994,Awasthi2007}.
+
+\section*{LÁMINA 15 --- Estado editorial}
+Cinco puntos mayores del arbitraje resueltos con simulaciones nuevas;
+manuscrito v2 listo (9 págs, protocolo RBEF: bilingüe, referencias en orden
+de cita, sin TikZ). Falta: ORCID de Gonzalo (bloqueante), frase sobre $N=7$
+en el ajuste, criterio de plateau explícito, recorte del resumen.
+
+\section*{LÁMINA 16 --- Decisiones}
+(1) Atribución del plateau, la fórmula de equipartición y $h^*$
+(¿contribución nueva o notas previas de Gonzalo? Si es suyo, se cita);
+(2) ORCID; (3) idioma del envío (RBEF acepta español); (4) orden de
+autores; (5) ¿arXiv \texttt{physics.ed-ph} simultáneo? ¿Versión extendida
+para una segunda revista?
+
+% =============================================================================
+\part{Chuleta numérica}
+% =============================================================================
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+Unidades (argón) & $\eps=0.0104$ eV, $\sigma=3.4$ \AA, $\tau=2.15$ ps;
+$g^*=0.026 \approx 2\times10^{11}\,g_{\rm Tierra}$\\
+Curvatura LJ & $V''(r_m) = 57.15\,\eps/\sigma^2$; período dímero
+$0.59\,\tau$; contacto $\sim10\,\tau$\\
+Shift & $|V(2.5\sigma)| = 0.0163\,\eps$; sin shift el cierre falla 2--6\%
+de $E_0$\\
+Conservación & $|\Delta E| = 4.3\times10^{-4}E_0$ en $400\,\tau$\\
+KE lateral CM & mediana $5\times10^{-4}E_0$; $<0.02\,E_0$ ($N\ge55$);
+$\le0.06\,E_0$ ($N=2,13$)\\
+Plateau & $\alpha_{T_B}\approx0.22$ para $0.9<v\lesssim1.7$, $N\ge55$\\
+Virial & $\Delta V_B/T_B$: $1.1$ ($v=1.16$) $\to$ $1.7$ ($v=2.02$)\\
+Equipartición & $f_{\rm ball}=(3N-3)/(3N-3+3N_c^{\rm ef})$,
+$N_c^{\rm ef}=25\pm8$\\
+$f_{\rm ball}$ & 0.34, 0.55, 0.38, 0.49, 0.70, 0.77 para
+$N=2,7,13,55,79,87$\\
+Tres escalas & $N_c^{\rm ef}\approx25 \ll N_c^{\rm geom}\approx45$--$90
+\ll N_c^{\rm part}\approx300$--$410$\\
+Losa doble & $\alpha_{\rm surf}$: $0.083\to0.143$; $f_{\rm ball}$:
+$0.87\to0.75$\\
+Fusión & LJ$_{55}$: $T^*\approx0.29$; bola $\sim$80 át.: $0.30$--$0.35$;
+bulk: $0.69$. Contraste $g(r)$: 11 vs 2\\
+$T_{\rm ef}$ & $0.19$ ($v=1.47$), $0.283$ ($v=2.03$)\\
+$h^*$ & $h_1/h^*=0.96$; atrapamiento tras 23 rebotes ($t\approx660\,\tau$)\\
+Adhesión & 24/24 pegados; $E_{\rm adh}\propto N^{0.73}$;
+$h_0^*\propto N^{-0.27}$\\
+Validación 2012 & $e_1$: $0.90$ vs $0.92$; convención $h_0$ difiere
+$\sim8\,\sigma$; $z_{\rm rest}\approx10.3\,\sigma$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =============================================================================
+\begin{thebibliography}{99}
+
+\bibitem{Gutierrez2012}
+G. Gutiérrez, S. Davis, C. Loyola, J. Peralta, F. González, Y. Navarrete
+y F. González-Wasaff, in \textit{Molecular Dynamics -- Theoretical
+Developments and Applications in Nanotechnology and Energy}, editado por
+L. Wang (InTech, Rijeka, 2012).
+
+\bibitem{Cross1999}
+R. Cross, ``The bounce of a ball'', Am. J. Phys. \textbf{67}, 222 (1999).
+
+\bibitem{Aguiar2003}
+C.E. Aguiar y F. Laudares, ``Listening to the coefficient of restitution
+and the gravitational acceleration of a bouncing ball'', Am. J. Phys.
+\textbf{71}, 499 (2003).
+
+\bibitem{Bridges1984}
+F.G. Bridges, A. Hatzes y D.N.C. Lin, ``Structure, stability and evolution
+of Saturn's rings'', Nature \textbf{309}, 333 (1984).
+
+\bibitem{Ramirez1999}
+R. Ramírez, T. Pöschel, N.V. Brilliantov y T. Schwager, ``Coefficient of
+restitution of colliding viscoelastic spheres'', Phys. Rev. E \textbf{60},
+4465 (1999).
+
+\bibitem{AllenTildesley}
+M.P. Allen y D.J. Tildesley, \textit{Computer Simulation of Liquids}
+(Oxford University Press, Oxford, 1987).
+
+\bibitem{FrenkelSmit}
+D. Frenkel y B. Smit, \textit{Understanding Molecular Simulation: From
+Algorithms to Applications} (Academic Press, San Diego, 2002), 2.ª ed.
+
+\bibitem{Verlet1967}
+L. Verlet, ``Computer `experiments' on classical fluids. I.
+Thermodynamical properties of Lennard-Jones molecules'', Phys. Rev.
+\textbf{159}, 98 (1967).
+
+\bibitem{Thompson2022}
+A.P. Thompson \emph{et al.}, ``LAMMPS --- a flexible simulation tool for
+particle-based materials modeling at the atomic, meso, and continuum
+scales'', Comput. Phys. Commun. \textbf{271}, 108171 (2022).
+
+\bibitem{Tolman1918}
+R.C. Tolman, ``A general theory of energy partition with applications to
+quantum theory'', Phys. Rev. \textbf{11}, 261 (1918).
+
+\bibitem{Reif1965}
+F. Reif, \textit{Fundamentals of Statistical and Thermal Physics}
+(McGraw-Hill, New York, 1965).
+
+\bibitem{Lindemann1910}
+F.A. Lindemann, ``Über die Berechnung molekularer Eigenfrequenzen'',
+Phys. Z. \textbf{11}, 609 (1910).
+
+\bibitem{HansenVerlet1969}
+J.-P. Hansen y L. Verlet, ``Phase transitions of the Lennard-Jones
+system'', Phys. Rev. \textbf{184}, 151 (1969).
+
+\bibitem{Labastie1990}
+P. Labastie y R.L. Whetten, ``Statistical thermodynamics of the cluster
+solid-liquid transition'', Phys. Rev. Lett. \textbf{65}, 1567 (1990).
+
+\bibitem{Wales1997}
+D.J. Wales y J.P.K. Doye, ``Global optimization by basin-hopping and the
+lowest energy structures of Lennard-Jones clusters containing up to 110
+atoms'', J. Phys. Chem. A \textbf{101}, 5111 (1997).
+
+\bibitem{Schmidt1998}
+M. Schmidt, R. Kusche, B. von Issendorff y H. Haberland, ``Irregular
+variations in the melting point of size-selected atomic clusters'',
+Nature \textbf{393}, 238 (1998).
+
+\bibitem{Haberland1994}
+H. Haberland, M. Mall, M. Moseler, Y. Qiang, T. Reiners y Y. Thurner,
+``Filling of micron-sized contact holes with copper by energetic cluster
+impact'', J. Vac. Sci. Technol. A \textbf{12}, 2925 (1994).
+
+\bibitem{Awasthi2007}
+A. Awasthi, S.C. Hendy, P. Zoontjens y S.A. Brown,
+Phys. Rev. B \textbf{76}, 115437 (2007) (deposición de cúmulos LJ:
+reflexión y adhesión).
+
+\end{thebibliography}
+
+\end{document}

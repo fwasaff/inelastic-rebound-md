@@ -39,8 +39,9 @@ preguntas probables}
 \begin{enumerate}[leftmargin=1.6em]
     \item La energía que un impacto ``pierde'' no se va al piso: queda
     mayoritariamente \clave{dentro de la bola}, mitad cinética
-    ($\alpha_{T_B}\approx0.22$, plateau) y mitad anarmónica
-    ($\Delta V_B$, virial).
+    ($\alpha_{T_B}\approx0.22$, plateau) y mitad potencial
+    ($\Delta V_B\approx T_B$ por virial; el \emph{exceso} sobre $T_B$
+    es la parte anarmónica).
     \item La equipartición correcta se aplica a la \clave{energía
     disipada}, no a $E_0$:
     $f_{\rm ball}=(3N-3)/(3N-3+3N_c^{\rm ef})$ con
@@ -103,10 +104,13 @@ apogeo en $t\approx72\,\tau$; color = KE por átomo).
     \item Columna $\alpha_{T_B}$: \clave{plateau $\approx0.22$ para
     $0.9<v\lesssim1.7$} --- la fracción deja de depender de cuán fuerte
     golpeas; señal de termalización interna.
-    \item Columna $\alpha_{\Delta V_B}$: canal anarmónico comparable al
-    cinético ($T_B\approx\Delta V_B$: virial de sólido casi armónico).
-    \item Cierre: $|\sum\alpha_i-1|<10^{-4}$, \clave{medido canal por
-    canal, no impuesto}.
+    \item Columna $\alpha_{\Delta V_B}$: canal potencial,
+    $\Delta V_B\approx T_B$ por virial (sólido casi armónico); el exceso
+    $\Delta V_B-T_B$, que crece con $v$, es la parte anarmónica.
+    \item Cierre: $\alpha_{\Delta V_B}$ se reporta por cierre; la
+    verificación con $V_B$ \clave{directo} muestra que solo falta la KE
+    \clave{lateral} del CM (mediana $5\times10^{-4}E_0$;
+    $<0.02\,E_0$ para $N\ge55$).
     \item Ojo: el límite superior $v\lesssim1.7$ se justifica en la
     lámina 11 (fusión); si pregunta antes, adelantar ``la bola se funde a
     $v\approx2$, lo vemos en dos láminas''.
@@ -285,9 +289,14 @@ Al primer apogeo, $E_0=KE$ de impacto se reparte en
    \alpha_{T_B}=\frac{T_B}{E_0},\qquad
    \alpha_{\Delta V_B}=\frac{\Delta V_B}{E_0},\qquad
    \alpha_{\rm surf}=\frac{\Delta E_{\rm surf}}{E_0}, \]
-con $\alpha_{\rm bola}\equiv\alpha_{T_B}+\alpha_{\Delta V_B}$ y cierre
-medido $|\sum\alpha_i-1|<10^{-4}$. Cada canal se mide
-independientemente en el dump; la suma no está impuesta.
+con $\alpha_{\rm bola}\equiv\alpha_{T_B}+\alpha_{\Delta V_B}$. En las
+tablas $\alpha_{\Delta V_B}$ se obtiene por cierre ($\sum\alpha_i=1$);
+la verificación independiente con $V_B$ medido muestra que el único
+término ausente es la KE \emph{lateral} del CM en el apogeo: mediana
+$5\times10^{-4}E_0$, $<0.02\,E_0$ para $N\ge55$ (hasta $0.06\,E_0$ en
+$N=2,13$ a baja $v$ --- refuerza el carácter molecular de esos casos).
+En el caso canónico ($N=79$, $h_0=28.15$) el cierre directo es
+$<10^{-4}$.
 
 \subsection{El plateau}
 Para $0.9<v_{\rm imp}\lesssim1.7\,\sigma/\tau$ (y $N\ge55$),
@@ -379,7 +388,9 @@ Versión condensada; el detalle completo está en
     es parte del mensaje (sin promediar, el ruido parece física).
     \item[¿Rotación / momento angular?] No medido; declarado futuro
     (\texttt{compute angmom} es una línea). Está dentro de $T_B$, no
-    afecta el cierre.
+    afecta el cierre. La traslación \emph{lateral} del CM sí queda fuera
+    de los 4 canales: medida, mediana $5\times10^{-4}E_0$ y
+    $<0.02\,E_0$ para $N\ge55$; declarada en el manuscrito.
     \item[¿Temperatura inicial finita?] Futuro. $T=0$ aísla el
     mecanismo; el plateau debería sobrevivir mientras
     $T\ll T_{\rm fus}$.
@@ -400,7 +411,7 @@ Plateau & $\alpha_{T_B}\approx0.22$ ($0.9<v\lesssim1.7$, $N\ge55$) \\
 Equipartición & $f_{\rm ball}=(3N-3)/(3N-3+3N_c^{\rm ef})$, $N_c^{\rm ef}=25\pm8$ \\
 Tres escalas & $25\ll45$--$90\ll300$--$410$ (ef / geom / part) \\
 $f_{\rm ball}$ medidos & 0.34 (N2), 0.55 (N7), 0.38 (N13), 0.49 (N55), 0.70 (N79), 0.77 (N87) \\
-Conservación & $|\Delta E|=0.023\,\eps=4.3\times10^{-4}E_0$ en $400\,\tau$; cierre $<10^{-4}$ \\
+Conservación & $|\Delta E|=4.3\times10^{-4}E_0$ en $400\,\tau$; KE lateral CM: med.\ $5\times10^{-4}E_0$, $<0.02\,E_0$ ($N\ge55$) \\
 Validación 2012 & $e_1$: 0.90 (2012) vs 0.92 (2026) cuasi-elástico; $z_{\rm rest}\approx10.3\,\sigma$ \\
 Losa doble & $\alpha_{\rm surf}$: $0.083\to0.143$; $f_{\rm ball}$: $0.87\to0.75$ \\
 Fusión & sólida $v\le1.47$ (contraste 11); fundida $v=2.03$ (contraste 2); $T_{\rm fus}^*\approx0.30$--$0.35$ \\

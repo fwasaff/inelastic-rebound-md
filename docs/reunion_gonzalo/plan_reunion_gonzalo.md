@@ -38,7 +38,7 @@ nuevas, no con redacción. Verificado contra los datos:
 | min | Tema | Lámina(s) |
 |-----|------|-----------|
 | 0–5   | Contexto: qué retomamos de 2012 y qué preguntamos ahora | 2 |
-| 5–15  | **Video 1** (rebote sólido) + los 4 canales + cierre exacto | 3–5 |
+| 5–15  | **Video 1** (rebote sólido) + los 4 canales + cierre verificado | 3–5 |
 | 15–25 | Control de calidad: conservación, shift, termalización, validación contra su Fig. 7 | 6–8 |
 | 25–40 | **El resultado central:** f_ball → 1, N_c^ef ≈ 25, las tres escalas de N_c | 9–11 |
 | 40–47 | **Video 2** (fusión a v≈2) + límites: fusión, losa, N=7/13 | 12–13 |
@@ -76,7 +76,7 @@ del manuscrito como "lección de convenciones".
 R: El 2012 describe el balance *durante* el contacto; nosotros medimos la
 partición *al primer apogeo*, cuando los canales ya se separaron. U_c es
 transitorio y regresa mayoritariamente a la bola. Lo nuevo: los 4 α con
-cierre exacto, el plateau α_TB ≈ 0.22, la reformulación de equipartición
+cierre verificado, el plateau α_TB ≈ 0.22, la reformulación de equipartición
 sobre energía disipada, N_c medido, h*, y el caso con adhesión.
 
 **P: "¿La fórmula de equipartición y h* vienen de mis notas?"**
@@ -124,8 +124,10 @@ el reservorio interno crece como 3N−3 y el neto de la superficie no crece.
 
 **P: "¿Se conserva la energía?"**
 R: |ΔE| < 0.023 ε = 4.3×10⁻⁴ E₀ por impacto (dt = 0.005 τ), figura dedicada.
-Y el cierre Σα = 1 se mide canal por canal, < 10⁻⁴ — cada canal se mide
-independientemente, la suma no está impuesta.
+α_ΔVB se reporta por cierre; la verificación independiente con V_B medido
+muestra que lo único ausente es la KE lateral del CM (mediana 5×10⁻⁴ E₀,
+< 0.02 E₀ para N≥55; declarada en el manuscrito). En el caso canónico
+N=79/h₀=28.15 el cierre directo es < 10⁻⁴.
 
 **P: "¿El shift del potencial no cambia la dinámica?"**
 R: No: desplaza U por una constante por par dentro de r_c; las fuerzas son

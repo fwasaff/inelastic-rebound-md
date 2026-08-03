@@ -1,0 +1,63 @@
+% =============================================================================
+% notas_reunion_hoy.tex — Notas personales de una página para la reunión Zoom
+% con Gonzalo. NO es un guion para presentarle a él; es para tener al lado.
+% Espíritu: abrir, mostrar, preguntar, callar. Seguirlo si se desvía.
+% Compilar: pdflatex notas_reunion_hoy.tex
+% =============================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage[margin=2cm]{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{titlesec}
+
+\titleformat{\section}{\normalfont\bfseries\large}{}{0pt}{}
+\titlespacing{\section}{0pt}{8pt}{4pt}
+\setlength{\parskip}{2pt}
+\pagestyle{empty}
+
+\begin{document}
+
+{\Large\bfseries Reunión con Gonzalo — hoy}\\[2pt]
+{\small Un solo objetivo: que él haga el análisis conmigo, no que yo lo presente cerrado.}
+
+\section*{Regla de la reunión}
+No uso las 15 láminas como guion. Las abro \emph{solo si él pide} profundizar
+en algo puntual. Si se queda media hora en un punto, lo sigo ahí —
+no vuelvo a mi orden.
+
+\section*{Orden}
+
+\begin{enumerate}[leftmargin=1.4em,itemsep=4pt]
+  \item \textbf{Abrir con la imagen} que ya le gustó (secuencia de 4 paneles:
+  caída, compresión, expansión, apogeo). Sin conclusiones todavía —
+  solo ``mira lo que se ve''.
+
+  \item \textbf{Reproducción 2012: una frase.} ``Reproducimos su trabajo,
+  coincide en el régimen elástico.'' Punto. No me quedo ahí.
+
+  \item \textbf{Mostrar el dato crudo y preguntar, no anunciar.}\\
+  \emph{``Medimos $N_c$ de tres formas distintas y dan 25, 60 y 350 —
+  ¿cómo lo lees tú?''}\\
+  Dejar que él arme la historia de las tres escalas antes de decir
+  la mía.
+
+  \item \textbf{Silencio después de preguntar.} Contar hasta cinco antes
+  de completar la idea.
+
+  \item \textbf{Las 4 decisiones (autoría, ORCID, idioma, arXiv/RBEF)
+  van al final, solo si se llega ahí solo.} No las fuerzo hoy.
+\end{enumerate}
+
+\section*{Si me pregunta ``¿y qué sigue?''}
+Ahí sí puedo mostrar la reformulación ($f_{ball}\to 1$, $N_c^{ef}\approx25$)
+como algo abierto a su lectura, no como resultado cerrado.
+
+\section*{Recordatorio}
+La vez pasada avancé más de lo pedido y él, con calma, me devolvió al
+problema del rebote. Hoy: seguirlo a él, no a la agenda escrita.
+
+\end{document}

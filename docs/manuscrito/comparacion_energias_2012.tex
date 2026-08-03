@@ -1,0 +1,430 @@
+% =============================================================================
+% comparacion_energias_2012.tex — Nota comparativa: las ocho energías de la
+% Sección 4 de Gutiérrez et al. (2012), "Inelastic Collisions and
+% Hypervelocity Impacts at Nanoscopic Level", vs. los cuatro canales alpha
+% de este estudio (borrador_rbef_v2.tex).
+% Compilar: pdflatex comparacion_energias_2012.tex (dos pasadas)
+% =============================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black]{hyperref}
+
+\newcommand{\eps}{\varepsilon}
+\newcommand{\kb}{k_B}
+\newcommand{\lammps}{\textsc{Lammps}}
+
+\title{\textbf{Las energías del rebote: dos formulaciones}\\
+\large Comparación entre la partición de energía de
+Gutiérrez \emph{et al.} (2012) y la de este estudio}
+\author{Felipe Wasaff}
+\date{Julio 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Gutiérrez \emph{et al.} (2012)\cite{Gutierrez2012}, Sección~4
+(``Bouncing of a ball over a surface: atomic level study''), definen ocho
+energías para seguir la disipación de un cúmulo LJ que rebota sobre una
+superficie. Este estudio parte exactamente de ese mismo esquema, pero lo
+reorganiza en cuatro fracciones adimensionales $\alpha_i$ que suman $1$ y
+se miden en el primer apogeo. Esta nota escribe ambos conjuntos de
+ecuaciones lado a lado, las desarrolla paso a paso, y hace explícito el
+mapeo entre ellos, incluyendo dos sutilezas de implementación (el reparto
+de la energía colisional $U_c$ y la definición de $K_S$) que no son
+evidentes de la sola lectura de ambos textos.
+\end{abstract}
+
+\tableofcontents
+
+% =============================================================================
+\section{Las ocho energías de Gutiérrez et al. (2012)}
+\label{sec:2012}
+% =============================================================================
+
+El capítulo trabaja con un sistema cerrado (bola + superficie), integrado
+con el algoritmo de Beeman, sin termostato: la energía total se conserva
+exactamente y ``la pérdida'' de energía es en realidad una
+\emph{transferencia} entre los siguientes ocho términos.
+
+\subsection{Potencial de interacción}
+
+\begin{equation}
+V(r) = \begin{cases}
+4\eps\left[\left(\dfrac{\sigma}{r}\right)^{12}
+- c\left(\dfrac{\sigma}{r}\right)^{6}\right] & r < r_c=2.5\,\sigma\\[4pt]
+0 & r\ge r_c,
+\end{cases}
+\label{eq:2012_lj}
+\end{equation}
+con $c=1$ para pares del mismo tipo (bola--bola, superficie--superficie) y
+$c=0$ para pares bola--superficie (repulsión pura). $\eps/\kb=119.8$~K,
+$\sigma=3.40$~\AA{} (argón).
+
+\subsection{Energías cinéticas}
+
+\begin{align}
+K_B &= \tfrac12 M_B\|\mathbf V_{\rm CM}^B\|^2
+    &&\text{cinética traslacional del CM de la bola,}
+    \label{eq:2012_KB}\\
+K_S &= \tfrac12 M_S\|\mathbf V_{\rm CM}^S\|^2
+    &&\text{cinética traslacional del CM de la superficie,}
+    \label{eq:2012_KS}\\
+T_B &= \sum_{i\in{\rm bola}} \tfrac12 m_i\|\mathbf v_i-\mathbf V_{\rm CM}^B\|^2
+    &&\text{energía térmica (vibracional) de la bola,}
+    \label{eq:2012_TB}\\
+T_S &= \sum_{i\in{\rm superf.}} \tfrac12 m_i\|\mathbf v_i-\mathbf V_{\rm CM}^S\|^2
+    &&\text{energía térmica de la superficie.}
+    \label{eq:2012_TS}
+\end{align}
+
+\subsection{Energía potencial: cuatro términos}
+
+\begin{equation}
+U = V_B + V_S + U_c + U_F,
+\label{eq:2012_U}
+\end{equation}
+\begin{align}
+V_B &= \sum_{\text{pares bola}} V(r) &&\text{potencial vibracional de la bola,}
+    \label{eq:2012_VB}\\
+V_S &= \sum_{\text{pares superficie}} V(r) &&\text{potencial vibracional de la superficie,}
+    \label{eq:2012_VS}\\
+U_c &= \sum_{\text{pares bola--superficie}} V(r) &&\text{energía colisional,}
+    \label{eq:2012_Uc}\\
+U_F &= M_B\,a\,z_{\rm CM} &&\text{potencial del campo de fuerza (gravedad),}
+    \label{eq:2012_UF}
+\end{align}
+con $a=0.026\,a_0$ la aceleración impuesta. Como el sistema es cerrado y
+newtoniano,
+\[
+K_B+K_S+T_B+T_S+V_B+V_S+U_c+U_F = \text{const.}
+\]
+en todo instante ---no solo en el apogeo---, lo que permite graficar la
+evolución temporal completa de cada término (Fig.~9 del capítulo) y usar
+el ancho del pico de $U_c(t)$ como definición operacional del
+\emph{tiempo de contacto}.
+
+\subsection{Desarrollo explícito de los cuatro términos}
+\label{sec:desarrollo_2012}
+
+Las ecs.~(\ref{eq:2012_VB})--(\ref{eq:2012_Uc}) son sumas dobles sobre
+pares de átomos; escribirlas con índices explícitos deja ver por qué son
+tres piezas disjuntas de la misma suma total. Sea $\mathcal B=\{1,\ldots,
+N\}$ el conjunto de átomos de la bola y $\mathcal S$ el de la superficie,
+con $r_{ij}=\|\vec r_i-\vec r_j\|$. Sustituyendo el potencial
+ec.~(\ref{eq:2012_lj}) (con $c=1$ para pares del mismo tipo,
+$c=0$ para pares bola--superficie):
+\begin{align}
+V_B &= \sum_{\substack{i<j\\ i,j\in\mathcal B}}
+    4\eps\left[\left(\frac{\sigma}{r_{ij}}\right)^{12}
+    -\left(\frac{\sigma}{r_{ij}}\right)^{6}\right],
+    \label{eq:2012_VB_exp}\\
+V_S &= \sum_{\substack{i<j\\ i,j\in\mathcal S}}
+    4\eps\left[\left(\frac{\sigma}{r_{ij}}\right)^{12}
+    -\left(\frac{\sigma}{r_{ij}}\right)^{6}\right],
+    \label{eq:2012_VS_exp}\\
+U_c &= \sum_{i\in\mathcal B}\sum_{j\in\mathcal S}
+    4\eps\left(\frac{\sigma}{r_{ij}}\right)^{12},
+    \label{eq:2012_Uc_exp}
+\end{align}
+todas restringidas a $r_{ij}<r_c=2.5\,\sigma$ (fuera de ese radio, cada
+término es cero). Nótese que $U_c$, ec.~(\ref{eq:2012_Uc_exp}), no lleva
+el término atractivo $-(\sigma/r_{ij})^6$: el par bola--superficie usa
+$c=0$ (repulsión pura), de modo que $U_c\ge0$ siempre, mientras que
+$V_B$ y $V_S$ sí pueden ser negativos (el cúmulo y la losa son estables
+por la parte atractiva de Lennard-Jones). La suma triple
+$V_B+V_S+U_c$ recorre \emph{cada} par de átomos del sistema exactamente
+una vez: los pares $\mathcal B$--$\mathcal B$ en $V_B$, los pares
+$\mathcal S$--$\mathcal S$ en $V_S$, y los pares cruzados
+$\mathcal B$--$\mathcal S$ en $U_c$ --- no hay traslape ni pares
+faltantes, lo que garantiza que ec.~(\ref{eq:2012_U}) sea exactamente el
+potencial total del sistema y no una aproximación.
+
+El cuarto término, $U_F$, no es una suma sobre pares sino la energía
+potencial de la fuerza externa constante $\vec F=-M_Ba\,\hat z$ que actúa
+solo sobre la bola (simulando gravedad). Integrando
+$U_F(z)=-\int_0^z F_z\,dz'=\int_0^z M_Ba\,dz'=M_Ba\,z$ y evaluando en
+$z=z_{\rm CM}$, la coordenada del centro de masa de la bola, se recupera
+la ec.~(\ref{eq:2012_UF}). En unidades no reducidas, $a$ hace las veces de
+la aceleración de gravedad $g$, así que $U_F=M_Bgz_{\rm CM}$ es,
+literalmente, la energía potencial gravitatoria de toda la vida.
+
+% =============================================================================
+\section{Los cuatro canales de este estudio}
+\label{sec:nuestro}
+% =============================================================================
+
+Este estudio no grafica energías en función del tiempo continuo, sino que
+las evalúa en un único instante ---el primer apogeo, cuando la bola vuelve
+a alcanzar velocidad vertical nula tras separarse--- y las normaliza por
+la energía de impacto $E_0=Mg\,h_0^{\rm ef}$, de modo que los canales sean
+fracciones adimensionales comparables entre corridas de $N$ y $h_0$
+distintos:
+\begin{align}
+    \alpha_{\rm cm}     &= \frac{h_1}{h_0^{\rm ef}} = e_1^2
+        &&\text{energía recuperada por el CM,}
+        \label{eq:acm}\\
+    \alpha_{T_B}        &= \frac{T_B^{(1)}}{E_0}
+        &&\text{KE vibracional interna de la bola,}
+        \label{eq:atb}\\
+    \alpha_{\rm surf}   &= \frac{\Delta(K_S + V_{\rm surf})}{E_0}
+        &&\text{fonones de la superficie,}
+        \label{eq:asurf}\\
+    \alpha_{\Delta V_B} &= \frac{V_B^{(1)}-V_B^{(0)}}{E_0}
+        &&\text{calentamiento potencial de la bola,}
+        \label{eq:avb}
+\end{align}
+donde el superíndice $(1)$ indica ``evaluado en el primer apogeo'' y
+$(0)$, ``en el instante inicial''. La conservación de energía garantiza
+\begin{equation}
+\alpha_{\rm cm}+\alpha_{T_B}+\alpha_{\rm surf}+\alpha_{\Delta V_B} = 1
+\label{eq:cierre}
+\end{equation}
+salvo un quinto término pequeño (la KE lateral del CM cuando el rebote no
+es perfectamente vertical), que en las tablas se absorbe dentro de
+$\alpha_{\Delta V_B}$ reportándola \emph{por cierre},
+$\alpha_{\Delta V_B}=1-\alpha_{\rm cm}-\alpha_{T_B}-\alpha_{\rm surf}$, en
+vez de calcularla directamente de $V_B$.
+
+% =============================================================================
+\section{Mapeo entre ambas formulaciones}
+\label{sec:mapeo}
+% =============================================================================
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Gutiérrez 2012 & Este estudio & Relación \\
+\midrule
+$V(r)$, ec.~(\ref{eq:2012_lj}) & $U_{\rm LJ}(r)$ & idéntica; $c\to c_{ij}$ \\
+$T_B$, ec.~(\ref{eq:2012_TB}) & $T_B^{(1)}$ en $\alpha_{T_B}$ & idéntica, evaluada en el apogeo \\
+$V_B$, ec.~(\ref{eq:2012_VB}) & $V_B^{(1)}-V_B^{(0)}$ en $\alpha_{\Delta V_B}$ & idéntica; nosotros restamos el valor inicial \\
+$K_B$, ec.~(\ref{eq:2012_KB}) & $\alpha_{\rm cm}=h_1/h_0^{\rm ef}$ & equivalente: $K_B^{(1)}=\alpha_{\rm cm}E_0$ \\
+$U_c$, ec.~(\ref{eq:2012_Uc}) & --- (no aparece en el apogeo) & $U_c\to0$ una vez separada la bola \\
+$U_F$, ec.~(\ref{eq:2012_UF}) & absorbido en la definición de $E_0=Mg h_0^{\rm ef}$ & mismo término, contabilizado distinto \\
+$K_S+T_S$ & $\alpha_{\rm surf}$ (vía \texttt{KS}) & ver nota (a) abajo \\
+$V_S$ & $\alpha_{\rm surf}$ (vía \texttt{PE\_surf}) & ver nota (b) abajo \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Nota (a) --- $K_S$ vs.\ $K_S+T_S$.} El capítulo separa
+formalmente la traslación del centro de masa de la superficie ($K_S$,
+ec.~\ref{eq:2012_KS}) de su energía térmica interna ($T_S$,
+ec.~\ref{eq:2012_TS}). Nuestro código \texttt{in.bounce\_cluster} calcula
+en cambio la energía cinética \emph{total} del grupo superficie
+(\texttt{compute surf\_ke}, sin restar el CM), es decir mide
+$K_S^{\rm paper}+T_S^{\rm paper}$ de una sola vez. Esto no introduce error
+en nuestro caso porque las capas inferiores de la losa están fijas
+(\texttt{setforce~0~0~0}): la superficie no adquiere momento neto
+apreciable, así que $K_S^{\rm paper}\approx0$ y nuestra variable
+\texttt{KS} es, en la práctica, $T_S^{\rm paper}$.
+
+\textbf{Nota (b) --- el reparto de $U_c$ entre $V_B$ y $V_S$.} El cómputo
+\texttt{pe/atom} de \lammps{} reparte la energía de cada par
+\emph{50/50} entre sus dos átomos. Sumar esa cantidad sobre todos los
+átomos de la bola da entonces $V_B^{\rm paper}+\tfrac12 U_c$, no
+$V_B^{\rm paper}$ puro; por eso nuestro código corrige explícitamente
+\verb|VB = c_pe_ball - 0.5*c_Uc|, restando la mitad de $U_c$ que le
+corresponde a la bola. La misma suma sobre la superficie
+(\texttt{PE\_surf}) \emph{no} se corrige, así que
+$\texttt{PE\_surf}=V_S^{\rm paper}+\tfrac12 U_c$. Esto sería un problema
+si evaluáramos estas cantidades durante la colisión, pero como
+$\alpha_{\rm surf}$ y $\alpha_{\Delta V_B}$ se miden en el primer apogeo
+---cuando la bola ya está separada y $U_c\approx0$ por definición
+(ec.~\ref{eq:2012_Uc} solo suma pares bola--superficie dentro de
+$r_c=2.5\,\sigma$)--- el término $\tfrac12 U_c$ es nulo en el instante de
+medición y no contamina ningún canal reportado.
+
+\subsection{Desarrollo explícito de los cuatro canales}
+\label{sec:desarrollo_canales}
+
+Con el mapeo y las dos notas anteriores ya establecidos, cada canal
+$\alpha_i$ se puede desarrollar hasta quedar escrito enteramente en
+términos de las ocho energías originales de la Sección~\ref{sec:2012}.
+
+\paragraph{$\alpha_{\rm cm}$: de la cinemática de caída libre al COR.}
+La bola cae desde el reposo una altura $h_0^{\rm ef}$ bajo el campo
+constante $g$; toda la energía del problema nace como potencial
+gravitatoria de la bola, $E_0=Mg\,h_0^{\rm ef}$. Considerando solo el
+movimiento de su centro de masa (sin tocar aún los canales internos), la
+velocidad de impacto satisface
+\[
+\tfrac12 M v_0^2 = Mg\,h_0^{\rm ef} \quad\Longrightarrow\quad
+v_0=\sqrt{2g\,h_0^{\rm ef}}.
+\]
+Tras el primer rebote, el CM se aleja con velocidad $v_1$ y por la misma
+conservación de energía del canal traslacional alcanza una altura de
+apogeo $h_1$ tal que $v_1=\sqrt{2g\,h_1}$. El coeficiente de restitución
+del primer rebote se define cinemáticamente como el cociente de
+rapideces, $e_1\equiv v_1/v_0$ (una cantidad puramente dinámica, sin
+mención de energía), de donde
+\begin{equation}
+e_1^2=\frac{v_1^2}{v_0^2}=\frac{2g\,h_1}{2g\,h_0^{\rm ef}}
+=\frac{h_1}{h_0^{\rm ef}}.
+\label{eq:e1_derivacion}
+\end{equation}
+Y como la energía que queda en el canal del CM tras el rebote es de nuevo
+puramente potencial en el apogeo, $Mg\,h_1$, su fracción de $E_0$ es
+$Mg\,h_1/(Mg\,h_0^{\rm ef})=h_1/h_0^{\rm ef}$: exactamente el mismo
+cociente. Por eso ec.~(\ref{eq:acm}) escribe dos expresiones separadas por
+un signo igual --- $h_1/h_0^{\rm ef}$ (definición energética) y $e_1^2$
+(definición cinemática, ec.~\ref{eq:e1_derivacion}) --- que coinciden
+exactamente \emph{porque} la caída y el ascenso del CM son, cada uno, un
+tiro vertical simple bajo campo uniforme, sin pérdidas dentro del propio
+canal del CM.
+
+\paragraph{$\alpha_{T_B}$: por qué se evalúa justo en el apogeo.}
+Desarrollando la suma de la ec.~(\ref{eq:atb}) con el tiempo explícito,
+$t_1$ el instante del primer apogeo ($V_{{\rm CM},z}^B(t_1)=0$ tras la
+separación):
+\begin{equation}
+T_B^{(1)} = \sum_{i\in\mathcal B}\tfrac12 m_i
+\left\|\vec v_i(t_1)-\vec V_{\rm CM}^B(t_1)\right\|^2.
+\label{eq:TB1_exp}
+\end{equation}
+El apogeo no es un instante arbitrario: es precisamente cuando
+$K_B=\tfrac12M_B\|\vec V_{\rm CM}^B\|^2=0$ (ec.~\ref{eq:2012_KB}), de modo
+que \emph{toda} la energía cinética que le queda a la bola en ese instante
+es, por construcción, interna --- no hay velocidad de CM que restar ni
+mezcla posible entre el canal traslacional y el vibracional. Evaluar
+$\alpha_{T_B}$ en cualquier otro instante mezclaría ambos canales y
+volvería ambigua la separación de la ec.~(\ref{eq:cierre}).
+
+\paragraph{$\alpha_{\rm surf}$: energía total ganada por la superficie.}
+Expandiendo la diferencia de la ec.~(\ref{eq:asurf}) en sus dos instantes,
+\begin{equation}
+\Delta(K_S+V_{\rm surf}) =
+\big[K_S^{(1)}+V_{\rm surf}^{(1)}\big] -
+\big[K_S^{(0)}+V_{\rm surf}^{(0)}\big].
+\label{eq:asurf_exp}
+\end{equation}
+En $t=0$ la superficie fue equilibrada a $T=0$ y sus velocidades se fijan
+en cero antes de soltar la bola (\texttt{velocity all set 0.0 0.0 0.0} en
+\texttt{in.bounce\_cluster}), así que $K_S^{(0)}=0$ exactamente; además la
+bola parte lejos de la superficie, de modo que no hay pares
+bola--superficie dentro de $r_c$ y $V_{\rm surf}^{(0)}=V_S^{{\rm
+paper},(0)}$ sin ninguna contaminación de $U_c$. En $t=t_1$ la bola ya se
+separó y $U_c^{(1)}\approx0$ (Nota~(b) arriba), así que
+$V_{\rm surf}^{(1)}=V_S^{{\rm paper},(1)}$ y (por las capas fijas de la
+losa, Nota~(a)) $K_S^{(1)}=T_S^{{\rm paper},(1)}$. La ec.~(\ref{eq:asurf_exp})
+se reduce entonces, en ambos extremos, a
+\begin{equation}
+\alpha_{\rm surf}\approx\frac{T_S^{{\rm paper},(1)}
++V_S^{{\rm paper},(1)}-V_S^{{\rm paper},(0)}}{E_0}:
+\label{eq:asurf_final}
+\end{equation}
+la energía vibracional (cinética \emph{más} potencial) que la red de la
+superficie ganó entre el instante de soltar la bola y el primer apogeo
+---literalmente los fonones creados por el impacto, sin ninguna
+ambigüedad de reparto de $U_c$ en ninguno de los dos extremos de la
+diferencia.
+
+\paragraph{$\alpha_{\Delta V_B}$: por qué se resta el valor inicial.}
+Usando la forma explícita de $V_B$, ec.~(\ref{eq:2012_VB_exp}), en los
+mismos dos instantes,
+\begin{equation}
+V_B^{(1)}-V_B^{(0)} =
+\sum_{\substack{i<j\\ i,j\in\mathcal B}}
+4\eps\left[\left(\frac{\sigma}{r_{ij}(t_1)}\right)^{12}
+-\left(\frac{\sigma}{r_{ij}(t_1)}\right)^{6}\right]
+-\sum_{\substack{i<j\\ i,j\in\mathcal B}}
+4\eps\left[\left(\frac{\sigma}{r_{ij}(0)}\right)^{12}
+-\left(\frac{\sigma}{r_{ij}(0)}\right)^{6}\right].
+\label{eq:avb_exp}
+\end{equation}
+$V_B^{(0)}$ no es cero: es la energía de cohesión del cúmulo frío
+premínimizado, con todos los pares cerca de su separación de equilibrio
+$r_m$ (Sección ``Un sólido que vibra: equipartición + virial juntos'' de
+\texttt{equiparticion\_y\_virial.tex}), y crece en magnitud con $N$. Si
+reportáramos $V_B^{(1)}$ solo, esa cohesión ---que nada tiene que ver con
+el impacto--- dominaría por completo la cifra. Restar $V_B^{(0)}$ aísla
+exactamente el calentamiento potencial producido por la colisión: los
+pares se alejan de $r_m$ al vibrar con más amplitud, y como el pozo de
+Lennard-Jones es asimétrico (Sección ``El exceso anarmónico'' de la misma
+nota), ese desplazamiento promedio es sistemáticamente positivo.
+
+% =============================================================================
+\section{Diferencias sustantivas}
+\label{sec:diferencias}
+% =============================================================================
+
+\begin{enumerate}[leftmargin=1.4em]
+
+\item \textbf{Instantánea vs.\ serie temporal.} El capítulo original
+grafica las ocho energías en función continua del tiempo (su Fig.~9,
+en unidades de $\eps$) para describir el mecanismo de intercambio durante
+la colisión. Este estudio evalúa los canales en un único instante ---el
+primer apogeo--- y los normaliza por $E_0$, sacrificando la dinámica
+temporal a cambio de poder comparar de forma sistemática 210 corridas
+distintas de $(N,h_0)$ mediante un solo número por canal.
+
+\item \textbf{Un canal de superficie explícito.} El capítulo no define una
+fracción de energía análoga a $\alpha_{\rm surf}$; sus energías de
+superficie ($K_S$, $T_S$, $V_S$) se leen solo del gráfico temporal,
+comentando que ``no contribuyen significativamente a la transferencia de
+energía'' para el caso que analizan en detalle ($N\approx79$,
+$h_0=11.03\,\sigma$, régimen casi elástico). Este estudio muestra que esa
+conclusión \emph{no} se sostiene en general: $\alpha_{\rm surf}$ crece con
+$v_{\rm imp}$ y llega a ser comparable a los otros canales a alta
+velocidad (Sección ``¿A dónde se va la energía? Los cuatro canales'' de
+\texttt{borrador\_rbef\_v2.tex}), lo que motivó agregar el canal como
+fracción de pleno derecho, con su propio control de tamaño finito de la
+losa.
+
+\item \textbf{Cúmulos de tamaño exacto.} El capítulo construye la bola
+recortando una esfera de la red (\texttt{create\_atoms region sphere}),
+lo que produce un número de átomos que depende de dónde cae el centro de
+la esfera respecto de la red ($N\approx79$--84 para su radio). Este
+estudio corrige esto construyendo la bola por capas esféricas FCC
+completas y minimizándola en vacío antes de soltarla, garantizando el
+mismo $N$ exacto en todas las corridas.
+
+\item \textbf{$\alpha_{\rm cm}$ como fracción formal.} El capítulo
+reporta las alturas de rebote (su Fig.~7) pero no las convierte
+explícitamente en una fracción de energía normalizada; este estudio
+formaliza $\alpha_{\rm cm}=e_1^2=h_1/h_0^{\rm ef}$ como el primero de los
+cuatro canales, permitiendo sumarlo directamente con los otros tres en la
+ec.~(\ref{eq:cierre}).
+
+\item \textbf{Promedio sobre orientaciones.} El capítulo reporta una
+simulación por altura $h_0$ (sin barras de error). Este estudio promedia
+sobre 5 orientaciones iniciales del cúmulo para cada $(N,h_0)$, reportando
+media $\pm\sigma$ ---una respuesta directa a que el capítulo original no
+cuantifica la variabilidad intrínseca del sistema.
+
+\end{enumerate}
+
+% =============================================================================
+\section{Conclusión}
+% =============================================================================
+
+Las cuatro fracciones $\alpha_i$ de este estudio no son un esquema nuevo:
+son las mismas ocho energías de Gutiérrez \emph{et al.} (2012), evaluadas
+en un instante fijo (el primer apogeo) y renormalizadas por $E_0$ para que
+sumen $1$. Las dos correcciones de bajo nivel (el reparto de $U_c$ entre
+$V_B$ y $V_S$, y la definición de $K_S$) no cambian ningún resultado
+reportado porque ambas se anulan en el instante de medición; las
+diferencias que sí importan son conceptuales: aislar $\alpha_{\rm surf}$
+como canal de pleno derecho, construir cúmulos de $N$ exacto, y promediar
+sobre orientaciones para tener barras de error.
+
+% =============================================================================
+\begin{thebibliography}{9}
+\bibitem{Gutierrez2012}
+G. Gutiérrez, S. Davis, C. Loyola, J. Peralta, F. González, Y. Navarrete
+y F. González-Wasaff, \textit{Inelastic Collisions and Hypervelocity
+Impacts at Nanoscopic Level: A Molecular Dynamics Study}, cap.~12 en
+\textit{Molecular Dynamics -- Theoretical Developments and Applications
+in Nanotechnology and Energy}, editado por L. Wang (InTech, Rijeka, 2012).
+\end{thebibliography}
+
+\end{document}
