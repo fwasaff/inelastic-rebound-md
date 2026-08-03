@@ -15,23 +15,27 @@
 #   cluster_file : ruta al archivo .dat del cluster pre-minimizado
 #   h0           : altura inicial del CM de la bola sobre la superficie [sigma]
 #   g            : gravedad [sigma/tau^2]
+#   bc_xy        : p (periódico, defecto) o s (shrink-wrap, superficie libre en
+#                  x,y — sin envoltura periódica; el frente elástico se refleja
+#                  en el borde en vez de reaparecer por el lado opuesto)
 # ==============================================================================
 
 # --- Configuración global -----------------------------------------------------
 units           lj
 atom_style      atomic
-boundary        p p f
 newton          on
 
 # --- Variables ----------------------------------------------------------------
+variable    bc_xy         index p
+boundary        ${bc_xy} ${bc_xy} f
 variable    cluster_file  index lammps/clusters/cluster_N1_min.dat
 variable    h0            index 11.03
 variable    g             index 0.026
 variable    c_ps          index 0
 variable    a0            equal 1.5496
-variable    Nx            equal 8
-variable    Ny            equal 8
-variable    Nz            equal 6
+variable    Nx            index 8
+variable    Ny            index 8
+variable    Nz            index 6
 variable    dt            index 0.005
 variable    thermo_freq   equal 100
 variable    print_freq    equal 20
@@ -88,12 +92,34 @@ region      reg_fixed block INF INF INF INF 0 ${z_fixed_top} units lattice
 group       fixed_surf  region reg_fixed
 group       mobile_surf subtract surface fixed_surf
 
+# --- Rotación opcional de la bola (promedio sobre orientaciones) ---------------
+# ax,ay,az: ángulos (grados) de rotación sucesiva de la bola en torno a su
+# propio centro, en los ejes x, y, z. Defecto 0 → orientación cristalina
+# original (runs previos idénticos). Se aplica antes de la minimización de la
+# superficie, de modo que la geometría interna (mínimo en vacío) se conserva.
+variable    ax   index 0.0
+variable    ay   index 0.0
+variable    az   index 0.0
+variable    bcx  equal xcm(ball,x)
+variable    bcy  equal xcm(ball,y)
+variable    bcz  equal xcm(ball,z)
+if "${ax} != 0.0" then "displace_atoms ball rotate ${bcx} ${bcy} ${bcz} 1 0 0 ${ax} units box"
+if "${ay} != 0.0" then "displace_atoms ball rotate ${bcx} ${bcy} ${bcz} 0 1 0 ${ay} units box"
+if "${az} != 0.0" then "displace_atoms ball rotate ${bcx} ${bcy} ${bcz} 0 0 1 ${az} units box"
+
 # --- Minimización T=0 ---------------------------------------------------------
 # El cluster ya está minimizado en aislamiento; solo minimizamos la superficie.
 # La bola se mantiene fija durante la minimización de la superficie.
+# etol=0 (no 1e-6): con losas grandes (Nx,Ny~80, ~1.5e5 átomos) la energía
+# total es tan grande que un cambio relativo de 1e-6 entre pasos ya la
+# satisface aunque las fuerzas sigan altas (visto: force two-norm 405->357 en
+# solo 2 iteraciones) -- corta la minimización antes de que la superficie
+# libre alcance a relajar, dejando tensión residual que se ve como vibración
+# ambiente espuria desde t=0. Con etol=0 el criterio de parada es solo ftol
+# (fuerza) o los topes de iteración/evaluación, que sí escalan bien con N.
 fix         f_fix_bot   fixed_surf  setforce 0.0 0.0 0.0
 fix         f_tmp_ball  ball        setforce 0.0 0.0 0.0
-minimize    1.0e-6 1.0e-8 5000 50000
+minimize    0.0 1.0e-8 20000 200000
 unfix       f_tmp_ball
 unfix       f_fix_bot
 
@@ -132,6 +158,53 @@ variable    KS_out      equal  c_surf_ke
 variable    PE_surf_out equal  c_pe_surf_r
 variable    Uc_out      equal  c_Uc
 variable    time        equal  step*${dt}
+
+# --- Capa absorbente opcional (esponja) ----------------------------------------
+# Sin esto, un frente elástico se refleja en un borde libre (bc_xy=s) o vuelve
+# por la imagen periódica (bc_xy=p) antes de disiparse -- ver
+# scripts/analizar_ondas_superficie.py. La esponja amortigua la velocidad
+# (fix viscous, F=-gamma*v; sin ruido térmico, a diferencia de fix langevin)
+# en 5 anillos concéntricos centrados en el punto de impacto (Lx/2,Ly/2), con
+# gamma en RAMPA CUADRÁTICA gamma_k = gamma_max*(k/5)^2. La rampa gradual (en
+# vez de un escalón) es lo que evita que la entrada de la esponja refleje --
+# mismo principio que una capa perfectamente acoplada (PML): la impedancia
+# cambia despacio, así el frente "no nota" el borde de la esponja y entra sin
+# rebotar, y luego se apaga contra la pared. Empieza en r0_frac*(Lx/2).
+# NOTA: fix viscous no conserva energía a propósito (la disipa) -- con
+# sponge=1 el cierre Sum(alpha)=1 de bounce.dat deja de valer; usar sponge
+# solo para el diagnóstico de ondas, no para las corridas de partición.
+variable    sponge     index 0
+variable    r0_frac    index 0.45
+variable    gamma_max  index 8.0
+if "${sponge} == 1" then &
+    "variable  R_edge  equal v_Lx/2" &
+    "variable  R0      equal v_r0_frac*v_R_edge" &
+    "variable  dR      equal (v_R_edge-v_R0)/5.0" &
+    "region    dsk0 cylinder z $(v_Lx/2) $(v_Ly/2) $(v_R0)        EDGE EDGE" &
+    "region    dsk1 cylinder z $(v_Lx/2) $(v_Ly/2) $(v_R0+v_dR)   EDGE EDGE" &
+    "region    dsk2 cylinder z $(v_Lx/2) $(v_Ly/2) $(v_R0+2*v_dR) EDGE EDGE" &
+    "region    dsk3 cylinder z $(v_Lx/2) $(v_Ly/2) $(v_R0+3*v_dR) EDGE EDGE" &
+    "region    dsk4 cylinder z $(v_Lx/2) $(v_Ly/2) $(v_R0+4*v_dR) EDGE EDGE" &
+    "group     g0 region dsk0" &
+    "group     g1 region dsk1" &
+    "group     g2 region dsk2" &
+    "group     g3 region dsk3" &
+    "group     g4 region dsk4" &
+    "group     ring1r subtract g1 g0" &
+    "group     ring2r subtract g2 g1" &
+    "group     ring3r subtract g3 g2" &
+    "group     ring4r subtract g4 g3" &
+    "group     ring1 intersect ring1r mobile_surf" &
+    "group     ring2 intersect ring2r mobile_surf" &
+    "group     ring3 intersect ring3r mobile_surf" &
+    "group     ring4 intersect ring4r mobile_surf" &
+    "group     ring5 subtract mobile_surf g4" &
+    "fix       f_sp1 ring1 viscous $(v_gamma_max*0.04)" &
+    "fix       f_sp2 ring2 viscous $(v_gamma_max*0.16)" &
+    "fix       f_sp3 ring3 viscous $(v_gamma_max*0.36)" &
+    "fix       f_sp4 ring4 viscous $(v_gamma_max*0.64)" &
+    "fix       f_sp5 ring5 viscous ${gamma_max}" &
+    "print     'ESPONJA 5 anillos cuadratica: R0=${R0} dR=${dR} R_edge=${R_edge} gamma_max=${gamma_max}'"
 
 # --- Dinámica NVE -------------------------------------------------------------
 fix         f_freeze_fixed  fixed_surf  setforce 0.0 0.0 0.0

@@ -43,7 +43,7 @@ Thumbs.db
 *.toc
 *.bbl
 *.blg
-docs/*.log
+docs/**/*.log
 docs/*Notes.bib
 texput.log
 *.nav
