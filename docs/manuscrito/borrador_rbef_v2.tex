@@ -61,7 +61,7 @@ personal. Midiendo la energía en el primer apogeo identificamos cuatro
 canales cuya suma es exactamente la energía de impacto $E_0$: la energía
 recuperada por el centro de masa ($\alpha_{\rm cm}=e_1^2$), el
 calentamiento vibracional interno de la bola ($\alpha_{T_B}\approx0.22$),
-la expansión anarmónica de la bola ($\alpha_{\Delta V_B}\approx0.2$--$0.3$)
+el calentamiento potencial interno de la bola ($\alpha_{\Delta V_B}\approx0.2$--$0.3$)
 y los fonones de la superficie ($\alpha_{\rm surf}\approx0.07$--$0.16$).
 La mayor parte de la energía no recuperada queda
 \emph{dentro de la propia pelota}, no en el piso. Promediando sobre las
@@ -92,7 +92,7 @@ atoms on a crystalline surface, simulated with the open-source code
 we identify four channels whose sum is exactly the impact energy $E_0$:
 the energy recovered by the center of mass ($\alpha_{\rm cm}=e_1^2$), the
 internal vibrational heating of the ball ($\alpha_{T_B}\approx0.22$), the
-anharmonic expansion of the ball ($\alpha_{\Delta V_B}\approx0.2$--$0.3$)
+internal potential-energy heating of the ball ($\alpha_{\Delta V_B}\approx0.2$--$0.3$)
 and the surface phonons ($\alpha_{\rm surf}\approx0.07$--$0.16$). The
 result is surprising: most of the non-recovered energy stays \emph{inside
 the ball itself}, not in the floor. Averaging over cluster orientations and
@@ -211,15 +211,22 @@ $h_1$) y normalizados por la energía de impacto $E_0=Mg\,h_0^{\rm ef}$:
     \alpha_{\rm surf}   &= \frac{\Delta(K_S + V_{\rm surf})}{E_0}
         &&\text{(fonones de la superficie),} \label{eq:asurf}\\
     \alpha_{\Delta V_B} &= \frac{V_B^{(1)}-V_B^{(0)}}{E_0}
-        &&\text{(expansión anarmónica de la bola),} \label{eq:avb}
+        &&\text{(calentamiento potencial de la bola),} \label{eq:avb}
 \end{align}
 donde $h_0^{\rm ef}$ es la altura de caída medida desde el nivel de
 contacto, $T_B$ es la energía cinética de los átomos de la bola
 \emph{descontado} el movimiento del centro de masa, y $V_B$ es la energía
-potencial interna de la bola. La conservación de la energía garantiza
-$\alpha_{\rm cm}+\alpha_{T_B}+\alpha_{\Delta V_B}+\alpha_{\rm surf}=1$, y
-esa suma, medida de forma independiente canal por canal, es el primer
-control de calidad de la simulación (Sección~\ref{sec:metodos}).
+potencial interna de la bola. La conservación de la energía garantiza que
+estos cuatro canales sumen $1$ salvo un quinto término pequeño: la energía
+cinética \emph{lateral} que el CM retiene cuando el rebote no es
+perfectamente vertical. En las tablas reportamos $\alpha_{\Delta V_B}$ por
+cierre ($1-\alpha_{\rm cm}-\alpha_{T_B}-\alpha_{\rm surf}$), de modo que ese
+retroceso lateral queda incluido en él; comparando con la medición directa
+de $V_B$ en la simulación lo cuantificamos: mediana $5\times10^{-4}\,E_0$
+sobre las 210 corridas, inferior a $0.02\,E_0$ para $N\ge55$, y llega a
+$\sim0.06\,E_0$ solo en los cúmulos moleculares ($N=2$, $13$) a baja
+velocidad. Esta comprobación es el primer control de calidad de la
+simulación (Sección~\ref{sec:metodos}).
 
 % =============================================================================
 \section{La simulación con LAMMPS}
@@ -259,9 +266,12 @@ los canales. Truncando \emph{y desplazando} el potencial
 (\texttt{pair\_modify shift yes}) ---lo que no altera fuerzas ni
 trayectorias--- la energía total se conserva a
 $|\Delta E|<0.03\,\eps\sim4\times10^{-4}E_0$ por impacto con paso de
-tiempo $\Delta t=5\times10^{-3}\,\tau$, y la suma de los cuatro canales
-cierra en $|\sum\alpha_i-1|<10^{-4}$. Comprobar este cierre es un
-excelente ejercicio de control numérico para el estudiante.
+tiempo $\Delta t=5\times10^{-3}\,\tau$, y la partición medida de forma
+directa (usando $V_B$ de la simulación en vez del cierre) reproduce
+$\sum\alpha_i=1$ hasta la KE lateral del CM discutida en la
+Sección~\ref{sec:modelo} (en el caso de referencia $N=79$,
+$h_0=28.15\,\sigma$, el cierre directo es $<10^{-4}$). Comprobar este
+cierre es un excelente ejercicio de control numérico para el estudiante.
 
 \textbf{(c) Convenciones de medición.} La altura ``$h_0$'' puede medirse
 desde el tope de la caja, desde la superficie o como altura absoluta del
@@ -323,8 +333,9 @@ estudiantes:
 \small
 \caption{Partición de la energía del primer rebote para $N=79$,
 $c_{ps}=0$, $T=0$, promediada sobre 5 orientaciones iniciales del cúmulo
-(media $\pm\sigma$; losa $8\times8\times6$). Por conservación,
-$\alpha_{\rm cm}+\alpha_{T_B}+\alpha_{\Delta V_B}+\alpha_{\rm surf}=1$. La
+(media $\pm\sigma$; losa $8\times8\times6$). $\alpha_{\Delta V_B}$ se
+reporta por cierre ($\sum\alpha_i=1$) e incluye la pequeña KE lateral del
+CM (Sec.~\ref{sec:modelo}). La
 dispersión entre orientaciones domina la incertidumbre; a alta energía
 $\alpha_{\rm surf}$ está además subestimado $\sim0.06$ por tamaño finito de
 losa (Sec.~\ref{sec:metodos}d).}
@@ -351,12 +362,17 @@ impacto supera $\sim0.9\,\sigma/\tau$, la fracción cinética interna salta
 a un \emph{plateau} $\alpha_{T_B}\approx0.21$--$0.24$ que se mantiene
 hasta la máxima velocidad estudiada.
 
-\textbf{Segundo}, existe un canal sin análogo macroscópico: la
-\emph{expansión anarmónica} $\alpha_{\Delta V_B}$. Al comprimirse y
-recalentarse, la bola queda vibrando alrededor de un estado expandido
-(el potencial de la ecuación~(\ref{eq:lj}) es más blando hacia afuera que
-hacia adentro), y esa energía potencial ``viaja'' con la bola. Es
-comparable al canal cinético: $\alpha_{\Delta V_B}\approx0.21$--$0.33$.
+\textbf{Segundo}, el calentamiento interno tiene una mitad potencial:
+$\alpha_{\Delta V_B}$. Por el teorema del virial, un sólido casi armónico
+almacena en promedio tanta energía potencial como cinética en sus
+vibraciones, de modo que $\Delta V_B\approx T_B$ es la firma de una bola
+que se comporta como sólido termalizado ---y así ocurre:
+$\alpha_{\Delta V_B}\approx0.21$--$0.33$, comparable al canal cinético.
+El \emph{exceso} $\Delta V_B-T_B$, que crece con la velocidad de impacto,
+sí es genuinamente anarmónico: la bola queda vibrando alrededor de un
+estado expandido (el potencial de la ecuación~(\ref{eq:lj}) es más blando
+hacia afuera que hacia adentro), y esa energía potencial ``viaja'' con la
+bola.
 En conjunto, la bola retiene como energía interna
 $\alpha_{\rm bola}=\alpha_{T_B}+\alpha_{\Delta V_B}\approx0.4$--$0.6$ de
 $E_0$.
@@ -421,7 +437,8 @@ $f_{\rm ball}$ & $N_c^{\rm geom}$ & $N_c^{\rm part}$ \\
 \bottomrule
 \end{tabular}\\
 \footnotesize $^a$ $N=13$ no alcanza el plateau en el rango estudiado
-(ver texto).
+(ver texto); en este régimen molecular parte de su $\alpha_{\rm bola}$
+(hasta $\sim0.05$) es retroceso lateral del CM, no energía interna.
 \end{table*}
 
 En vez de dejar $N_c$ como parámetro de ajuste, lo \emph{medimos} en la
@@ -589,7 +606,8 @@ dificultad creciente:
 
     \item \textbf{Cierre energético.} Medir los cuatro canales de las
     ecuaciones~(\ref{eq:acm})--(\ref{eq:avb}) y verificar
-    $\sum\alpha_i=1$. Repetir con el potencial truncado sin desplazar y
+    $\sum\alpha_i=1$; identificar el pequeño déficit restante como la KE
+    lateral del CM. Repetir con el potencial truncado sin desplazar y
     explicar el origen del error de cierre resultante.
 
     \item \textbf{Predecir antes de simular.} Con la

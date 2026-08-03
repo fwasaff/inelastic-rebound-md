@@ -1,0 +1,571 @@
+% =============================================================================
+% equiparticion_y_virial.tex — Nota teórica complementaria: de dónde salen
+% los canales alpha_TB y alpha_ΔVB. Equipartición, virial, sólidos armónicos,
+% y el origen anarmónico del exceso Delta V_B - T_B. Con historia y fuentes
+% primarias/textos de referencia para cada resultado.
+% Compilar: pdflatex equiparticion_y_virial.tex (dos pasadas)
+% =============================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black]{hyperref}
+
+\newcommand{\eps}{\varepsilon}
+\newcommand{\kb}{k_B}
+\newcommand{\lammps}{\textsc{Lammps}}
+\newcommand{\clave}[1]{\textcolor{red!55!black}{\textbf{#1}}}
+
+\title{\textbf{Calor cinético y calor potencial en un cúmulo que vibra}\\
+\large Equipartición, el teorema del virial, y por qué
+$T_B \approx \Delta V_B$ --- historia, derivaciones y fuentes}
+\author{Felipe Wasaff}
+\date{Julio 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Cuando la bola de nuestro proyecto se calienta al chocar, esa energía se
+reparte en dos mitades casi iguales: una cinética ($T_B$, los átomos se
+mueven) y una potencial ($\Delta V_B$, los enlaces se estiran y comprimen).
+Este documento explica \emph{por qué} ocurre eso, con las herramientas que
+lo predicen ---el teorema de equipartición y el teorema del virial---, su
+historia, sus demostraciones, y por qué la igualdad no es exacta sino que
+tiene un exceso sistemático que crece con la energía del impacto. Todas las
+afirmaciones históricas y las fórmulas están referenciadas a fuentes
+primarias o a textos de posgrado estándar.
+\end{abstract}
+
+\tableofcontents
+
+% =============================================================================
+\section{La pregunta}
+% =============================================================================
+
+En la Sección~\ref{sec:proyecto} definimos dos canales de la partición de
+energía del rebote:
+\[ \alpha_{T_B} = \frac{T_B}{E_0}, \qquad
+   \alpha_{\Delta V_B} = \frac{\Delta V_B}{E_0}, \]
+y observamos, en 210 simulaciones independientes, que
+$\Delta V_B \approx T_B$ ---con un exceso sistemático,
+$\Delta V_B - T_B$, que crece con la velocidad de impacto. Esa igualdad
+aproximada no es un accidente numérico: es la predicción de dos teoremas
+centenarios de la física estadística y la mecánica clásica, que se aplican
+aquí con una precisión notable porque nuestra simulación es
+\emph{clásica y sin aproximaciones de temperatura}: no hay efectos
+cuánticos que corregir, así que la predicción se cumple de manera casi
+exacta, no como un límite de alta temperatura.
+
+% =============================================================================
+\section{El teorema de equipartición}
+\label{sec:equiparticion_teo}
+% =============================================================================
+
+\subsection{Enunciado}
+
+En el ensamble canónico clásico (temperatura $T$ fija, distribución de
+Boltzmann $\rho \propto e^{-H/\kb T}$), si una variable $x$ del
+Hamiltoniano $H$ tiene un rango de integración tal que
+$x\,e^{-H/\kb T}\to0$ en sus extremos (siempre cierto para momentos, y para
+coordenadas confinadas por un potencial), entonces
+\begin{equation}
+\left\langle x\,\frac{\partial H}{\partial x}\right\rangle = \kb T.
+\label{eq:equip_general}
+\end{equation}
+
+\subsection{Demostración}
+
+Sea $\beta=1/\kb T$. Como
+$(\partial H/\partial x)\,e^{-\beta H} = -\beta^{-1}\,\partial_x
+\big(e^{-\beta H}\big)$,
+\[ \left\langle x\frac{\partial H}{\partial x}\right\rangle
+   = -\frac{1}{\beta Z}\int x\,\partial_x\!\big(e^{-\beta H}\big)\,d\Gamma. \]
+Integrando por partes en $x$ (el término de borde se anula por hipótesis):
+\[ \int x\,\partial_x\!\big(e^{-\beta H}\big)\,dx
+   = \big[x\,e^{-\beta H}\big]_{\rm borde} - \int e^{-\beta H}\,dx
+   = -\int e^{-\beta H}\,dx, \]
+de modo que $\langle x\,\partial H/\partial x\rangle
+= \beta^{-1} = \kb T$. $\blacksquare$
+
+\subsection{Corolario: energía por grado de libertad cuadrático}
+
+Si $H$ contiene un término $H\supset a\,x^2$ (con $a$ constante), entonces
+$x\,\partial H/\partial x \supset 2a x^2$, y la ecuación~(\ref{eq:equip_general})
+da directamente
+\begin{equation}
+\langle a\,x^2 \rangle = \tfrac12 \kb T.
+\label{eq:equip_cuadratico}
+\end{equation}
+Esta es la forma familiar: \emph{cada grado de libertad que entra al
+cuadrado en la energía aporta $\tfrac12\kb T$ en promedio}, sin importar la
+masa ni la constante de resorte. Para energía cinética
+$K=\tfrac12 m v^2$, cada componente de velocidad aporta $\tfrac12\kb T$;
+para los $3N-3$ grados cinéticos internos de nuestra bola,
+\begin{equation}
+\langle T_B\rangle = \frac{3N-3}{2}\,\kb T
+\quad\Longrightarrow\quad
+T_{\rm ef} \equiv \frac{2\,T_B}{3N-3}
+\label{eq:Tef_derivada}
+\end{equation}
+---exactamente la definición de temperatura efectiva que usamos en el
+proyecto.
+
+\subsection{Historia}
+
+\begin{itemize}[leftmargin=1.4em]
+\item \textbf{John James Waterston (1845)} propuso una versión temprana del
+reparto de energía en un artículo enviado a la Royal Society. Fue
+\clave{rechazado} por los revisores, que lo consideraron especulativo y sin
+fundamento suficiente. El manuscrito quedó archivado.
+\item \textbf{Maxwell (1860)} llegó al mismo resultado de forma
+independiente para la teoría cinética de los gases, repartiendo energía
+entre los grados de libertad traslacionales.
+\item \textbf{Boltzmann (1871)} lo generalizó a sistemas mecánicos
+arbitrarios, más allá de los gases ideales.
+\item \textbf{Rayleigh}, revisando los archivos de la Royal Society casi
+medio siglo después, encontró el manuscrito rechazado de Waterston y lo
+hizo publicar \textbf{47 años después} de haber sido escrito --- un caso
+célebre de revisión por pares fallida en la historia de la física.
+\item \textbf{Tolman (1918)} dio la demostración general moderna, la que
+seguimos arriba, en el lenguaje del espacio de fases.
+\item Nota histórica adicional: aplicado ingenuamente a los modos del
+campo electromagnético (radiación de cuerpo negro), este mismo teorema
+predice energía infinita por unidad de volumen --- la ``catástrofe
+ultravioleta''. Ese fracaso fue una de las motivaciones centrales que
+llevaron a Planck (1900) y Einstein (1905) a introducir la cuantización.
+\end{itemize}
+
+\subsection{Fuentes}
+\begin{itemize}[leftmargin=1.4em]
+\item J.J. Waterston, \textit{Phil. Trans. R. Soc.} \textbf{183}, 1 (1892)
+--- el artículo de 1845, publicado póstumamente gracias a Rayleigh.
+\item R.C. Tolman, \textit{Phys. Rev.} \textbf{11}, 261 (1918) --- prueba
+general moderna.
+\item F. Reif, \textit{Fundamentals of Statistical and Thermal Physics}
+(McGraw-Hill, 1965), cap.~6 --- la derivación pedagógica estándar de
+posgrado.
+\item L.D. Landau y E.M. Lifshitz, \textit{Statistical Physics}, Curso de
+Física Teórica vol.~5 (Pergamon) --- tratamiento riguroso alternativo.
+\end{itemize}
+
+% =============================================================================
+\section{El teorema del virial}
+\label{sec:virial_teo}
+% =============================================================================
+
+La equipartición predice cuánto vale $T_B$. Pero \emph{no} predice, por sí
+sola, que $\Delta V_B$ valga lo mismo --- eso requiere un teorema distinto:
+el virial.\footnote{Este es el virial \emph{mecánico} de Clausius,
+$2\langle K\rangle=-\langle\sum_i\vec F_i\cdot\vec r_i\rangle$, sobre
+trayectorias acotadas en el tiempo. No debe confundirse con la
+\emph{expansión del virial} de la mecánica estadística de gases reales,
+$pV/Nk_BT=1+B_2(T)N/V+\cdots$: ambas llevan el nombre de Clausius (que
+introdujo el término en 1870) pero son resultados distintos, uno mecánico
+y el otro estadístico.}
+
+\subsection{Demostración}
+
+Sea $G = \sum_i \vec p_i \cdot \vec r_i$ (suma sobre partículas). Su
+derivada temporal es
+\[ \frac{dG}{dt} = \sum_i \left(\dot{\vec p}_i\cdot\vec r_i
+   + \vec p_i\cdot\dot{\vec r}_i\right)
+   = \sum_i \vec F_i\cdot\vec r_i + \sum_i \frac{p_i^2}{m_i}
+   = \sum_i \vec F_i\cdot\vec r_i + 2K. \]
+Si el movimiento está acotado (posiciones y momentos permanecen finitos,
+como en un sólido o una órbita), el promedio temporal de $dG/dt$ sobre un
+intervalo largo $\mathcal T$ tiende a cero:
+$\langle dG/dt\rangle = [G(\mathcal T)-G(0)]/\mathcal T \to 0$. Por lo
+tanto
+\begin{equation}
+2\langle K\rangle = -\Big\langle\sum_i \vec F_i\cdot\vec r_i\Big\rangle
+\equiv \langle \text{virial}\rangle.
+\label{eq:virial_general}
+\end{equation}
+Clausius llamó a $-\sum_i\vec F_i\cdot\vec r_i$ el \emph{virial} del
+sistema (del latín \textit{vis}, fuerza).
+
+\subsection{Forma para potenciales tipo ley de potencia}
+
+Si una partícula se mueve en un potencial central $V(r)=c\,r^n$, entonces
+$\vec F\cdot\vec r = -nc\,r^n = -nV(r)$, y la
+ecuación~(\ref{eq:virial_general}) se reduce a
+\begin{equation}
+2\langle K\rangle = n\,\langle V\rangle.
+\label{eq:virial_potencia}
+\end{equation}
+
+\textbf{Ejemplo 1 --- resorte ($n=2$):} $2\langle K\rangle=2\langle V\rangle
+\Rightarrow \langle K\rangle=\langle V\rangle$. Esta es la relación que
+predice $T_B\approx\Delta V_B$ en nuestro sistema, una vez que aproximamos
+el potencial de Lennard-Jones cerca de su mínimo como una parábola
+(Sección~\ref{sec:solido_armonico}).
+
+\textbf{Ejemplo 2 --- gravedad o Coulomb ($n=-1$):}
+$2\langle K\rangle=-\langle V\rangle$. Esta forma del virial tiene una
+aplicación histórica célebre: \textbf{Zwicky (1933)}, midiendo las
+velocidades de las galaxias en el cúmulo de Coma y aplicando
+$2\langle K\rangle=-\langle V\rangle$ para estimar la masa total del
+cúmulo, encontró que la masa necesaria para mantenerlas gravitacionalmente
+ligadas superaba largamente la masa visible en estrellas --- el primer
+indicio observacional de lo que hoy llamamos materia oscura.
+
+\subsection{Historia}
+
+\textbf{Rudolf Clausius (1870)} introdujo el teorema y el término
+``virial'' en el contexto de \emph{corregir la ley de los gases ideales}:
+quería entender cómo las fuerzas entre moléculas reales modifican la
+relación presión-volumen-temperatura. Ese origen sigue vivo hoy en el
+nombre de las \emph{expansiones viriales} de la ecuación de estado,
+$pV = nRT(1 + B_2/V + B_3/V^2 + \cdots)$, usadas en termodinámica de gases
+reales.
+
+\subsection{Fuentes}
+\begin{itemize}[leftmargin=1.4em]
+\item R. Clausius, \textit{Ueber einen auf die Wärme anwendbaren
+mechanischen Satz}, \textit{Ann. Phys.} \textbf{141}, 124 (1870) ---
+artículo original.
+\item F. Zwicky, \textit{Die Rotverschiebung von extragalaktischen Nebeln},
+\textit{Helv. Phys. Acta} \textbf{6}, 110 (1933) --- aplicación a Coma y
+el origen de la ``materia oscura''.
+\item H. Goldstein, C. Poole y J. Safko, \textit{Classical Mechanics},
+3.\ ed. (Addison-Wesley, 2002), cap.~3 --- derivación clásica estándar de
+posgrado (la que seguimos arriba).
+\end{itemize}
+
+% =============================================================================
+\section{Un sólido que vibra: equipartición + virial juntos}
+\label{sec:solido_armonico}
+% =============================================================================
+
+Cerca de su mínimo $r_m$, el potencial de Lennard-Jones se puede aproximar
+como una parábola (expansión de Taylor a segundo orden):
+\begin{equation}
+V_{\rm LJ}(r) \approx V(r_m) + \tfrac12 V''(r_m)\,(r-r_m)^2,
+\qquad V''(r_m) \approx 57.15\,\eps/\sigma^2
+\label{eq:taylor2}
+\end{equation}
+(el valor numérico es el que calculamos para nuestro sistema en la guía
+principal del proyecto). Esta es la aproximación \emph{armónica}: cada par
+de átomos vecinos se comporta como un resorte.
+
+Un sólido de $N$ átomos vibrando armónicamente equivale, tras
+diagonalizar, a $3N-3$ osciladores independientes (modos normales, en el
+lenguaje moderno de fonones). Cada modo tiene, por
+equipartición~(\ref{eq:equip_cuadratico}), $\tfrac12\kb T$ de energía
+cinética y, por el virial con $n=2$, la misma cantidad de energía
+potencial:
+\begin{equation}
+\langle T_B\rangle = \frac{3N-3}{2}\kb T, \qquad
+\langle \Delta V_B\rangle = \frac{3N-3}{2}\kb T
+\quad\Longrightarrow\quad
+\langle T_B\rangle = \langle \Delta V_B\rangle.
+\label{eq:virial_solido}
+\end{equation}
+Esta es la predicción teórica exacta (a nivel armónico) detrás de lo que
+medimos en las 210 simulaciones.
+
+\subsection{Conexión con la ley de Dulong-Petit}
+
+Sumando las dos mitades, cada átomo del sólido almacena $3\kb T$ de
+energía vibracional total (3 modos cinéticos + 3 potenciales, cada uno
+$\tfrac12\kb T$). Para un mol de átomos, esto da una capacidad calorífica
+$C_V = 3R$ --- la ley empírica de \textbf{Dulong y Petit (1819)}, que
+describieron un valor casi universal para sólidos a temperatura ambiente
+mucho antes de que existiera una explicación microscópica. La
+equipartición, medio siglo después, fue la explicación teórica.
+
+\subsection{Por qué no hace falta corrección cuántica aquí}
+
+Dulong-Petit falla en materiales reales a baja temperatura: la capacidad
+calorífica cae a cero cuando $T\to0$, en vez de mantenerse constante en
+$3R$. La razón es cuántica: los modos de vibración de alta frecuencia
+requieren $\kb T \gtrsim \hbar\omega$ para excitarse térmicamente, y a
+baja $T$ quedan ``congelados''. \textbf{Einstein (1907)} dio la primera
+explicación cuántica (osciladores idénticos de una sola frecuencia);
+\textbf{Debye (1912)} la refinó con un espectro continuo de frecuencias,
+reproduciendo la ley $T^3$ observada experimentalmente a muy baja
+temperatura.
+
+\clave{Nuestra simulación no necesita ninguna de estas dos correcciones.}
+\lammps{} integra dinámica clásica de Newton --- no hay $\hbar$, ningún
+modo está ``congelado''. El virial clásico se cumple exactamente, no como
+límite de alta temperatura sino como la física completa y correcta del
+modelo. Por eso la igualdad $T_B\approx\Delta V_B$ es tan limpia en
+nuestros datos.
+
+\subsection{Fuentes}
+\begin{itemize}[leftmargin=1.4em]
+\item P.L. Dulong y A.T. Petit, \textit{Ann. Chim. Phys.} \textbf{10}, 395
+(1819) --- ley empírica original.
+\item A. Einstein, \textit{Ann. Phys.} \textbf{22}, 180 (1907) --- primer
+modelo cuántico de sólido.
+\item P. Debye, \textit{Ann. Phys.} \textbf{39}, 789 (1912) --- refinamiento
+con espectro de frecuencias.
+\item N.W. Ashcroft y N.D. Mermin, \textit{Solid State Physics} (Saunders
+College, 1976) --- tratamiento estándar de posgrado de todo lo anterior.
+\end{itemize}
+
+% =============================================================================
+\section{El exceso anarmónico: por qué $\Delta V_B$ es \emph{un poco más}
+que $T_B$}
+\label{sec:anarmonia}
+% =============================================================================
+
+La ecuación~(\ref{eq:taylor2}) es solo el segundo orden de una expansión
+de Taylor. El siguiente término, cúbico,
+\begin{equation}
+V_{\rm LJ}(r) \approx V(r_m) + \tfrac12 V''(r_m)(r-r_m)^2
++ \tfrac16 V'''(r_m)(r-r_m)^3 + \cdots,
+\end{equation}
+\textbf{rompe la simetría} de la parábola. En un potencial puramente
+armónico (solo el término cuadrático), la probabilidad de encontrar al
+átomo desplazado $+u$ o $-u$ de su posición de equilibrio es idéntica
+(simetría par), así que el desplazamiento promedio es exactamente cero:
+$\langle u\rangle=0$. Con el término cúbico presente, esa simetría se
+rompe: el pozo de potencial es más ``duro'' hacia adentro (repulsión
+$\propto r^{-12}$, muy empinada) y más ``blando'' hacia afuera (atracción
+$\propto r^{-6}$, mucho más suave). El átomo, vibrando con cierta energía,
+pasa más tiempo y alcanza mayor amplitud hacia el lado barato ---el
+promedio $\langle u\rangle$ deja de ser cero y se vuelve positivo: la
+distancia promedio entre átomos \textbf{crece con la energía vibracional}.
+
+Esto \textbf{es}, microscópicamente, la dilatación térmica. La conexión
+sistemática entre la forma (asimetría) del potencial interatómico y la
+dilatación térmica fue establecida por \textbf{Grüneisen (1912)}, quien
+introdujo el parámetro que lleva su nombre,
+$\gamma = -\dfrac{d\ln\omega}{d\ln V}$, cuantificando cuánto se ablandan
+los modos de vibración cuando el sólido se expande.
+
+En nuestros datos, este exceso se ve directamente en el cociente
+$\alpha_{\Delta V_B}/\alpha_{T_B}$, que crece de $\approx1.1$
+($v_{\rm imp}=1.16\,\sigma/\tau$) a $\approx1.7$
+($v_{\rm imp}=2.02\,\sigma/\tau$): a mayor energía de impacto, mayor
+amplitud de vibración, y mayor el sesgo hacia el lado ``caro'' de la
+asimetría de Lennard-Jones.
+
+\subsection{Fuentes}
+\begin{itemize}[leftmargin=1.4em]
+\item E. Grüneisen, \textit{Theorie des festen Zustandes einatomiger
+Elemente}, \textit{Ann. Phys.} \textbf{344}, 257 (1912) --- origen del
+parámetro de Grüneisen y la conexión anarmonicidad--dilatación térmica.
+\item N.W. Ashcroft y N.D. Mermin, \textit{Solid State Physics}, cap.\ de
+efectos anarmónicos --- tratamiento moderno estándar.
+\end{itemize}
+
+% =============================================================================
+\section{Aplicación explícita a este proyecto}
+\label{sec:proyecto}
+% =============================================================================
+
+Reuniendo todo, las cantidades que medimos en la simulación y sus
+predicciones teóricas:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Cantidad & Definición medida & Predicción teórica \\
+\midrule
+$T_{\rm ef}$ & $2T_B/(3N-3)$ & equipartición, ec.~(\ref{eq:Tef_derivada}) \\
+$T_B \approx \Delta V_B$ & tabla partición, Sec.~\ref{sec:solido_armonico} & virial armónico, ec.~(\ref{eq:virial_solido}) \\
+$\Delta V_B - T_B > 0$, crece con $v$ & Sec.~\ref{sec:anarmonia} & anarmonicidad (Grüneisen) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Las dos secciones siguientes contrastan estas predicciones contra el sweep
+con orientaciones (\texttt{data/outputs/cluster\_orient}): $N\in\{1,2,7,13,
+55,79,87\}\times$ 6 alturas $\times$ 5 orientaciones iniciales del cúmulo
+$=210$ simulaciones independientes, las mismas que se citan en el
+resumen. Cada punto reportado abajo es media $\pm$ desviación estándar
+sobre las 5 orientaciones a igual $(N,h_0)$ --- no un único run, a
+diferencia de las cifras que aparecían en una versión anterior de esta
+nota.
+
+\subsection{¿Se cumple $T_B\approx\Delta V_B$? Contraste directo}
+\label{sec:contraste_directo}
+
+La Fig.~\ref{fig:virial_check}a muestra $\alpha_{T_B}$ y
+$\alpha_{\Delta V_B}$ en función de $v_{\rm imp}$ para $N=79$, el cúmulo
+canónico del proyecto:
+
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+$v_{\rm imp}\,(\sigma/\tau)$ & $\alpha_{T_B}$ & $\alpha_{\Delta V_B}$ & $\alpha_{\Delta V_B}/\alpha_{T_B}$\\
+\midrule
+0.70 & $0.13\pm0.09$ & $0.04\pm0.02$ & $0.98\pm1.08$ \\
+0.93 & $0.17\pm0.05$ & $0.21\pm0.17$ & $1.12\pm0.66$ \\
+1.16 & $0.22\pm0.10$ & $0.24\pm0.10$ & $1.10\pm0.17$ \\
+1.43 & $0.21\pm0.06$ & $0.26\pm0.09$ & $1.24\pm0.31$ \\
+1.72 & $0.19\pm0.04$ & $0.31\pm0.05$ & $1.65\pm0.36$ \\
+2.02 & $0.18\pm0.02$ & $0.31\pm0.05$ & $1.68\pm0.22$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Las dos curvas de la Fig.~\ref{fig:virial_check}a son estadísticamente
+indistinguibles ---dentro de una barra de error--- en la ventana
+$0.9\lesssim v_{\rm imp}\lesssim1.4$: ahí el virial armónico,
+ec.~(\ref{eq:virial_solido}), \textbf{se cumple}. Fuera de esa ventana pasan
+dos cosas distintas, cada una con una explicación física propia (no son
+``ruido''): a $v$ alta $\alpha_{\Delta V_B}$ se despega sistemáticamente
+por encima de $\alpha_{T_B}$ (Sec.~\ref{sec:exceso_v_alta}); a $v$ baja
+($v_{\rm imp}=0.70$) ambas fracciones son pequeñas y sus barras de error
+son comparables a su magnitud, señal de que el régimen de contacto es
+cualitativamente distinto (Sec.~\ref{sec:falla_v_baja}).
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=\textwidth]{../figuras_rbef/fig_virial_check.pdf}
+\caption{Contraste del virial armónico contra el sweep con orientaciones.
+(a) $\alpha_{T_B}$ y $\alpha_{\Delta V_B}$ vs.\ $v_{\rm imp}$ para $N=79$
+(media $\pm\sigma$, 5 orientaciones por punto): las curvas coinciden dentro
+de error para $0.9\lesssim v_{\rm imp}\lesssim1.4$ y se separan
+sistemáticamente a $v$ mayor. (b) Razón $\alpha_{\Delta V_B}/\alpha_{T_B}$
+para $N=13,55,79,87$: el mismo patrón ---acercamiento a la línea virial
+(razón $=1$) en una ventana intermedia de $v$, seguido de un exceso
+creciente--- se repite de forma robusta en los cuatro tamaños de cúmulo
+``sólidos'' del sweep.}
+\label{fig:virial_check}
+\end{figure}
+
+\subsection{El exceso a $v$ alta: anarmonicidad, y que no depende de $N$}
+\label{sec:exceso_v_alta}
+
+La Fig.~\ref{fig:virial_check}b generaliza la razón
+$\alpha_{\Delta V_B}/\alpha_{T_B}$ a $N=13,55,79,87$. El resultado clave es
+que el mismo patrón cualitativo aparece en los cuatro tamaños: la razón
+cruza $1$ alrededor de $v_{\rm imp}\approx1.1$--$1.4$ y luego crece de
+forma monótona, alcanzando $1.6$--$1.8$ en el extremo del sweep
+($v_{\rm imp}\approx2.0$). Que la tendencia sea la misma en un rango de
+$N$ que va de 13 a 87 átomos --- con geometrías, números de coordinación y
+frecuencias de modo normal distintas entre sí --- es evidencia de que el
+exceso no es un artefacto de tamaño finito ni de la definición por cierre
+de $\alpha_{\Delta V_B}$ (Sec.~\ref{sec:anarmonia}), sino la firma genuina
+de la anarmonicidad de Lennard-Jones predicha por Grüneisen: a mayor
+energía de impacto, mayor amplitud de vibración, y el pozo asimétrico
+empuja $\langle\Delta V_B\rangle$ por encima de $\langle T_B\rangle$ de
+forma sistemática y reproducible entre cúmulos de tamaño muy distinto.
+
+\subsection{Por qué el virial deja de cumplirse a $v$ baja}
+\label{sec:falla_v_baja}
+
+La demostración de la Sec.~\ref{sec:virial_teo} depende de una hipótesis
+que es fácil pasar por alto: el promedio temporal de $dG/dt$ tiende a cero
+solo si el intervalo de promediado $\mathcal T$ es largo comparado con el
+período característico del movimiento acotado. En nuestro sistema,
+$\mathcal T$ es el \emph{tiempo de contacto} bola-superficie durante el
+primer rebote --- no un intervalo elegido por nosotros, sino impuesto por
+la dinámica.
+
+A $v_{\rm imp}=0.70$ ($N=79$), $e_1\approx0.92$ (Sec.~\ref{sec:proyecto}):
+el impacto es casi elástico, la bola apenas se deforma, y el tiempo de
+contacto es corto en comparación con el período de vibración interna de
+los enlaces LJ ($\sim2\pi\sqrt{m/V''(r_m)}\approx0.83\,\tau$, a partir de
+la ec.~(\ref{eq:taylor2})). El promedio temporal que exige el virial
+simplemente no alcanza a completarse dentro del contacto: la bola no
+``olvida'' su fase inicial de vibración antes de despegar, y por eso
+$\alpha_{T_B}$ y $\alpha_{\Delta V_B}$ son pequeños, ruidosos entre
+orientaciones (la fase inicial de cada orientación importa) y su razón no
+converge a ningún valor estable (nótese la barra de error de
+$\pm1.08$ sobre un valor medio de $0.98$ en la tabla de
+Sec.~\ref{sec:contraste_directo}). Esto no contradice el virial: confirma
+que su hipótesis de fondo ---separación de escalas temporales entre el
+contacto y la vibración interna--- es la que efectivamente controla cuándo
+la predicción se cumple.
+
+\subsection{Conclusión: la teoría se cumple, con dos matices esperables}
+
+En resumen, frente a los datos:
+\begin{itemize}[leftmargin=1.4em]
+\item La \textbf{equipartición} se cumple por construcción (es la
+definición de $T_{\rm ef}$) y no es falsable con estos datos por sí sola;
+lo que sí es falsable, y se confirma, es que \emph{la misma} $T_{\rm ef}$
+gobierna tanto el canal cinético como el potencial (el virial).
+\item El \textbf{virial armónico} ($T_B\approx\Delta V_B$) se cumple
+cuantitativamente, dentro de barras de error de $\sim$10--30\%, en la
+ventana $0.9\lesssim v_{\rm imp}\lesssim1.4$, y este resultado es robusto
+para $N=13,55,79,87$: cuatro cúmulos de tamaño muy distinto obedecen la
+misma ley.
+\item Fuera de esa ventana, las dos desviaciones observadas
+---exceso anarmónico creciente a $v$ alta, ruido y razón inestable a $v$
+baja--- tienen explicaciones físicas identificables (Grüneisen; separación
+de escalas temporales) y no son fallas del formalismo, sino límites
+esperables de su rango de validez.
+\end{itemize}
+Valores de referencia ($N=79$, plateau $0.9<v\lesssim1.4$):
+$\alpha_{T_B}\approx0.17$--$0.22$, $\alpha_{\Delta V_B}\approx0.21$--$0.24$;
+el acuerdo entre ambos, cuantitativo dentro de las barras de error, es la
+evidencia directa de que la bola termaliza como un sólido casi armónico
+durante el contacto, tal como exige la equipartición para poder hablar de
+``temperatura'' en un sistema de apenas 79 átomos fuera de equilibrio
+global.
+
+% =============================================================================
+\section*{Bibliografía completa}
+% =============================================================================
+
+\begin{thebibliography}{99}
+
+\bibitem{Waterston1892}
+J.J. Waterston, \textit{On the Physics of Media that are Composed of Free
+and Perfectly Elastic Molecules in a State of Motion}, Phil. Trans. R.
+Soc. \textbf{183}, 1 (1892) [escrito en 1845, rechazado entonces,
+publicado póstumamente por gestión de Rayleigh].
+
+\bibitem{Tolman1918b}
+R.C. Tolman, \textit{A General Theory of Energy Partition with
+Applications to Quantum Theory}, Phys. Rev. \textbf{11}, 261 (1918).
+
+\bibitem{Reif1965b}
+F. Reif, \textit{Fundamentals of Statistical and Thermal Physics}
+(McGraw-Hill, Nueva York, 1965).
+
+\bibitem{LandauLifshitz}
+L.D. Landau y E.M. Lifshitz, \textit{Statistical Physics}, Course of
+Theoretical Physics Vol.~5 (Pergamon Press, Oxford, 1980), 3.\ ed.
+
+\bibitem{Clausius1870}
+R. Clausius, \textit{Ueber einen auf die Wärme anwendbaren mechanischen
+Satz}, Ann. Phys. \textbf{141}, 124 (1870).
+
+\bibitem{Zwicky1933}
+F. Zwicky, \textit{Die Rotverschiebung von extragalaktischen Nebeln},
+Helv. Phys. Acta \textbf{6}, 110 (1933).
+
+\bibitem{Goldstein}
+H. Goldstein, C. Poole y J. Safko, \textit{Classical Mechanics}, 3.\ ed.
+(Addison-Wesley, San Francisco, 2002).
+
+\bibitem{DulongPetit1819}
+P.L. Dulong y A.T. Petit, \textit{Recherches sur quelques points
+importants de la théorie de la chaleur}, Ann. Chim. Phys. \textbf{10}, 395
+(1819).
+
+\bibitem{Einstein1907}
+A. Einstein, \textit{Die Plancksche Theorie der Strahlung und die Theorie
+der spezifischen Wärme}, Ann. Phys. \textbf{22}, 180 (1907).
+
+\bibitem{Debye1912}
+P. Debye, \textit{Zur Theorie der spezifischen Wärmen}, Ann. Phys.
+\textbf{39}, 789 (1912).
+
+\bibitem{AshcroftMermin}
+N.W. Ashcroft y N.D. Mermin, \textit{Solid State Physics} (Saunders
+College Publishing, Filadelfia, 1976).
+
+\bibitem{Gruneisen1912}
+E. Grüneisen, \textit{Theorie des festen Zustandes einatomiger Elemente},
+Ann. Phys. \textbf{344}, 257 (1912).
+
+\end{thebibliography}
+
+\end{document}

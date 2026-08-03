@@ -17,10 +17,14 @@ nanocúmulo Lennard-Jones sobre una superficie FCC bajo gravedad constante.
 - α_CM  = e₁² = h₁/h₀  (fracción CM vertical, = COR al cuadrado)
 - α_TB  = T_B/E₀        (KE interna de la bola → "temperatura" de la bola)
 - α_surf = ΔE_surf/E₀   (fonones superficie, medido directamente)
-- α_ball = 1 − α_CM − α_surf = α_TB + α_VB  (energía interna total; α_VB = PE anarmónico)
+- α_ball = 1 − α_CM − α_surf = α_TB + α_VB  (energía interna total; α_VB = PE
+  vibracional ≈ T_B por virial, su exceso sobre T_B es la parte anarmónica.
+  Al calcularse por cierre, α_VB incluye la pequeña KE lateral del CM:
+  mediana 5×10⁻⁴E₀, <0.02E₀ para N≥55)
 
 **Observable clave:** α_TB ≈ 0.22 constante para v > 0.9 σ/τ (con N=79).
-El canal anarmónico α_VB ≈ α_TB (equipartición aproximada).
+El canal potencial α_VB ≈ α_TB (virial de sólido casi armónico; el exceso
+α_VB − α_TB crece con v y es la parte genuinamente anarmónica).
 
 **REFORMULACIÓN tras arbitraje simulado (2026-07-03, ver docs/arbitraje/carta_respuesta_referi.md):**
 La equipartición se aplica a la energía DISIPADA, no a E₀. Cantidad correcta:
@@ -218,7 +222,7 @@ lmp -in ../../../lammps/in.bounce_reprod \
 | 77.24      | 2.004       | 0.503 | 0.253 | 0.244 | 0.342 | 0.160  | 0.586  |
 
 **Hallazgo:** α_TB ≈ 0.22 constante para v > 0.9 σ/τ.
-α_ball = α_TB + α_VB ≈ 0.43–0.59 (total interno cinético + anarmónico).
+α_ball = α_TB + α_VB ≈ 0.43–0.59 (total interno cinético + potencial).
 α_surf ≈ 0.06–0.16 (mucho más pequeño que α_ball).
 
 ### N=79 fijo (in.bounce_cluster, cluster_N79_min.dat, c_ps=0)
