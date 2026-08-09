@@ -173,6 +173,19 @@ variable    time        equal  step*${dt}
 # NOTA: fix viscous no conserva energía a propósito (la disipa) -- con
 # sponge=1 el cierre Sum(alpha)=1 de bounce.dat deja de valer; usar sponge
 # solo para el diagnóstico de ondas, no para las corridas de partición.
+#
+# `units box` es OBLIGATORIO en las cinco `region cylinder`. El defecto de
+# `region` es `units lattice` (docs.lammps.org/region.html: "The option
+# defaults are side = in, units = lattice"), y en un cilindro escala tanto
+# c1,c2 como el RADIO. Como Lx=xhi-xlo ya está en sigma, sin `units box` todo
+# se multiplicaba por a0=1.5496: el centro caía en (96.10,96.10) en vez de
+# (62.01,62.01) y el punto de impacto quedaba DENTRO del primer anillo
+# amortiguado (gamma=0.32), azimutalmente asimétrico. Eso invalidó por completo
+# la corrida ondas_N79_esponja_v2 (jul 2026) sin dar ni un aviso: LAMMPS acepta
+# las regiones y corre. Detectado el 2026-08-09 comparando los conteos de
+# átomos por grupo del log contra los dos escalados (g0: 45204 medido, 45327
+# predicho con lattice, 24772 con box). De ahí el bloque de verificación de
+# abajo: el log tiene que llevar los conteos para que el error sea visible.
 variable    sponge     index 0
 variable    r0_frac    index 0.45
 variable    gamma_max  index 8.0
@@ -180,11 +193,11 @@ if "${sponge} == 1" then &
     "variable  R_edge  equal v_Lx/2" &
     "variable  R0      equal v_r0_frac*v_R_edge" &
     "variable  dR      equal (v_R_edge-v_R0)/5.0" &
-    "region    dsk0 cylinder z $(v_Lx/2) $(v_Ly/2) $(v_R0)        EDGE EDGE" &
-    "region    dsk1 cylinder z $(v_Lx/2) $(v_Ly/2) $(v_R0+v_dR)   EDGE EDGE" &
-    "region    dsk2 cylinder z $(v_Lx/2) $(v_Ly/2) $(v_R0+2*v_dR) EDGE EDGE" &
-    "region    dsk3 cylinder z $(v_Lx/2) $(v_Ly/2) $(v_R0+3*v_dR) EDGE EDGE" &
-    "region    dsk4 cylinder z $(v_Lx/2) $(v_Ly/2) $(v_R0+4*v_dR) EDGE EDGE" &
+    "region    dsk0 cylinder z $(v_Lx/2) $(v_Ly/2) $(v_R0)        EDGE EDGE units box" &
+    "region    dsk1 cylinder z $(v_Lx/2) $(v_Ly/2) $(v_R0+v_dR)   EDGE EDGE units box" &
+    "region    dsk2 cylinder z $(v_Lx/2) $(v_Ly/2) $(v_R0+2*v_dR) EDGE EDGE units box" &
+    "region    dsk3 cylinder z $(v_Lx/2) $(v_Ly/2) $(v_R0+3*v_dR) EDGE EDGE units box" &
+    "region    dsk4 cylinder z $(v_Lx/2) $(v_Ly/2) $(v_R0+4*v_dR) EDGE EDGE units box" &
     "group     g0 region dsk0" &
     "group     g1 region dsk1" &
     "group     g2 region dsk2" &
@@ -204,7 +217,11 @@ if "${sponge} == 1" then &
     "fix       f_sp3 ring3 viscous $(v_gamma_max*0.36)" &
     "fix       f_sp4 ring4 viscous $(v_gamma_max*0.64)" &
     "fix       f_sp5 ring5 viscous ${gamma_max}" &
-    "print     'ESPONJA 5 anillos cuadratica: R0=${R0} dR=${dR} R_edge=${R_edge} gamma_max=${gamma_max}'"
+    "print     'ESPONJA 5 anillos cuadratica: R0=${R0} dR=${dR} R_edge=${R_edge} gamma_max=${gamma_max}'" &
+    "variable  f_esp_pred equal PI*v_R0*v_R0/(v_Lx*v_Ly)" &
+    "variable  f_esp_med  equal count(g0)/count(surface)" &
+    "print     'ESPONJA check: fraccion de area de g0 esperada=${f_esp_pred} medida=${f_esp_med}'" &
+    "print     'ESPONJA check: si no coinciden a ~2%, las regiones estan mal escaladas (units)'"
 
 # --- Dinámica NVE -------------------------------------------------------------
 fix         f_freeze_fixed  fixed_surf  setforce 0.0 0.0 0.0
