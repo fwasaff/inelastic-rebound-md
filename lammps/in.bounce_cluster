@@ -125,6 +125,21 @@ unfix       f_fix_bot
 
 velocity    all set 0.0 0.0 0.0
 
+# El contador de pasos NO se reinicia solo tras `minimize`: las iteraciones de
+# minimización lo dejan avanzado, y en una cantidad que depende del tamaño del
+# sistema y de cuándo converge (medido: 180 pasos con Nz=6, 766 con Nz=40). Como
+# `variable time equal step*dt`, ese desfase entraba en la columna `time` de
+# bounce.dat -- por eso las corridas viejas empiezan en t=0.9 en vez de t=0.
+#
+# Se pone a cero aquí, antes de definir el termo, el print de energía y el dump.
+# Con esto: (1) `time` es el tiempo físico desde que arranca la dinámica, y
+# (2) `dump_delay` se puede pedir en pasos físicos, que es la única forma de que
+# sea predecible de una corrida a otra.
+#
+# No invalida nada anterior: todo el análisis usa diferencias t - t_imp, con
+# t_imp leído del mínimo de Zcm de la propia corrida.
+reset_timestep 0
+
 # --- Variables derivadas de energía -------------------------------------------
 variable    N_ball  equal count(ball)
 variable    M_ball  equal v_N_ball*1.0
@@ -244,11 +259,34 @@ fix print_energy all print ${print_freq} &
 
 # --- Dump opcional para visualización (OVITO/ParaView) -------------------------
 # dump_freq=0 (defecto) desactiva; dump_freq=50 → 1 frame cada 0.25 tau (dt=0.005)
+#
+# Con losas profundas (Nz~40 → ~1e6 átomos) volcar TODO desde el paso 0 son ~20 GB
+# por corrida, y la mayor parte es caída libre sin nada que mirar. Dos perillas
+# para acotarlo; ambas desactivadas por defecto, así que sin usarlas el
+# comportamiento es idéntico al de antes (todos los átomos, desde el paso 0):
+#
+#   z_dump_bot : solo se vuelcan los átomos por encima de esa z [sigma, caja],
+#                MÁS la bola entera (se añade por unión, así que da igual dónde
+#                esté). El modo de Rayleigh decae en ~1 lambda (~17 sigma), de
+#                modo que 25-30 sigma de profundidad lo contienen de sobra.
+#                Defecto INF = sin recorte.
+#   dump_delay : primer paso que se vuelca (dump_modify delay). Sirve para
+#                saltarse la caída libre, que con h0=28.15 y g=0.026 dura
+#                t_imp ~ 46.7 tau = 9340 pasos. Defecto -1 = sin retardo.
+#
+# NOTA: `surf_dump` es un grupo ESTÁTICO (se fija al definirse). Vale porque los
+# átomos de superficie no migran en z; la bola, que sí se mueve, entra por unión.
 variable    dump_freq     index 0
+variable    z_dump_bot    index INF
+variable    dump_delay    index -1
 if "${dump_freq} > 0" then &
     "compute keratom all ke/atom" &
-    "dump viz all custom ${dump_freq} traj.lammpstrj id type x y z vx vy vz c_keratom c_pe_atom" &
-    "dump_modify viz sort id"
+    "region  reg_dump  block INF INF INF INF ${z_dump_bot} EDGE units box" &
+    "group   surf_dump region reg_dump" &
+    "group   dump_atoms union surf_dump ball" &
+    "dump viz dump_atoms custom ${dump_freq} traj.lammpstrj id type x y z vx vy vz c_keratom c_pe_atom" &
+    "dump_modify viz sort id delay ${dump_delay}" &
+    "print 'DUMP: grupo=dump_atoms  z_dump_bot=${z_dump_bot}  delay=${dump_delay}'"
 
 # --- Correr -------------------------------------------------------------------
 run     ${steps_total}
