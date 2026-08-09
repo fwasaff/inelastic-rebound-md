@@ -10,8 +10,8 @@ de la energía del impacto, evaluando g(r) en cuatro instantes clave:
   t=t_apo2    — segundo apogeo (si la bola sigue rebotando)
 
 Requiere (por cada h0):
-    data/outputs/reprod_2012/h0_{h0}/ball_dump.lammpstrj   (dump generado por LAMMPS)
-    data/outputs/reprod_2012/h0_{h0}/bounce.dat             (para identificar tiempos)
+    data/outputs/terminado/reprod_2012/h0_{h0}/ball_dump.lammpstrj   (dump generado por LAMMPS)
+    data/outputs/terminado/reprod_2012/h0_{h0}/bounce.dat             (para identificar tiempos)
 
 Uso (desde la raíz del proyecto):
     python3 scripts/analizar_gr.py
@@ -25,7 +25,7 @@ from pathlib import Path
 from scipy.signal import find_peaks
 
 # ─── Configuración ────────────────────────────────────────────────────────────
-BASE   = Path("data/outputs/reprod_2012")
+BASE   = Path("data/outputs/terminado/reprod_2012")
 OUTFIG = BASE / "fig_gr_ball.pdf"
 
 # Casos representativos para la figura final

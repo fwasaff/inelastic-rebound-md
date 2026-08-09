@@ -26,9 +26,9 @@ c=8.28 nominal puede estar muestreando la zona quieta.
 
 Uso:
     python3 scripts/medir_polarizacion_frente.py \\
-        --traj data/outputs/ondas_N79_libre/traj.lammpstrj \\
-        --bounce data/outputs/ondas_N79_libre/bounce.dat \\
-        --out data/outputs/fig_polarizacion_frente.png \\
+        --traj data/outputs/activo/ondas_N79_libre/traj.lammpstrj \\
+        --bounce data/outputs/activo/ondas_N79_libre/bounce.dat \\
+        --out data/outputs/activo/fig_polarizacion_frente.png \\
         --tmax 7.5
 """
 

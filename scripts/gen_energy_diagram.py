@@ -21,7 +21,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch
 
-OUT = "data/outputs/reprod_2012/fig_energy_diagram.png"
+OUT = "data/outputs/terminado/reprod_2012/fig_energy_diagram.png"
 
 # ── Paleta ────────────────────────────────────────────────────────────────────
 C = dict(

@@ -1,7 +1,7 @@
 """
 fig_largo.py — Figura de la simulación larga (5000 τ) para el paper.
 
-Genera data/outputs/fig_paso_B_convergencia.pdf:
+Genera data/outputs/terminado/fig_paso_B_convergencia.pdf:
   (a) Z_cm(t) − z0, primeros 1000 τ (inset: 5000 τ completos);
       línea roja discontinua = colapso a través de la red
   (b) alturas de apogeo h_n vs predicción h*_n = T_B/(Mg)
@@ -26,9 +26,9 @@ T = {"es": {"colapso": "colapso", "medido": r"$h_n$ medido",
             "n_rebote": r"bounce number $n$", "altura": r"height $(\sigma)$",
             "primer": "first bounce"}}[LANG]
 
-DATA = Path("data/outputs/cluster_N79_long/h0_28.15/bounce.dat")
-OUT = Path("data/outputs/fig_paso_B_convergencia.pdf" if LANG == "es"
-           else "data/outputs/fig_paso_B_convergencia_en.pdf")
+DATA = Path("data/outputs/terminado/cluster_N79_long/h0_28.15/bounce.dat")
+OUT = Path("data/outputs/terminado/fig_paso_B_convergencia.pdf" if LANG == "es"
+           else "data/outputs/terminado/fig_paso_B_convergencia_en.pdf")
 M = 79.0
 
 aplicar_estilo()

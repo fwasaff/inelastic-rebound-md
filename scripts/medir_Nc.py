@@ -19,7 +19,7 @@ Dos estimadores independientes, evaluados en la ventana de contacto:
 
 Uso:
     python3 scripts/medir_Nc.py <dump.lammpstrj> [--rc 2.5]
-    python3 scripts/medir_Nc.py --sweep     # todos los N de data/outputs/Nc_runs
+    python3 scripts/medir_Nc.py --sweep     # todos los N de data/outputs/terminado/Nc_runs
 """
 import sys
 import numpy as np
@@ -112,7 +112,7 @@ def analizar_dump(path, rc=RC, verbose=True):
 
 
 def sweep(base):
-    """Analiza data/outputs/Nc_runs/N{N}/traj.lammpstrj para varios N."""
+    """Analiza data/outputs/terminado/Nc_runs/N{N}/traj.lammpstrj para varios N."""
     base = Path(base)
     filas = []
     for d in sorted(base.glob("N*"), key=lambda p: int(p.name[1:])):
@@ -148,7 +148,7 @@ def sweep(base):
 
 if __name__ == "__main__":
     if "--sweep" in sys.argv:
-        base = "data/outputs/Nc_runs"
+        base = "data/outputs/terminado/Nc_runs"
         sweep(base)
     else:
         path = sys.argv[1]

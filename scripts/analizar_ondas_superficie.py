@@ -17,9 +17,9 @@ directamente con numpy, calcula la distancia mínima-imagen (x,y) de cada
 
 Uso:
     python3 scripts/analizar_ondas_superficie.py \\
-        --traj data/outputs/viz_N79_h28/traj.lammpstrj \\
-        --bounce data/outputs/viz_N79_h28/bounce.dat \\
-        --out data/outputs/fig_ondas_superficie.png
+        --traj data/outputs/activo/viz_N79_h28/traj.lammpstrj \\
+        --bounce data/outputs/activo/viz_N79_h28/bounce.dat \\
+        --out data/outputs/activo/fig_ondas_superficie.png
 """
 
 import argparse

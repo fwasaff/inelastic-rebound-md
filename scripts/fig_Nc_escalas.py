@@ -82,7 +82,7 @@ def main():
     ax2.legend(loc="lower right", fontsize=6.8)
     panel_label(ax2, "(b)")
 
-    out = Path("data/outputs/fig_Nc_escalas.pdf")
+    out = Path("data/outputs/terminado/fig_Nc_escalas.pdf")
     fig.savefig(out); print(f"Figura guardada: {out}")
     print(f"  N_c^eff (ajuste f_ball, N>=7) = {Nc_fit:.1f}")
 

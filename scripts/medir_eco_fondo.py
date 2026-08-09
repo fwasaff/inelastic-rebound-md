@@ -17,9 +17,9 @@ plano de fondo y el retorno en el plano de arriba.
 
 Uso:
     python3 scripts/medir_eco_fondo.py \\
-        --traj data/outputs/ondas_N79_libre/traj.lammpstrj \\
-        --bounce data/outputs/ondas_N79_libre/bounce.dat \\
-        --out data/outputs/fig_eco_fondo.png --tmax 7.5
+        --traj data/outputs/activo/ondas_N79_libre/traj.lammpstrj \\
+        --bounce data/outputs/activo/ondas_N79_libre/bounce.dat \\
+        --out data/outputs/activo/fig_eco_fondo.png --tmax 7.5
 """
 
 import argparse

@@ -16,9 +16,9 @@ anillos/coherente: baja textura = liso/termalizado.
 
 Uso:
     python3 scripts/medir_coherencia_radial.py \\
-        --traj data/outputs/ondas_N79_libre/traj.lammpstrj \\
-        --bounce data/outputs/ondas_N79_libre/bounce.dat \\
-        --out data/outputs/fig_coherencia_radial.png \\
+        --traj data/outputs/activo/ondas_N79_libre/traj.lammpstrj \\
+        --bounce data/outputs/activo/ondas_N79_libre/bounce.dat \\
+        --out data/outputs/activo/fig_coherencia_radial.png \\
         --times 3 5 7
 """
 

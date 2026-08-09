@@ -19,8 +19,8 @@ absorber ambas.
 
 Uso:
     python3 scripts/medir_pulso_contacto.py \\
-        --bounce data/outputs/ondas_N79_libre/bounce.dat \\
-        --out data/outputs/fig_pulso_contacto.png
+        --bounce data/outputs/activo/ondas_N79_libre/bounce.dat \\
+        --out data/outputs/activo/fig_pulso_contacto.png
 """
 
 import argparse

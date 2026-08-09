@@ -21,8 +21,8 @@ Coloreado por átomo, específico de cada canal:
 Uso:
     LD_LIBRARY_PATH=~/ovito_env/lib/python3.12/site-packages/PySide6/Qt/lib:$LD_LIBRARY_PATH \\
     ~/ovito_env/bin/python scripts/render_video_canal.py \\
-        --traj data/outputs/viz_N79_h28/traj.lammpstrj \\
-        --bounce data/outputs/viz_N79_h28/bounce.dat \\
+        --traj data/outputs/activo/viz_N79_h28/traj.lammpstrj \\
+        --bounce data/outputs/activo/viz_N79_h28/bounce.dat \\
         --channel TB --N 79 \\
         --out docs/reunion_gonzalo/videos_reunion/canal_TB.mp4 \\
         --t0 30 --t1 95 --vmax 0.9

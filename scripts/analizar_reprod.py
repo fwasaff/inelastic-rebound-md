@@ -7,7 +7,7 @@ Genera:
   Fig. R3 – Secuencia e_n = COR por rebote (observable ausente en 2012)
 
 Uso:
-  python3 scripts/analizar_reprod.py --outdir data/outputs/reprod_2012
+  python3 scripts/analizar_reprod.py --outdir data/outputs/terminado/reprod_2012
 """
 
 import argparse
@@ -273,7 +273,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Análisis de la reproducción de Gutiérrez et al. 2012"
     )
-    parser.add_argument("--outdir", default="data/outputs/reprod_2012",
+    parser.add_argument("--outdir", default="data/outputs/terminado/reprod_2012",
                         help="Directorio con los resultados de las simulaciones")
     parser.add_argument("--h0-fig9", type=float, default=11.03,
                         help="Altura h0 para la figura de energía (Fig. R2)")

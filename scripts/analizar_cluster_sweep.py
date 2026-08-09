@@ -20,8 +20,8 @@ from pathlib import Path
 G      = 0.026
 NS     = [1, 2, 7, 13, 55, 83]
 H0S    = [11.03, 18.64, 28.15, 41.47, 58.6, 79.53]
-SWEEP  = Path("data/outputs/cluster_sweep")
-REPRO  = Path("data/outputs/reprod_2012")
+SWEEP  = Path("data/outputs/terminado/cluster_sweep")
+REPRO  = Path("data/outputs/terminado/reprod_2012")
 FIGDIR = SWEEP
 
 COLORES = ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b"]

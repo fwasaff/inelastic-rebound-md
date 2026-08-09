@@ -7,7 +7,7 @@
 #   bash scripts/run_cluster_sweep.sh --n "1 2 7"     # varios N
 #
 # Los resultados se guardan en:
-#   data/outputs/cluster_sweep/N{N}/h0_{h0}/bounce.dat
+#   data/outputs/terminado/cluster_sweep/N{N}/h0_{h0}/bounce.dat
 
 set -euo pipefail
 
@@ -16,10 +16,10 @@ N_VALUES="1"
 H0_VALUES="11.03 18.64 28.15 41.47 58.6 79.53"
 JOBS=4
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-OUTDIR="${SCRIPT_DIR}/data/outputs/cluster_sweep"
+OUTDIR="${SCRIPT_DIR}/data/outputs/terminado/cluster_sweep"
 LAMMPS_SCRIPT="${SCRIPT_DIR}/lammps/in.bounce_cluster"
 CLUSTER_DIR="${SCRIPT_DIR}/lammps/clusters"
-TABLE="${SCRIPT_DIR}/data/outputs/reprod_2012/table_repulsiva.txt"
+TABLE="${SCRIPT_DIR}/data/outputs/terminado/reprod_2012/table_repulsiva.txt"
 
 # --- Parse argumentos ---------------------------------------------------------
 while [[ $# -gt 0 ]]; do

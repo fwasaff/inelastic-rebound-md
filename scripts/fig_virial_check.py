@@ -1,6 +1,6 @@
 """
 fig_virial_check.py — Contraste directo del teorema del virial (T_B ~ Delta V_B)
-contra los datos del sweep con orientaciones (data/outputs/cluster_orient).
+contra los datos del sweep con orientaciones (data/outputs/terminado/cluster_orient).
 
 Para la nota docs/manuscrito/equiparticion_y_virial.tex:
   - Panel (a): alpha_TB y alpha_VB vs v_imp para N=79 (cluster canonico),
@@ -10,7 +10,7 @@ Para la nota docs/manuscrito/equiparticion_y_virial.tex:
     con la prediccion virial (razon=1) como referencia. La razon por-run
     evita dividir por el promedio (mismo criterio que fig_equiparticion_v2).
 
-Genera: data/outputs/fig_virial_check.pdf
+Genera: data/outputs/terminado/fig_virial_check.pdf
 """
 import numpy as np
 from pathlib import Path
@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from estilo_figuras import (aplicar_estilo, panel_label, cargar_run,
                             ANCHO, COLOR_N, MARKER_N)
 
-BASE = Path("data/outputs/cluster_orient")
+BASE = Path("data/outputs/terminado/cluster_orient")
 H0S = [11.03, 18.64, 28.15, 41.47, 58.6, 79.53]
 A_TB_MIN = 0.02   # descarta razones VB/TB cuando TB es consistente con ruido
 
@@ -101,7 +101,7 @@ def main():
     panel_label(ax2, "(b)")
 
     fig.tight_layout()
-    out = Path("data/outputs/fig_virial_check.pdf")
+    out = Path("data/outputs/terminado/fig_virial_check.pdf")
     fig.savefig(out)
     print(f"Figura guardada: {out}")
 

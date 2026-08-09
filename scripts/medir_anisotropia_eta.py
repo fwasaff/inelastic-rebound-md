@@ -21,9 +21,9 @@ Produce dos figuras:
 
 Uso:
     python3 scripts/medir_anisotropia_eta.py \\
-        --traj data/outputs/ondas_N79_libre/traj.lammpstrj \\
-        --bounce data/outputs/ondas_N79_libre/bounce.dat \\
-        --out data/outputs/fig_anisotropia_eta.png \\
+        --traj data/outputs/activo/ondas_N79_libre/traj.lammpstrj \\
+        --bounce data/outputs/activo/ondas_N79_libre/bounce.dat \\
+        --out data/outputs/activo/fig_anisotropia_eta.png \\
         --tmax 20
 """
 

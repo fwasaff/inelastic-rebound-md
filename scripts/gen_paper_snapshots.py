@@ -11,9 +11,9 @@ Uso (desde el directorio raíz del proyecto):
 import os
 import numpy as np
 
-TRAJ       = "data/outputs/reprod_2012/h0_41.47/traj.lammpstrj"
-OUT_SETUP  = "data/outputs/reprod_2012/fig_setup.png"
-OUT_IMPACT = "data/outputs/reprod_2012/fig_impact.png"
+TRAJ       = "data/outputs/terminado/reprod_2012/h0_41.47/traj.lammpstrj"
+OUT_SETUP  = "data/outputs/terminado/reprod_2012/fig_setup.png"
+OUT_IMPACT = "data/outputs/terminado/reprod_2012/fig_impact.png"
 
 FRAME_SETUP  = 175   # t = 43.75 τ  —  bola a ~16σ sobre la superficie
 FRAME_IMPACT = 224   # t = 56.0 τ   —  compresión máxima
@@ -150,4 +150,4 @@ vp_impact.render_image(
 )
 print(f"  → {OUT_IMPACT}  ({os.path.getsize(OUT_IMPACT)//1024} KB)")
 
-print("\nListo. Imágenes guardadas en data/outputs/reprod_2012/")
+print("\nListo. Imágenes guardadas en data/outputs/terminado/reprod_2012/")

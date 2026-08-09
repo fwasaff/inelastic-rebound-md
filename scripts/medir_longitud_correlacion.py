@@ -43,9 +43,9 @@ forzamiento sigue activo y el eco del fondo llega a 1.8 tau).
 
 Uso:
     python3 scripts/medir_longitud_correlacion.py \\
-        --traj data/outputs/ondas_N79_libre/traj.lammpstrj \\
-        --bounce data/outputs/ondas_N79_libre/bounce.dat \\
-        --out data/outputs/fig_correlacion_velocidad.png --tmax 3.0
+        --traj data/outputs/activo/ondas_N79_libre/traj.lammpstrj \\
+        --bounce data/outputs/activo/ondas_N79_libre/bounce.dat \\
+        --out data/outputs/activo/fig_correlacion_velocidad.png --tmax 3.0
 """
 
 import argparse

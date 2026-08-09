@@ -11,8 +11,8 @@ aquí); solo se renderiza la superficie.
 Uso:
     LD_LIBRARY_PATH=~/ovito_env/lib/python3.12/site-packages/PySide6/Qt/lib \\
     ~/ovito_env/bin/python scripts/render_video_ondas.py \\
-        --traj data/outputs/ondas_N79_grande/traj.lammpstrj \\
-        --bounce data/outputs/ondas_N79_grande/bounce.dat \\
+        --traj data/outputs/activo/ondas_N79_grande/traj.lammpstrj \\
+        --bounce data/outputs/activo/ondas_N79_grande/bounce.dat \\
         --out docs/reunion_gonzalo/videos_reunion/ondas_superficie_grande.mp4 \\
         --vmax 0.003
 """

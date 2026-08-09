@@ -14,8 +14,8 @@ sin colorear (gris).
 Uso:
     LD_LIBRARY_PATH=~/ovito_env/lib/python3.12/site-packages/PySide6/Qt/lib \\
     ~/ovito_env/bin/python scripts/render_video_eta.py \\
-        --traj data/outputs/ondas_N79_libre/traj.lammpstrj \\
-        --bounce data/outputs/ondas_N79_libre/bounce.dat \\
+        --traj data/outputs/activo/ondas_N79_libre/traj.lammpstrj \\
+        --bounce data/outputs/activo/ondas_N79_libre/bounce.dat \\
         --out docs/reunion_gonzalo/videos_reunion/eta_superficie.mp4 \\
         --cell 4.0
 """

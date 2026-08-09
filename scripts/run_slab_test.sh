@@ -6,10 +6,10 @@
 # fonones en el fondo fijo / bordes periódicos).
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-OUTDIR="${SCRIPT_DIR}/data/outputs/slab_test"
+OUTDIR="${SCRIPT_DIR}/data/outputs/terminado/slab_test"
 LAMMPS_SCRIPT="${SCRIPT_DIR}/lammps/in.bounce_cluster"
 CLUSTER="${SCRIPT_DIR}/lammps/clusters/cluster_N79_min.dat"
-TABLE="${SCRIPT_DIR}/data/outputs/reprod_2012/table_repulsiva.txt"
+TABLE="${SCRIPT_DIR}/data/outputs/terminado/reprod_2012/table_repulsiva.txt"
 H0=41.47
 
 run_slab() {

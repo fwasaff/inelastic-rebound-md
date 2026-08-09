@@ -10,9 +10,9 @@ ecuación de calor (difusivo).
 
 Uso:
     python3 scripts/medir_frente_onda.py \\
-        --traj data/outputs/ondas_N79_libre/traj.lammpstrj \\
-        --bounce data/outputs/ondas_N79_libre/bounce.dat \\
-        --out data/outputs/fig_frente_onda.png \\
+        --traj data/outputs/activo/ondas_N79_libre/traj.lammpstrj \\
+        --bounce data/outputs/activo/ondas_N79_libre/bounce.dat \\
+        --out data/outputs/activo/fig_frente_onda.png \\
         --t-clean 7.5
 """
 

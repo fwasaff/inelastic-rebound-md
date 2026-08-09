@@ -28,9 +28,9 @@ medido es CUANDO vuelve (scripts/medir_eco_fondo.py: 1.8 tau).
 
 Uso:
     python3 scripts/medir_reflexion_borde.py \\
-        --traj data/outputs/ondas_N79_libre/traj.lammpstrj \\
-        --bounce data/outputs/ondas_N79_libre/bounce.dat \\
-        --out data/outputs/fig_reflexion_borde.png
+        --traj data/outputs/activo/ondas_N79_libre/traj.lammpstrj \\
+        --bounce data/outputs/activo/ondas_N79_libre/bounce.dat \\
+        --out data/outputs/activo/fig_reflexion_borde.png
 """
 
 import argparse

@@ -17,8 +17,8 @@ Responde a los puntos M1 y M3 del arbitraje:
       Se invierte para obtener N_c^eff(N) medido a partir de la partición.
 
 Genera:
-  data/outputs/cluster_orient/tabla_orient.txt   (resumen con σ)
-  data/outputs/fig_equiparticion_v2.pdf
+  data/outputs/terminado/cluster_orient/tabla_orient.txt   (resumen con σ)
+  data/outputs/terminado/fig_equiparticion_v2.pdf
 """
 import numpy as np
 from pathlib import Path
@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from estilo_figuras import (aplicar_estilo, panel_label, cargar_run,
                             ANCHO, COLOR_N, MARKER_N)
 
-BASE = Path("data/outputs/cluster_orient")
+BASE = Path("data/outputs/terminado/cluster_orient")
 NS = [1, 2, 7, 13, 55, 79, 87]
 H0S = [11.03, 18.64, 28.15, 41.47, 58.6, 79.53]
 V_PLATEAU = 1.1
@@ -162,7 +162,7 @@ def fig_equiparticion(plateau):
     ax.set_xticks([2, 7, 13, 55, 79, 87])
     ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
     ax.legend(loc="lower right", fontsize=7.5)
-    out = Path("data/outputs/fig_equiparticion_v2.pdf")
+    out = Path("data/outputs/terminado/fig_equiparticion_v2.pdf")
     fig.savefig(out)
     print(f"Figura guardada: {out}")
     print(f"  N_c^eff ajustado (N>=7) = {Nc_fit:.1f} ± {Nc_err:.1f}")

@@ -5,8 +5,8 @@ fig_reunion_conservacion.py — Figuras de control de calidad para la reunión:
   2. fig_termalizacion.pdf: (a) Zcm(t) y T_B(t) — escalera de termalización,
                             (b) T_ef vs v_imp con banda de fusión
 
-Datos: data/outputs/viz_N79_h28 (N=79, h0=28.15σ, v_imp≈1.16) y
-       data/outputs/cluster_orient/tabla_orient.txt (N=79, 5 orientaciones).
+Datos: data/outputs/activo/viz_N79_h28 (N=79, h0=28.15σ, v_imp≈1.16) y
+       data/outputs/terminado/cluster_orient/tabla_orient.txt (N=79, 5 orientaciones).
 
 Uso:  python3 scripts/fig_reunion_conservacion.py
 Salida: docs/figuras_reunion/
@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from estilo_figuras import aplicar_estilo, ANCHO, plt
 
 ROOT = Path(__file__).resolve().parents[1]
-RUN = ROOT / "data/outputs/viz_N79_h28"
+RUN = ROOT / "data/outputs/activo/viz_N79_h28"
 OUT = ROOT / "docs/figuras_reunion"
 OUT.mkdir(exist_ok=True)
 
@@ -117,7 +117,7 @@ ax1.text(0.03, 0.93, "(a)", transform=ax1.transAxes, weight="bold")
 
 # --- T_ef vs v_imp desde tabla_orient (N=79) --------------------------------
 vs, atb, satb = [], [], []
-for line in (ROOT / "data/outputs/cluster_orient/tabla_orient.txt"
+for line in (ROOT / "data/outputs/terminado/cluster_orient/tabla_orient.txt"
              ).read_text().splitlines():
     p = line.split()
     if len(p) == 10 and p[0] == "79":

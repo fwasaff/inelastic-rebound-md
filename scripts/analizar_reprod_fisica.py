@@ -28,7 +28,7 @@ from pathlib import Path
 H0S   = [11.03, 18.64, 28.15, 41.47, 58.6, 79.53]
 M     = 83
 G     = 0.026
-OUTDIR = Path("data/outputs/reprod_2012")
+OUTDIR = Path("data/outputs/terminado/reprod_2012")
 FIGDIR = OUTDIR
 
 COLS  = "time Zcm Vcmz KB TB VB Uc UF KB3d KS PE_surf TS".split()

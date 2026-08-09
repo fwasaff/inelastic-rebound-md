@@ -5,7 +5,7 @@
 # orientaciones iniciales del cúmulo (una cristalina + 4 rotaciones
 # aleatorias fijas), de modo que cada fracción α se reporta como media ± σ.
 #
-# Salida: data/outputs/cluster_orient/N{N}/h0_{h0}/o{k}/bounce.dat
+# Salida: data/outputs/terminado/cluster_orient/N{N}/h0_{h0}/o{k}/bounce.dat
 
 set -euo pipefail
 
@@ -14,10 +14,10 @@ H0_VALUES="11.03 18.64 28.15 41.47 58.6 79.53"
 JOBS=8
 T_TOTAL=200.0
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-OUTDIR="${SCRIPT_DIR}/data/outputs/cluster_orient"
+OUTDIR="${SCRIPT_DIR}/data/outputs/terminado/cluster_orient"
 LAMMPS_SCRIPT="${SCRIPT_DIR}/lammps/in.bounce_cluster"
 CLUSTER_DIR="${SCRIPT_DIR}/lammps/clusters"
-TABLE="${SCRIPT_DIR}/data/outputs/reprod_2012/table_repulsiva.txt"
+TABLE="${SCRIPT_DIR}/data/outputs/terminado/reprod_2012/table_repulsiva.txt"
 
 # Ángulos de rotación (grados) por orientación: ax ay az. Semilla fija.
 ANGLES=(

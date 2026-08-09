@@ -114,7 +114,7 @@ inelastic-rebound-md/
 3. Nc_eff crece con N (no constante): sugiere Nc ∝ área de contacto ∝ N^(2/3)
 4. La fórmula captura la tendencia pero subestima α_TB por ~10–25%
 
-**Figura generada:** `data/outputs/fig_alpha_TB_vs_N.pdf`
+**Figura generada:** `data/outputs/terminado/fig_alpha_TB_vs_N.pdf`
 
 ---
 
@@ -173,13 +173,13 @@ time  Zcm  Vcmz  KB  TB  VB  Uc  UF  KB3d
 ```bash
 # Generar tabla de potencial repulsivo
 python3 scripts/gen_tabla_repulsiva.py \
-    --output data/outputs/reprod_2012/table_repulsiva.txt
+    --output data/outputs/terminado/reprod_2012/table_repulsiva.txt
 
 # Correr las 6 alturas
 bash scripts/run_reprod.sh --jobs 4
 
 # Analizar
-python3 scripts/analizar_reprod.py --outdir data/outputs/reprod_2012
+python3 scripts/analizar_reprod.py --outdir data/outputs/terminado/reprod_2012
 python3 scripts/analizar_reprod_fisica.py
 ```
 

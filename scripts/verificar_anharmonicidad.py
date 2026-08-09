@@ -10,7 +10,7 @@ Ajuste global: ΔVB = a·TB + b·TB²  (forzado a pasar por el origen)
 Predicción armónica:          a = 1, b = 0  (equipartición)
 Predicción LJ anarmónica:     a ≈ 1, b > 0  (cuártico domina al cúbico)
 
-Genera fig_C1_dVB_vs_TB.pdf en data/outputs/cluster_sweep/
+Genera fig_C1_dVB_vs_TB.pdf en data/outputs/terminado/cluster_sweep/
 """
 
 import numpy as np
@@ -22,8 +22,8 @@ from pathlib import Path
 G    = 0.026
 H0S  = [11.03, 18.64, 28.15, 41.47, 58.6, 79.53]
 PROJ = Path(__file__).resolve().parent.parent
-SWEEP = PROJ / "data/outputs/cluster_sweep"
-REPRO = PROJ / "data/outputs/reprod_2012"
+SWEEP = PROJ / "data/outputs/terminado/cluster_sweep"
+REPRO = PROJ / "data/outputs/terminado/reprod_2012"
 
 COLORES = {2:"#ff7f0e", 7:"#2ca02c", 13:"#d62728", 55:"#9467bd", 83:"#1f77b4"}
 MARKERS = {2:"s", 7:"^", 13:"D", 55:"v", 83:"o"}

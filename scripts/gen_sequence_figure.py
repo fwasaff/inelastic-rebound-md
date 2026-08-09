@@ -35,11 +35,11 @@ import sys
 LANG = "en" if "--en" in sys.argv else "es"
 CH4  = "--ch4" in sys.argv   # 4 canales alpha del manuscrito, en vez de las 6 barras de 2012
 
-RUN     = "data/outputs/viz_N79_h28"
+RUN     = "data/outputs/activo/viz_N79_h28"
 TRAJ    = f"{RUN}/traj.lammpstrj"
 BOUNCE  = f"{RUN}/bounce.dat"
 _suffix = ("_4ch" if CH4 else "") + ("_en" if LANG == "en" else "")
-OUT     = f"data/outputs/fig_sequence{_suffix}.png"
+OUT     = f"data/outputs/terminado/fig_sequence{_suffix}.png"
 TMPDIR  = "/tmp/claude-1000/sequence_panels"
 
 DT_DUMP = 0.25   # tau/frame (dump_freq=50, dt=0.005)

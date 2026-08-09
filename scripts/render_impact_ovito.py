@@ -7,7 +7,7 @@ Uso (desde el directorio raíz del proyecto):
     ~/ovito_env/bin/python scripts/render_impact_ovito.py
 
 Salida:
-    data/outputs/reprod_2012/h0_41.47/impact_video.mp4
+    data/outputs/terminado/reprod_2012/h0_41.47/impact_video.mp4
 """
 
 import os
@@ -15,8 +15,8 @@ import sys
 import subprocess
 import numpy as np
 
-TRAJ       = "data/outputs/reprod_2012/h0_41.47/traj.lammpstrj"
-VIDEO      = "data/outputs/reprod_2012/h0_41.47/impact_video.mp4"
+TRAJ       = "data/outputs/terminado/reprod_2012/h0_41.47/traj.lammpstrj"
+VIDEO      = "data/outputs/terminado/reprod_2012/h0_41.47/impact_video.mp4"
 FRAMES_DIR = "/tmp/impact_frames_ovito"
 
 # Rango de frames: t ≈ 25τ (frame 100) a t ≈ 125τ (frame 500)

@@ -7,8 +7,8 @@ render_video_canal.py, unificada en un solo render).
 Uso:
     LD_LIBRARY_PATH=~/ovito_env/lib/python3.12/site-packages/PySide6/Qt/lib:$LD_LIBRARY_PATH \\
     ~/ovito_env/bin/python scripts/render_video_4canales.py \\
-        --traj data/outputs/viz_N79_h28/traj.lammpstrj \\
-        --bounce data/outputs/viz_N79_h28/bounce.dat \\
+        --traj data/outputs/activo/viz_N79_h28/traj.lammpstrj \\
+        --bounce data/outputs/activo/viz_N79_h28/bounce.dat \\
         --out docs/reunion_gonzalo/videos_reunion/video_4canales_solido.mp4 \\
         --N 79 --t0 30 --t1 95
 """

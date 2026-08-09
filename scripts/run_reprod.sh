@@ -10,7 +10,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
-OUTDIR="$ROOT_DIR/data/outputs/reprod_2012"
+OUTDIR="$ROOT_DIR/data/outputs/terminado/reprod_2012"
 LAMMPS_IN="$ROOT_DIR/lammps/in.bounce_reprod"
 TABLE="$OUTDIR/table_repulsiva.txt"
 LAMMPS="${LAMMPS_EXE:-lmp}"

@@ -4,10 +4,10 @@
 # se mida a velocidad de impacto constante. Salida en Nc_runs/N{N}/.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-OUTDIR="${SCRIPT_DIR}/data/outputs/Nc_runs"
+OUTDIR="${SCRIPT_DIR}/data/outputs/terminado/Nc_runs"
 LAMMPS_SCRIPT="${SCRIPT_DIR}/lammps/in.bounce_cluster"
 CLUSTER_DIR="${SCRIPT_DIR}/lammps/clusters"
-TABLE="${SCRIPT_DIR}/data/outputs/reprod_2012/table_repulsiva.txt"
+TABLE="${SCRIPT_DIR}/data/outputs/terminado/reprod_2012/table_repulsiva.txt"
 H0=41.47
 N_VALUES="${1:-7 13 55 79 87}"
 JOBS="${2:-5}"

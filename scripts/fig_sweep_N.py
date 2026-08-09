@@ -1,7 +1,7 @@
 """
 fig_sweep_N.py — Figura del barrido en N para el paper (estilo revista).
 
-Genera data/outputs/fig_alpha_TB_full_sweep.pdf:
+Genera data/outputs/terminado/fig_alpha_TB_full_sweep.pdf:
   (a) α_TB vs v_imp para N ∈ {1,2,7,13,55,79,87}
   (b) ⟨α_TB⟩_plateau vs N, comparado con la fórmula de equipartición
       para Nc=290 (azul sólida) y Nc(N) = A·N^β ajustado (negra discontinua);

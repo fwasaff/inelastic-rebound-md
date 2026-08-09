@@ -1,7 +1,7 @@
 """
 fig_adhesion.py — Figura del barrido con adhesión (c_ps=1) para el paper.
 
-Genera data/outputs/fig_paso_C_adhesion.pdf:
+Genera data/outputs/terminado/fig_paso_C_adhesion.pdf:
   (a) Z_cm(t) para N=79, 6 alturas: la bola pega en todos los casos
   (b) energía de adhesión E_adh(N) y umbral extrapolado h0*(N)
 

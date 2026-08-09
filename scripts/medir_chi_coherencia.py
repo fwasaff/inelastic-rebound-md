@@ -47,9 +47,9 @@ energias ya calculadas celda a celda.
 
 Uso:
     python3 scripts/medir_chi_coherencia.py \\
-        --traj data/outputs/ondas_N79_libre/traj.lammpstrj \\
-        --bounce data/outputs/ondas_N79_libre/bounce.dat \\
-        --out data/outputs/fig_chi_coherencia.png --tmax 7.5
+        --traj data/outputs/activo/ondas_N79_libre/traj.lammpstrj \\
+        --bounce data/outputs/activo/ondas_N79_libre/bounce.dat \\
+        --out data/outputs/activo/fig_chi_coherencia.png --tmax 7.5
 """
 
 import argparse

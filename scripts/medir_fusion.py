@@ -11,7 +11,7 @@ Métricas:
   - T_eff = 2 T_B / (3N-3): temperatura interna efectiva en el apogeo,
     a comparar con la fusión de un cúmulo LJ de ~80 átomos (T* ~ 0.30-0.35).
 
-Genera data/outputs/fig_fusion_gr.pdf
+Genera data/outputs/terminado/fig_fusion_gr.pdf
 """
 import numpy as np
 from pathlib import Path
@@ -67,8 +67,8 @@ def analizar(dump):
 def main():
     aplicar_estilo()
     casos = [
-        ("data/outputs/Nc_runs/N79/traj.lammpstrj",     "$v_{\\rm imp}=1.47$  ($T_{\\rm ef}\\approx0.19$)"),
-        ("data/outputs/Nc_runs/N79_hiv/traj.lammpstrj", "$v_{\\rm imp}=2.03$  ($T_{\\rm ef}\\approx0.28$)"),
+        ("data/outputs/terminado/Nc_runs/N79/traj.lammpstrj",     "$v_{\\rm imp}=1.47$  ($T_{\\rm ef}\\approx0.19$)"),
+        ("data/outputs/terminado/Nc_runs/N79_hiv/traj.lammpstrj", "$v_{\\rm imp}=2.03$  ($T_{\\rm ef}\\approx0.28$)"),
     ]
     fig, axes = plt.subplots(1, 2, figsize=(ANCHO, 2.7), sharey=True)
     for ax, (dump, lab) in zip(axes, casos):
@@ -86,7 +86,7 @@ def main():
     axes[0].set_ylabel(r"$g(r)$ (norm. al 1$^{\rm er}$ pico)")
     axes[0].legend(loc="upper right", fontsize=7)
     panel_label(axes[0], "(a)"); panel_label(axes[1], "(b)")
-    out = Path("data/outputs/fig_fusion_gr.pdf")
+    out = Path("data/outputs/terminado/fig_fusion_gr.pdf")
     fig.savefig(out); print(f"Figura guardada: {out}")
 
     # cuantificar: nitidez del 2º pico (r≈a0) vs valle previo

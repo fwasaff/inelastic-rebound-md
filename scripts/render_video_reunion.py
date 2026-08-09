@@ -6,7 +6,7 @@ de color como argumentos; añade etiqueta de tiempo t/τ.
 Uso:
     LD_LIBRARY_PATH=~/ovito_env/lib/python3.12/site-packages/PySide6/Qt/lib:$LD_LIBRARY_PATH \\
     ~/ovito_env/bin/python scripts/render_video_reunion.py \\
-        --traj data/outputs/viz_N79_h28/traj.lammpstrj \\
+        --traj data/outputs/activo/viz_N79_h28/traj.lammpstrj \\
         --out docs/videos_reunion/video_N79_v116_solido.mp4 \\
         --t0 30 --t1 95 --kemax 0.5
 """
