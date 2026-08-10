@@ -45,6 +45,17 @@ from ovito.vis import (Viewport, TachyonRenderer, TextLabelOverlay,
 p = argparse.ArgumentParser()
 p.add_argument("--run", required=True, help="directorio de la corrida")
 p.add_argument("--out", default=None, help="mp4 de salida")
+p.add_argument("--modo", default="ke", choices=["ke", "vz", "chi"],
+               help="ke  = log10 energia cinetica (cuanta energia hay)\n"
+                    "vz  = velocidad vertical con mapa divergente (la ONDA se ve "
+                    "como bandas suaves; el CALOR como moteado atomo a atomo)\n"
+                    "chi = fraccion coherente por atomo (rojo=onda, azul=calor). "
+                    "Es la vista que separa frente de estela, porque la energia "
+                    "cinetica NO los distingue: ambos tienen energia, difieren en "
+                    "organizacion")
+p.add_argument("--ke-corte", type=float, default=1e-6,
+               help="en modo chi/vz, se ocultan los atomos con KE por debajo de "
+                    "esto: aun no les ha llegado nada y su 'coherencia' es ruido")
 p.add_argument("--espesor", type=float, default=6.0,
                help="espesor del corte [sigma]. Fino se ve mejor la onda pero "
                     "hay menos atomos y la imagen queda rala")
@@ -54,6 +65,10 @@ p.add_argument("--zmax", type=float, default=72.0, help="recorte superior de la 
 p.add_argument("--fps", type=int, default=12)
 p.add_argument("--ancho", type=int, default=1280)
 p.add_argument("--alto", type=int, default=720)
+p.add_argument("--vmax", type=float, default=0.008,
+               help="modo vz: rango simetrico del color [sigma/tau]")
+p.add_argument("--cutoff", type=float, default=3.0,
+               help="modo chi: radio del promedio local [sigma]")
 p.add_argument("--radio", type=float, default=0.45, help="radio de particula [sigma]")
 p.add_argument("--frames", type=int, default=0, help="0 = todos; N = solo N frames")
 p.add_argument("--frame-inicio", type=int, default=0, help="primer frame a renderizar")
@@ -62,7 +77,7 @@ p.add_argument("--dt", type=float, default=0.005)
 args = p.parse_args()
 
 TRAJ = os.path.join(args.run, "traj.lammpstrj")
-OUT = args.out or os.path.join(args.run, "corte_transversal.mp4")
+OUT = args.out or os.path.join(args.run, f"corte_{args.modo}.mp4")
 TMP = "/tmp/claude-1000/corte_frames"
 os.makedirs(TMP, exist_ok=True)
 for f in glob.glob(f"{TMP}/*.png"):
@@ -89,16 +104,57 @@ pipe.modifiers.append(SliceModifier(normal=(0.0, 1.0, 0.0), distance=float(cy),
 pipe.modifiers.append(ExpressionSelectionModifier(expression=f"Position.Z > {args.zmax}"))
 pipe.modifiers.append(DeleteSelectedModifier())
 
-# --- Color por log10(KE) -------------------------------------------------------
-# El +1e-30 evita log(0) en los atomos que aun no se han enterado del impacto
-# (KE exactamente 0 en la red intacta a T=0).
-pipe.modifiers.append(ComputePropertyModifier(
-    output_property="logKE",
-    expressions=["log(c_keratom + 1e-30)/log(10)"]))
+# --- Campo de color segun el modo ----------------------------------------------
+if args.modo == "ke":
+    # El +1e-30 evita log(0) en los atomos que aun no se han enterado del
+    # impacto (KE exactamente 0 en la red intacta a T=0).
+    pipe.modifiers.append(ComputePropertyModifier(
+        output_property="logKE",
+        expressions=["log(c_keratom + 1e-30)/log(10)"]))
+    prop, v0, v1 = "logKE", args.ke_min, args.ke_max
+    grad, titulo = ColorCodingModifier.Viridis(), "log10 KE por atomo"
+
+else:
+    # Los atomos a los que aun no ha llegado nada tienen KE ~1e-21 y una
+    # "coherencia" que es puro ruido numerico. Se ocultan.
+    pipe.modifiers.append(ExpressionSelectionModifier(
+        expression=f"c_keratom < {args.ke_corte}"))
+    pipe.modifiers.append(DeleteSelectedModifier())
+
+    if args.modo == "vz":
+        # Mapa DIVERGENTE sobre la velocidad vertical. Una onda coherente se ve
+        # como bandas amplias y suaves de un signo (compresion / rarefaccion);
+        # el calor, como moteado que cambia de signo entre atomos vecinos. La
+        # diferencia salta a la vista sin necesidad de calcular nada.
+        prop, v0, v1 = "Velocity.Z", -args.vmax, args.vmax
+        grad, titulo = ColorCodingModifier.BlueWhiteRed(), "v_z  [sigma/tau]"
+    else:
+        # chi por atomo: misma descomposicion que el analisis. Se compara la
+        # velocidad de cada atomo con la MEDIA LOCAL de sus vecinos:
+        #   u = media local  -> movimiento colectivo = onda
+        #   v - u            -> lo que se sale de esa media = calor
+        #   chi = |u|^2 / (|u|^2 + |v-u|^2)
+        # chi ~ 1 (rojo): el atomo se mueve CON sus vecinos -> coherente.
+        # chi ~ 0 (azul): se mueve por su cuenta -> termalizado.
+        pipe.modifiers.append(ComputePropertyModifier(
+            output_property="vsum", expressions=["0", "0", "0"],
+            neighbor_expressions=["Velocity.X", "Velocity.Y", "Velocity.Z"],
+            cutoff_radius=args.cutoff))
+        pipe.modifiers.append(ComputePropertyModifier(
+            output_property="nnb", expressions=["0"],
+            neighbor_expressions=["1"], cutoff_radius=args.cutoff))
+        UX = "((vsum.1+Velocity.X)/(nnb+1))"
+        UY = "((vsum.2+Velocity.Y)/(nnb+1))"
+        UZ = "((vsum.3+Velocity.Z)/(nnb+1))"
+        U2 = f"({UX}^2+{UY}^2+{UZ}^2)"
+        D2 = f"((Velocity.X-{UX})^2+(Velocity.Y-{UY})^2+(Velocity.Z-{UZ})^2)"
+        pipe.modifiers.append(ComputePropertyModifier(
+            output_property="chi", expressions=[f"{U2}/({U2}+{D2}+1e-30)"]))
+        prop, v0, v1 = "chi", 0.0, 1.0
+        grad, titulo = ColorCodingModifier.BlueWhiteRed(), "chi  (1=onda, 0=calor)"
+
 pipe.modifiers.append(ColorCodingModifier(
-    property="logKE",
-    start_value=args.ke_min, end_value=args.ke_max,
-    gradient=ColorCodingModifier.Viridis()))
+    property=prop, start_value=v0, end_value=v1, gradient=grad))
 
 data = pipe.compute(0)
 data.particles.vis.radius = args.radio
@@ -140,7 +196,7 @@ vp.overlays.append(ColorLegendOverlay(
     modifier=pipe.modifiers[-1], alignment=0x41, orientation=0x1,
     legend_size=0.26, font_size=0.022, format_string="%.0f",
     offset_x=0.03, offset_y=0.05,
-    title="log10 KE por atomo", text_color=(1, 1, 1)))
+    title=titulo, text_color=(1, 1, 1)))
 
 f0 = args.frame_inicio
 f1 = n_frames - 1 if args.frames == 0 else min(f0 + args.frames - 1, n_frames - 1)
