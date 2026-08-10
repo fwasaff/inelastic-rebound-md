@@ -32,8 +32,17 @@ TABLE_SRC="$ROOT_DIR/data/outputs/activo/ondas_N79_libre/table_repulsiva.txt"
 LAMMPS="${LAMMPS_EXE:-lmp}"
 
 H0=28.15
-NP=8
 NZ=40
+
+# Cores FÍSICOS, no hilos lógicos. OpenMPI asigna un slot por core físico y
+# aborta con "not enough slots available" si se le piden más -- que es lo que
+# pasaba usando nproc (en un i7-8550U nproc dice 8, pero son 4 cores con
+# hyperthreading). Y para MD, que es cómputo en coma flotante saturado, los
+# hilos extra del HT no aportan casi nada: compiten por la misma unidad
+# vectorial.
+NP="$(lscpu -p=CORE 2>/dev/null | grep -v '^#' | sort -u | wc -l)"
+[[ -z "$NP" || "$NP" -lt 1 ]] && NP="$(grep '^core id' /proc/cpuinfo 2>/dev/null | sort -u | wc -l)"
+[[ -z "$NP" || "$NP" -lt 1 ]] && NP=1
 FG=0
 RECORTE=0
 NOMBRE=""
