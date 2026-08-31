@@ -53,3 +53,6 @@ docs/*Notes.bib
 texput.log
 *.nav
 *.snm
+
+# PID de procesos en segundo plano (basura de sesion, nunca versionar)
+*.pid

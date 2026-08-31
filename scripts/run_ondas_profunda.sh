@@ -20,6 +20,14 @@
 #   bash scripts/run_ondas_profunda.sh --np 4           # menos procesos
 #   bash scripts/run_ondas_profunda.sh --recorte        # dump solo capas de
 #                                                       # arriba (~2.7 GB vs 5)
+#   bash scripts/run_ondas_profunda.sh --margen 20      # t_total = t_imp+20 en
+#                                                       # vez de +16 (2026-08-12:
+#                                                       # con --recorte y margen 16
+#                                                       # el eco de fondo predicho,
+#                                                       # ~14.2 tau, casi no entra
+#                                                       # en la ventana dumpeada;
+#                                                       # sin --recorte, +20 da
+#                                                       # margen real para verlo)
 # ==============================================================================
 
 set -euo pipefail
@@ -46,6 +54,7 @@ NP="$(lscpu -p=CORE 2>/dev/null | grep -v '^#' | sort -u | wc -l)"
 FG=0
 RECORTE=0
 NOMBRE=""
+MARGEN=16
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -53,6 +62,7 @@ while [[ $# -gt 0 ]]; do
         --np)      NP="$2"; shift 2 ;;
         --nz)      NZ="$2"; shift 2 ;;
         --nombre)  NOMBRE="$2"; shift 2 ;;
+        --margen)  MARGEN="$2"; shift 2 ;;
         --fg)      FG=1; shift ;;
         --recorte) RECORTE=1; shift ;;
         *) echo "Opción desconocida: $1"; exit 1 ;;
@@ -72,9 +82,9 @@ OUTDIR="$ROOT_DIR/data/outputs/activo/$NOMBRE"
 # mientras se deforma. El error va en la dirección segura -- el dump arranca
 # antes de lo pedido (2.7 tau en vez de 2), nunca después.
 read -r T_IMP T_TOTAL DUMP_DELAY <<< "$(python3 -c "
-h0=$H0; g=0.026; dt=0.005
+h0=$H0; g=0.026; dt=0.005; margen=$MARGEN
 t_imp=(2*(h0-1.73)/g)**0.5
-print(f'{t_imp:.1f} {t_imp+16:.0f} {round((t_imp-2)/dt)}')
+print(f'{t_imp:.1f} {t_imp+margen:.0f} {round((t_imp-2)/dt)}')
 ")"
 
 EXTRA=""
@@ -129,6 +139,7 @@ else
     echo "  cd $ROOT_DIR && python3 scripts/medir_eco_fondo.py \\"
     echo "      --traj $OUTDIR/traj.lammpstrj \\"
     echo "      --bounce $OUTDIR/bounce.dat \\"
-    echo "      --out data/outputs/activo/fig_eco_${NOMBRE}.png --tmax 16"
-    echo "  (el eco debe salir cerca de 14 tau, no de 1.8)"
+    echo "      --out data/outputs/activo/fig_eco_${NOMBRE}.png --tmax $MARGEN"
+    echo "  (el eco debe salir cerca de 14 tau, no de 1.8 -- necesita --recorte"
+    echo "   DESACTIVADO para poder verlo, ver nota 2026-08-12 arriba)"
 fi
